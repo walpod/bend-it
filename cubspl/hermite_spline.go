@@ -31,8 +31,8 @@ type HermiteSpline2d struct {
 	knots    []float64
 }
 
-func NewHermiteSpline2d(vertices []HermiteVertex2d) *HermiteSpline2d {
-	return &HermiteSpline2d{vertices: vertices}
+func NewHermiteSpline2d() *HermiteSpline2d {
+	return &HermiteSpline2d{vertices: []HermiteVertex2d{}}
 }
 
 func (hs HermiteSpline2d) VertexCnt() int {
@@ -46,6 +46,28 @@ func (hs HermiteSpline2d) SegmentCnt() int {
 	} else {
 		return sc
 	}
+}
+
+func (hs HermiteSpline2d) Knot0() float64 {
+	if len(hs.knots) == 0 {
+		return 0 // TODO
+	} else {
+		return hs.knots[0]
+	}
+}
+
+func (hs HermiteSpline2d) KnotN() float64 {
+	lk := len(hs.knots)
+	if lk == 0 {
+		return -1 // TODO
+	} else {
+		return hs.knots[lk-1]
+	}
+}
+
+func (hs HermiteSpline2d) Add(v HermiteVertex2d) {
+	hs.vertices = append(hs.vertices, v)
+	hs.knots = append(hs.knots, hs.KnotN()+1) // TODO currently only uniform splines
 }
 
 func (hs HermiteSpline2d) Fn() SplineFn2d {
@@ -122,7 +144,7 @@ func (hs *HermiteSpline2d) createCubics() (cubx, cuby []*Cubic) {
 	return
 }
 
-// TODO prepare something to map faster
+// TODO speed up mapping
 func (hs *HermiteSpline2d) mapToSegm(t float64) (i int, u float64, err error) {
 	segmCnt := hs.SegmentCnt() // Precondition: segmCnt >= 1
 	if t < hs.knots[0] {
