@@ -5,20 +5,15 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type Cubic struct {
+type cubic struct {
 	a, b, c, d float64
 }
 
-func NewCubic(a float64, b float64, c float64, d float64) *Cubic {
-	return &Cubic{a: a, b: b, c: c, d: d}
-}
-
-func (cb *Cubic) At(u float64) float64 {
-	//return cb.a + cb.b*u + cb.c*u*u + cb.d*u*u*u
+func (cb *cubic) At(u float64) float64 {
 	return cb.a + u*(cb.b+u*(cb.c+cb.d*u))
 }
 
-func (cb *Cubic) AsFunc() func(float64) float64 {
+func (cb *cubic) Fn() func(float64) float64 {
 	return func(u float64) float64 {
 		return cb.At(u)
 	}
@@ -31,8 +26,8 @@ type HermiteSpline2d struct {
 	knots    []float64
 }
 
-func NewHermiteSpline2d() *HermiteSpline2d {
-	return &HermiteSpline2d{vertices: []HermiteVertex2d{}}
+func NewHermiteSpline2d(vertices []HermiteVertex2d, knots []float64) *HermiteSpline2d {
+	return &HermiteSpline2d{vertices: vertices, knots: knots}
 }
 
 func (hs *HermiteSpline2d) VertexCnt() int {
@@ -100,45 +95,39 @@ func (hs *HermiteSpline2d) Fn() SplineFn2d {
 	}
 }
 
-func (hs *HermiteSpline2d) createCubics() (cubx, cuby []*Cubic) {
+func (hs *HermiteSpline2d) createCubics() (cubx, cuby []cubic) {
 	const dim = 2
 	segmCnt := hs.SegmentCnt() // Precondition: segmCnt >= 1
 
-	cubx = make([]*Cubic, segmCnt)
-	cuby = make([]*Cubic, segmCnt)
+	cubx = make([]cubic, segmCnt)
+	cuby = make([]cubic, segmCnt)
 
 	for i := 0; i < segmCnt; i++ {
-		v0, v1 := hs.vertices[i], hs.vertices[i+1]
 		tlen := hs.knots[i+1] - hs.knots[i]
-		/*
-			1, 	0, 0, 		0,
-			0, 	0, 1*plen, 	0,
-			-3, 3, -2*plen, -plen,
-			2, -2, plen, 	plen,
-
-		*/
 		a := mat.NewDense(4, 4, []float64{
 			1, 0, 0, 0,
 			0, 0, tlen, 0,
 			-3, 3, -2 * tlen, -tlen,
 			2, -2, tlen, tlen,
 		})
-		v0x, v0y := v0.Point()
-		v1x, v1y := v1.Point()
-		v0mx, v0my := v0.ExitTan()
-		v1lx, v1ly := v0.ExitTan()
+
+		startv, endv := hs.vertices[i], hs.vertices[i+1]
+		spx, spy := startv.Point()
+		epx, epy := endv.Point()
+		smx, smy := startv.ExitTan()
+		elx, ely := endv.EntryTan()
 		b := mat.NewDense(4, dim, []float64{
-			v0x, v0y,
-			v1x, v1y,
-			v0mx, v0my,
-			v1lx, v1ly,
+			spx, spy,
+			epx, epy,
+			smx, smy,
+			elx, ely,
 		})
 
 		var coefs mat.Dense
 		coefs.Mul(a, b)
 
-		cubx[i] = NewCubic(coefs.At(0, 0), coefs.At(1, 0), coefs.At(2, 0), coefs.At(3, 0))
-		cuby[i] = NewCubic(coefs.At(0, 1), coefs.At(1, 1), coefs.At(2, 1), coefs.At(3, 1))
+		cubx[i] = cubic{coefs.At(0, 0), coefs.At(1, 0), coefs.At(2, 0), coefs.At(3, 0)}
+		cuby[i] = cubic{coefs.At(0, 1), coefs.At(1, 1), coefs.At(2, 1), coefs.At(3, 1)}
 	}
 
 	return
