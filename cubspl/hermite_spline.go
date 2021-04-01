@@ -35,11 +35,11 @@ func NewHermiteSpline2d() *HermiteSpline2d {
 	return &HermiteSpline2d{vertices: []HermiteVertex2d{}}
 }
 
-func (hs HermiteSpline2d) VertexCnt() int {
+func (hs *HermiteSpline2d) VertexCnt() int {
 	return len(hs.vertices)
 }
 
-func (hs HermiteSpline2d) SegmentCnt() int {
+func (hs *HermiteSpline2d) SegmentCnt() int {
 	sc := len(hs.vertices) - 1
 	if sc < 0 {
 		return 0
@@ -48,7 +48,7 @@ func (hs HermiteSpline2d) SegmentCnt() int {
 	}
 }
 
-func (hs HermiteSpline2d) Knot0() float64 {
+func (hs *HermiteSpline2d) Knot0() float64 {
 	if len(hs.knots) == 0 {
 		return 0 // TODO
 	} else {
@@ -56,7 +56,7 @@ func (hs HermiteSpline2d) Knot0() float64 {
 	}
 }
 
-func (hs HermiteSpline2d) KnotN() float64 {
+func (hs *HermiteSpline2d) KnotN() float64 {
 	lk := len(hs.knots)
 	if lk == 0 {
 		return -1 // TODO
@@ -65,12 +65,12 @@ func (hs HermiteSpline2d) KnotN() float64 {
 	}
 }
 
-func (hs HermiteSpline2d) Add(v HermiteVertex2d) {
+func (hs *HermiteSpline2d) Add(v HermiteVertex2d) {
 	hs.vertices = append(hs.vertices, v)
 	hs.knots = append(hs.knots, hs.KnotN()+1) // TODO currently only uniform splines
 }
 
-func (hs HermiteSpline2d) Fn() SplineFn2d {
+func (hs *HermiteSpline2d) Fn() SplineFn2d {
 	n := hs.VertexCnt()
 	if n >= 2 {
 		cubx, cuby := hs.createCubics()
