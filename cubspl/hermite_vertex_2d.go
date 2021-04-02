@@ -1,5 +1,11 @@
 package cubspl
 
+/*
+type Vertex interface {
+	Point() []float64
+}
+*/
+
 type Vertex2d interface {
 	Point() (px, py float64)
 }
