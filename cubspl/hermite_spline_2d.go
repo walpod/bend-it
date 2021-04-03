@@ -21,74 +21,19 @@ func (cb *cubic) Fn() func(float64) float64 {
 	}
 }
 
-type SplineFn2d func(t float64) (x, y float64)
-
-type HermiteSpline2d struct {
-	vertsx, vertsy []float64
-	tangents       []VertexTan2d
-	// TODO slopeEstimator
-	knots []float64 // TODO uniform - non-uniform
-}
-
-/*
-func NewHermiteSpline2d(vertsx, vertsy []float64, tangents []VertexTan2d, knots []float64) *HermiteSpline2d {
-	n := len(vertsx)
-	if len(vertsy) != n || len(tangents) != n || len(knots) != n {
-		panic("versv, vertsy, tangents and knots must all have the same length")
-	}
-	return &HermiteSpline2d{vertsx: vertsx, vertsy: vertsy, tangents: tangents, knots: knots}
-}
-*/
-
-func (hs *HermiteSpline2d) VertexCnt() int {
-	return len(hs.vertsx)
-}
-
-func (hs *HermiteSpline2d) SegmentCnt() int {
-	if len(hs.vertsx) > 0 {
-		return len(hs.vertsx) - 1
-	} else {
-		return 0
-	}
-}
-
-func (hs *HermiteSpline2d) Knot0() float64 {
-	if len(hs.knots) == 0 {
-		return 0 // TODO
-	} else {
-		return hs.knots[0]
-	}
-}
-
-func (hs *HermiteSpline2d) KnotN() float64 {
-	lk := len(hs.knots)
-	if lk == 0 {
-		return -1 // TODO
-	} else {
-		return hs.knots[lk-1]
-	}
-}
-
-func (hs *HermiteSpline2d) Add(vertx, verty float64, tangent VertexTan2d) {
-	hs.vertsx = append(hs.vertsx, vertx)
-	hs.vertsy = append(hs.vertsy, verty)
-	hs.tangents = append(hs.tangents, tangent)
-	hs.knots = append(hs.knots, hs.KnotN()+1) // TODO currently for uniform splines
-}
-
-func (hs *HermiteSpline2d) Fn() SplineFn2d {
-	return BuildNuHermiteSplineFn2d(hs.vertsx, hs.vertsy, hs.tangents, hs.knots)
-}
+type Spline2d func(t float64) (x, y float64)
 
 // build non-uniform hermite spline
-func BuildNuHermiteSplineFn2d(vertsx, vertsy []float64, tangents []VertexTan2d, knots []float64) SplineFn2d {
+func BuildNuHermiteSpline2d(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64,
+	knots []float64) Spline2d {
+
 	n := len(vertsx)
-	if len(vertsy) != n || len(tangents) != n || len(knots) != n {
-		panic("versv, vertsy, tangents and knots must all have the same length")
+	if len(vertsy) != n || len(entryTansx) != n || len(entryTansy) != n || len(exitTansx) != n || len(exitTansy) != n || len(knots) != n {
+		panic("versv, vertsy, all tangents and knots must have the same length")
 	}
 
 	if n >= 2 {
-		cubx, cuby := createNuCubics(vertsx, vertsy, tangents, knots)
+		cubx, cuby := createNuCubics(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy, knots)
 		return func(t float64) (x, y float64) {
 			segmNo, u, err := mapNuToSegm(t, knots)
 			if err != nil {
@@ -109,9 +54,11 @@ func BuildNuHermiteSplineFn2d(vertsx, vertsy []float64, tangents []VertexTan2d, 
 }
 
 // create cubics for non-uniform spline
-func createNuCubics(vertsx, vertsy []float64, tangents []VertexTan2d, knots []float64) (cubx, cuby []cubic) {
+func createNuCubics(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64,
+	knots []float64) (cubx, cuby []cubic) {
+
 	const dim = 2
-	// precondition: len(vertsx) == len(vertsy) == len(tangents) == len(knots)
+	// precondition: len(vertsx) == len(vertsy) == len(entryTansx) == len(entryTansy) == len(exitTansx) == len(exitTansy) == len(knots)
 	segmCnt := len(vertsx) - 1
 	cubx = make([]cubic, segmCnt)
 	cuby = make([]cubic, segmCnt)
@@ -125,14 +72,11 @@ func createNuCubics(vertsx, vertsy []float64, tangents []VertexTan2d, knots []fl
 			2, -2, tlen, tlen,
 		})
 
-		stat, endt := tangents[i], tangents[i+1]
-		smx, smy := stat.ExitTan()
-		elx, ely := endt.EntryTan()
 		b := mat.NewDense(4, dim, []float64{
 			vertsx[i], vertsy[i],
 			vertsx[i+1], vertsy[i+1],
-			smx, smy,
-			elx, ely,
+			exitTansx[i], exitTansy[i],
+			entryTansx[i+1], entryTansy[i+1],
 		})
 
 		var coefs mat.Dense
@@ -167,14 +111,14 @@ func mapNuToSegm(t float64, knots []float64) (segmNo int, u float64, err error) 
 }
 
 // build non-uniform hermite spline
-func BuildUniHermiteSplineFn2d(vertsx, vertsy []float64, tangents []VertexTan2d) SplineFn2d {
+func BuildUniHermiteSpline2d(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) Spline2d {
 	n := len(vertsx)
-	if len(vertsy) != n || len(tangents) != n {
-		panic("versv, vertsy and tangents must all have the same length")
+	if len(vertsy) != n || len(entryTansx) != n || len(entryTansy) != n || len(exitTansx) != n || len(exitTansy) != n {
+		panic("versv, vertsy and all tangents must have the same length")
 	}
 
 	if n >= 2 {
-		cubx, cuby := createUniCubics(vertsx, vertsy, tangents)
+		cubx, cuby := createUniCubics(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy)
 		return func(t float64) (x, y float64) {
 			segmNo, u, err := mapUniToSegm(t, n-1)
 			if err != nil {
@@ -195,7 +139,7 @@ func BuildUniHermiteSplineFn2d(vertsx, vertsy []float64, tangents []VertexTan2d)
 }
 
 // create cubics for uniform spline
-func createUniCubics(vertsx, vertsy []float64, tangents []VertexTan2d) (cubx, cuby []cubic) {
+func createUniCubics(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) (cubx, cuby []cubic) {
 	const dim = 2
 	// precondition: len(vertsx) == len(vertsy) == len(tangents)
 	segmCnt := len(vertsx) - 1
@@ -212,11 +156,8 @@ func createUniCubics(vertsx, vertsy []float64, tangents []VertexTan2d) (cubx, cu
 
 	bvs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
-		stat, endt := tangents[i], tangents[i+1]
-		smx, smy := stat.ExitTan()
-		elx, ely := endt.EntryTan()
-		bvs = append(bvs, vertsx[i], vertsx[i+1], smx, elx)
-		bvs = append(bvs, vertsy[i], vertsy[i+1], smy, ely)
+		bvs = append(bvs, vertsx[i], vertsx[i+1], exitTansx[i], entryTansx[i+1])
+		bvs = append(bvs, vertsy[i], vertsy[i+1], exitTansy[i], entryTansy[i+1])
 	}
 	b := mat.NewDense(dim*segmCnt, 4, bvs).T()
 
