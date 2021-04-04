@@ -23,28 +23,46 @@ func (cb *cubic) Fn() func(float64) float64 {
 
 type Spline2d func(t float64) (x, y float64)
 
-// build non-uniform hermite spline
-func BuildNuHermiteSpline2d(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64,
+// build hermite spline, if knots are empty then spline is uniform
+func BuildHermiteSpline2d(vertsx, vertsy []float64,
+	entryTansx, entryTansy []float64,
+	exitTansx, exitTansy []float64,
 	knots []float64) Spline2d {
 
 	n := len(vertsx)
-	if len(vertsy) != n || len(entryTansx) != n || len(entryTansy) != n || len(exitTansx) != n || len(exitTansy) != n || len(knots) != n {
-		panic("versv, vertsy, all tangents and knots must have the same length")
+	if len(vertsy) != n || len(entryTansx) != n || len(entryTansy) != n || len(exitTansx) != n || len(exitTansy) != n ||
+		(len(knots) > 0 && len(knots) != n) {
+		panic("versv, vertsy, all tangents and (optional) knots must have the same length")
 	}
 
 	if n >= 2 {
-		cubx, cuby := createNuCubics(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy, knots)
-		return func(t float64) (x, y float64) {
-			segmNo, u, err := mapNuToSegm(t, knots)
-			if err != nil {
-				return 0, 0 // TODO or panic? or error?
-			} else {
-				return cubx[segmNo].At(u), cuby[segmNo].At(u)
+		if len(knots) == 0 {
+			// uniform spline
+			cubx, cuby := createUniCubics(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy)
+			return func(t float64) (x, y float64) {
+				segmNo, u, err := mapUniToSegm(t, n-1)
+				if err != nil {
+					return 0, 0 // TODO or panic? or error?
+				} else {
+					return cubx[segmNo].At(u), cuby[segmNo].At(u)
+				}
+			}
+		} else {
+			// non-uniform spline
+			cubx, cuby := createNuCubics(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy, knots)
+			return func(t float64) (x, y float64) {
+				segmNo, u, err := mapNuToSegm(t, knots)
+				if err != nil {
+					return 0, 0 // TODO or panic? or error?
+				} else {
+					return cubx[segmNo].At(u), cuby[segmNo].At(u)
+				}
 			}
 		}
+
 	} else {
 		return func(t float64) (x, y float64) {
-			if n == 1 && t == knots[0] { // TODO delta around first knot
+			if n == 1 && ((len(knots) == 0 && t == 0) || (len(knots) == 1 && t == knots[0])) { // TODO delta around
 				return vertsx[0], vertsy[0]
 			} else {
 				return 0, 0
@@ -108,34 +126,6 @@ func mapNuToSegm(t float64, knots []float64) (segmNo int, u float64, err error) 
 	}
 	err = fmt.Errorf("%v greater than upper limit %v", t, knots[segmCnt+1])
 	return
-}
-
-// build non-uniform hermite spline
-func BuildUniHermiteSpline2d(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) Spline2d {
-	n := len(vertsx)
-	if len(vertsy) != n || len(entryTansx) != n || len(entryTansy) != n || len(exitTansx) != n || len(exitTansy) != n {
-		panic("versv, vertsy and all tangents must have the same length")
-	}
-
-	if n >= 2 {
-		cubx, cuby := createUniCubics(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy)
-		return func(t float64) (x, y float64) {
-			segmNo, u, err := mapUniToSegm(t, n-1)
-			if err != nil {
-				return 0, 0 // TODO or panic? or error?
-			} else {
-				return cubx[segmNo].At(u), cuby[segmNo].At(u)
-			}
-		}
-	} else {
-		return func(t float64) (x, y float64) {
-			if n == 1 && t == 0 { // TODO delta around 0
-				return vertsx[0], vertsy[0]
-			} else {
-				return 0, 0
-			}
-		}
-	}
 }
 
 // create cubics for uniform spline

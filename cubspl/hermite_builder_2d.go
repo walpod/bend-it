@@ -90,5 +90,5 @@ func (hs *HermiteBuilder2d) Build() Spline2d {
 		exitTansx[i] = exitTanx
 		exitTansy[i] = exitTany
 	}
-	return BuildNuHermiteSpline2d(hs.vertsx, hs.vertsy, entryTansx, entryTansy, exitTansx, exitTansy, hs.knots)
+	return BuildHermiteSpline2d(hs.vertsx, hs.vertsy, entryTansx, entryTansy, exitTansx, exitTansy, hs.knots)
 }
