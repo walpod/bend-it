@@ -1,22 +1,26 @@
 package cubic
 
-// estimate tangents based on given vertices
-type TanEstimator2d interface {
-	Estimate(vertsx, vertsy []float64, knots []float64) (entryTansx, entryTansy []float64, exitTansx, exitTansy []float64)
+// find tangents based on given vertices and knots
+type TanFinder2d interface {
+	Find(vertsx, vertsy []float64, knots []float64) (
+		entryTansx, entryTansy []float64, exitTansx, exitTansy []float64)
 }
-type CardinalTan2d struct {
+
+type CardinalTanf2d struct {
 	tension float64
 }
 
-func NewCardinalTan2d(tension float64) CardinalTan2d {
-	return CardinalTan2d{tension: tension}
+func NewCardinalTanf2d(tension float64) CardinalTanf2d {
+	return CardinalTanf2d{tension: tension}
 }
 
-func NewCatmullRomTan2d() CardinalTan2d {
-	return NewCardinalTan2d(0)
+func NewCatmullRomTanf2d() CardinalTanf2d {
+	return NewCardinalTanf2d(0)
 }
 
-func (ct CardinalTan2d) Estimate(vertsx, vertsy []float64, knots []float64) (entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
+func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
+	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
+
 	n := len(vertsx)
 	exitTansx = make([]float64, n)
 	exitTansy = make([]float64, n)
