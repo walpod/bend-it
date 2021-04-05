@@ -1,5 +1,7 @@
 package cubic
 
+import "github.com/walpod/bend-it"
+
 // entry and exit tangents for given vertex
 type VertexTan2d interface {
 	EntryTan() (lx, ly float64)
@@ -76,7 +78,7 @@ func (hs *HermiteBuilder2d) Add(vertx, verty float64, tangent VertexTan2d) {
 	hs.knots = append(hs.knots, hs.KnotN()+1) // TODO currently for uniform splines
 }
 
-func (hs *HermiteBuilder2d) Build() Spline2d {
+func (hs *HermiteBuilder2d) Build() bendit.Spline2d {
 	n := hs.VertexCnt()
 	entryTansx := make([]float64, n)
 	entryTansy := make([]float64, n)

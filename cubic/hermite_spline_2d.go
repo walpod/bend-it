@@ -3,6 +3,7 @@ package cubic
 import (
 	"errors"
 	"fmt"
+	"github.com/walpod/bend-it"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -22,13 +23,11 @@ func (cb *cubicPoly) Fn() func(float64) float64 {
 	}
 }
 
-type Spline2d func(t float64) (x, y float64)
-
 // build hermite spline, if knots are empty then spline is uniform
 func BuildHermiteSpline2d(vertsx, vertsy []float64,
 	entryTansx, entryTansy []float64,
 	exitTansx, exitTansy []float64,
-	knots []float64) Spline2d {
+	knots []float64) bendit.Spline2d {
 
 	n := len(vertsx)
 	if len(vertsy) != n || len(entryTansx) != n || len(entryTansy) != n || len(exitTansx) != n || len(exitTansy) != n ||
