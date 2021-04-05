@@ -1,4 +1,4 @@
-package cubspl
+package cubic
 
 // entry and exit tangents for given vertex
 type VertexTan2d interface {

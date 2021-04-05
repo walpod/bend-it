@@ -1,4 +1,4 @@
-package cubspl
+package cubic
 
 import (
 	"errors"
@@ -7,15 +7,16 @@ import (
 	"math"
 )
 
-type cubic struct {
+// cubic polynomial
+type cubicPoly struct {
 	a, b, c, d float64
 }
 
-func (cb *cubic) At(u float64) float64 {
+func (cb *cubicPoly) At(u float64) float64 {
 	return cb.a + u*(cb.b+u*(cb.c+cb.d*u))
 }
 
-func (cb *cubic) Fn() func(float64) float64 {
+func (cb *cubicPoly) Fn() func(float64) float64 {
 	return func(u float64) float64 {
 		return cb.At(u)
 	}
@@ -73,13 +74,13 @@ func BuildHermiteSpline2d(vertsx, vertsy []float64,
 
 // create cubics for non-uniform spline
 func createNuCubics(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64,
-	knots []float64) (cubx, cuby []cubic) {
+	knots []float64) (cubx, cuby []cubicPoly) {
 
 	const dim = 2
 	// precondition: len(vertsx) == len(vertsy) == len(entryTansx) == len(entryTansy) == len(exitTansx) == len(exitTansy) == len(knots)
 	segmCnt := len(vertsx) - 1
-	cubx = make([]cubic, segmCnt)
-	cuby = make([]cubic, segmCnt)
+	cubx = make([]cubicPoly, segmCnt)
+	cuby = make([]cubicPoly, segmCnt)
 
 	for i := 0; i < segmCnt; i++ {
 		tlen := knots[i+1] - knots[i]
@@ -100,8 +101,8 @@ func createNuCubics(vertsx, vertsy []float64, entryTansx, entryTansy []float64, 
 		var coefs mat.Dense
 		coefs.Mul(a, b)
 
-		cubx[i] = cubic{coefs.At(0, 0), coefs.At(1, 0), coefs.At(2, 0), coefs.At(3, 0)}
-		cuby[i] = cubic{coefs.At(0, 1), coefs.At(1, 1), coefs.At(2, 1), coefs.At(3, 1)}
+		cubx[i] = cubicPoly{coefs.At(0, 0), coefs.At(1, 0), coefs.At(2, 0), coefs.At(3, 0)}
+		cuby[i] = cubicPoly{coefs.At(0, 1), coefs.At(1, 1), coefs.At(2, 1), coefs.At(3, 1)}
 	}
 
 	return
@@ -129,12 +130,12 @@ func mapNuToSegm(t float64, knots []float64) (segmNo int, u float64, err error) 
 }
 
 // create cubics for uniform spline
-func createUniCubics(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) (cubx, cuby []cubic) {
+func createUniCubics(vertsx, vertsy []float64, entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) (cubx, cuby []cubicPoly) {
 	const dim = 2
 	// precondition: len(vertsx) == len(vertsy) == len(tangents)
 	segmCnt := len(vertsx) - 1
 	if segmCnt < 1 {
-		return []cubic{}, []cubic{}
+		return []cubicPoly{}, []cubicPoly{}
 	}
 
 	a := mat.NewDense(4, 4, []float64{
@@ -154,14 +155,14 @@ func createUniCubics(vertsx, vertsy []float64, entryTansx, entryTansy []float64,
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	cubx = make([]cubic, segmCnt)
-	cuby = make([]cubic, segmCnt)
+	cubx = make([]cubicPoly, segmCnt)
+	cuby = make([]cubicPoly, segmCnt)
 
 	colno := 0
 	for i := 0; i < segmCnt; i++ {
-		cubx[i] = cubic{coefs.At(0, colno), coefs.At(1, colno), coefs.At(2, colno), coefs.At(3, colno)}
+		cubx[i] = cubicPoly{coefs.At(0, colno), coefs.At(1, colno), coefs.At(2, colno), coefs.At(3, colno)}
 		colno++
-		cuby[i] = cubic{coefs.At(0, colno), coefs.At(1, colno), coefs.At(2, colno), coefs.At(3, colno)}
+		cuby[i] = cubicPoly{coefs.At(0, colno), coefs.At(1, colno), coefs.At(2, colno), coefs.At(3, colno)}
 		colno++
 	}
 	return

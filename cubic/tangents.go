@@ -1,4 +1,4 @@
-package cubspl
+package cubic
 
 // estimate tangents based on given vertices
 type TanEstimator2d interface {
