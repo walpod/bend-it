@@ -21,6 +21,7 @@ func NewCatmullRomTanf2d() CardinalTanf2d {
 func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
 
+	// TODO check len of params
 	n := len(vertsx)
 	exitTansx = make([]float64, n)
 	exitTansy = make([]float64, n)
@@ -69,16 +70,24 @@ func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 type NaturalTanf2d struct{}
 
 // find hermite tangents for natural spline
-// a mathematical treatment can be found in "Interpolating Cubic Splines" - 9 (Knott) and in
+// mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
 func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
 
-	// TODO check paramlengths
+	// TODO check len of params
 	n := len(vertsx)
-	r := make([]float64, n) // diagonal values
+	exitTansx = make([]float64, n)
+	exitTansy = make([]float64, n)
+
+	if n < 2 {
+		entryTansx = exitTansx
+		entryTansy = exitTansy
+		return
+	}
 
 	var solve func(p, m []float64)
+	r := make([]float64, n) // diagonal values
 	if len(knots) == 0 {
 		// uniform, solve equations for m[0] ... m[n-1] (A*m = p)
 		// 2 1			= 3 * (p1 - p0)
@@ -87,7 +96,7 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 		//  	...		= ...
 		//		  1 4 1 = 3 * (p(n-1) - p(n-3))
 		//			1 2 = 3 * (p(n-1) - p(n-2))
-		// first transform to upper-diagonal: eliminate 1's below diagonal and convert diagonal to r[i]
+		// first transform to upper-diagonal matrix: eliminate 1's below diagonal and convert diagonal to r[i]
 		// followed by a back-substitution to yield m[i]
 		solve = func(p, m []float64) {
 			// forward elimination
@@ -144,24 +153,20 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 
 			// backward substitution
 			m[n-1] /= r[n-1]
-			for i := n - 2; i >= 0; i-- {
-				if i == 0 {
-					m[i] = (m[i] - m[i+1]) / r[i]
-				} else {
-					m[i] = (m[i] - m[i+1]*t[i-1]) / r[i]
-				}
+			for i := n - 2; i >= 1; i-- {
+				m[i] = (m[i] - m[i+1]*t[i-1]) / r[i]
 			}
+			m[0] = (m[0] - m[1]) / r[0]
 		}
 	}
 
 	// solve n linear equations
-	exitTansx = make([]float64, n)
 	solve(vertsx, exitTansx)
-
-	exitTansy = make([]float64, n)
 	solve(vertsy, exitTansy)
 
+	// single tangent
 	entryTansx = exitTansx
 	entryTansy = exitTansy
+
 	return
 }
