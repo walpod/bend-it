@@ -1,6 +1,6 @@
 package cubic
 
-// find tangents based on given vertices and knots
+// TanFinder2d finds tangents based on given vertices and knots
 type TanFinder2d interface {
 	Find(vertsx, vertsy []float64, knots []float64) (
 		entryTansx, entryTansy []float64, exitTansx, exitTansy []float64)
@@ -69,7 +69,7 @@ func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 
 type NaturalTanf2d struct{}
 
-// find hermite tangents for natural spline
+// Find hermite tangents for natural spline
 // mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
 func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (

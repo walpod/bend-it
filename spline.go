@@ -1,3 +1,3 @@
 package bendit
 
-type Spline2d func(t float64) (x, y float64)
+type SplineFn2d func(t float64) (x, y float64)

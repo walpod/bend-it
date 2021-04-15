@@ -27,7 +27,7 @@ func (cb *cubicPoly) Fn() func(float64) float64 {
 func BuildHermiteSpline2d(vertsx, vertsy []float64,
 	entryTansx, entryTansy []float64,
 	exitTansx, exitTansy []float64,
-	knots []float64) bendit.Spline2d {
+	knots []float64) bendit.SplineFn2d {
 
 	n := len(vertsx)
 	if len(vertsy) != n || len(entryTansx) != n || len(entryTansy) != n || len(exitTansx) != n || len(exitTansy) != n ||
