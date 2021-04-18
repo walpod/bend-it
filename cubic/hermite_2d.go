@@ -5,13 +5,46 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
+/*
+// TODO currently deactivated
+// entry and exit tangents for given vertex
+type VertexTan2d interface {
+	EntryTan() (lx, ly float64)
+	ExitTan() (mx, my float64)
+}
+
+type SingleTan2d struct {
+	Mx, My float64
+}
+
+func NewSingleTan2d(mx float64, my float64) *SingleTan2d {
+	return &SingleTan2d{Mx: mx, My: my}
+}
+
+func (st *SingleTan2d) EntryTan() (lx, ly float64) {
+	// entry = exit tangent
+	return st.Mx, st.My
+}
+
+func (st *SingleTan2d) ExitTan() (mx, my float64) {
+	return st.Mx, st.My
+}
+*/
+
+// HermiteTanFinder2d finds tangents based on given vertices and knots
+type HermiteTanFinder2d interface {
+	Find(vertsx, vertsy []float64, knots []float64) (
+		entryTansx, entryTansy []float64, exitTansx, exitTansy []float64)
+}
+
 type HermiteSpline2d struct {
 	vertsx, vertsy         []float64
 	tanFinder              HermiteTanFinder2d
 	entryTansx, entryTansy []float64
 	exitTansx, exitTansy   []float64
-	knots                  []float64
-	canon                  *CanonicalSpline2d
+	// TODO tangents       []VertexTan2d
+	knots []float64
+	canon *CanonicalSpline2d
 }
 
 func NewHermiteSpline2d(vertsx []float64, vertsy []float64,
@@ -29,6 +62,33 @@ func NewHermiteSplineTanFinder2d(vertsx []float64, vertsy []float64, tanFinder H
 	herm.Build()
 	return herm
 }
+
+/* TODO variant with  tangents []VertexTan2d
+func (hs *HermiteSpline2d) Add(vertx, verty float64, tangent VertexTan2d) {
+	hs.vertsx = append(hs.vertsx, vertx)
+	hs.vertsy = append(hs.vertsy, verty)
+	hs.tangents = append(hs.tangents, tangent)
+	hs.knots = append(hs.knots, hs.KnotN()+1) // TODO currently for uniform splines
+}
+
+func (hs *HermiteBuilder2d) Build() bendit.Fn2d {
+	n := hs.VertexCnt()
+	entryTansx := make([]float64, n)
+	entryTansy := make([]float64, n)
+	exitTansx := make([]float64, n)
+	exitTansy := make([]float64, n)
+	for i := 0; i < len(hs.tangents); i++ {
+		entryTanx, entryTany := hs.tangents[i].EntryTan()
+		entryTansx[i] = entryTanx
+		entryTansy[i] = entryTany
+		exitTanx, exitTany := hs.tangents[i].ExitTan()
+		exitTansx[i] = exitTanx
+		exitTansy[i] = exitTany
+	}
+	return BuildHermiteSpline2d(hs.vertsx, hs.vertsy, entryTansx, entryTansy, exitTansx, exitTansy, hs.knots)
+}
+
+*/
 
 func (hs *HermiteSpline2d) SegmentCnt() int {
 	return len(hs.vertsx) - 1
@@ -58,11 +118,9 @@ func (hs *HermiteSpline2d) Build() {
 
 		var cubics []Cubic2d
 		if len(hs.knots) == 0 {
-			// uniform spline
-			cubics = hs.createUniCubics()
+			cubics = hs.createUniCubics() // uniform
 		} else {
-			// non-uniform spline
-			cubics = hs.createNonUniCubics()
+			cubics = hs.createNonUniCubics() // non-uniform
 		}
 		hs.canon = NewCanonicalSpline2d(cubics, hs.knots)
 	} else {
