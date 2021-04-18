@@ -9,8 +9,8 @@ type BezierSpline2d struct {
 	vertsx, vertsy []float64
 	ctrlx, ctrly   []float64
 	knots          []float64
-	cubics         []Cubic2d
-	canon          *CanonicalSpline2d
+	//cubics         []Cubic2d
+	canon *CanonicalSpline2d
 }
 
 func NewBezierSpline2d(vertsx []float64, vertsy []float64, ctrlx []float64, ctrly []float64, knots []float64) *BezierSpline2d {
@@ -40,32 +40,17 @@ func (bs *BezierSpline2d) Domain() (fr, to float64) {
 func (bs *BezierSpline2d) Build() {
 	n := len(bs.vertsx)
 	if n >= 2 {
+		var cubics []Cubic2d
 		if len(bs.knots) == 0 {
 			// uniform spline
-			bs.cubics = bs.createUniCubics()
+			cubics = bs.createUniCubics()
 		} else {
 			// non-uniform spline
-			bs.cubics = bs.createNonUniCubics()
+			cubics = bs.createNonUniCubics()
 		}
-		bs.canon = NewCanonicalSpline2d(bs.cubics, bs.knots)
+		bs.canon = NewCanonicalSpline2d(cubics, bs.knots)
 	} else {
 		bs.canon = nil
-	}
-}
-
-func (bs *BezierSpline2d) At(t float64) (x, y float64) {
-	if bs.canon != nil {
-		return bs.canon.At(t)
-	} else {
-		return 0, 0
-	}
-}
-
-func (bs *BezierSpline2d) Fn() bendit.Fn2d {
-	if bs.canon != nil {
-		return bs.canon.Fn()
-	} else {
-		return NewCanonicalSpline2d(nil, nil).Fn()
 	}
 }
 
@@ -111,4 +96,20 @@ func (bs *BezierSpline2d) createUniCubics() []Cubic2d {
 func (bs *BezierSpline2d) createNonUniCubics() []Cubic2d {
 	// TODO
 	panic("not yet implemented")
+}
+
+func (bs *BezierSpline2d) At(t float64) (x, y float64) {
+	if bs.canon != nil {
+		return bs.canon.At(t)
+	} else {
+		return 0, 0
+	}
+}
+
+func (bs *BezierSpline2d) Fn() bendit.Fn2d {
+	if bs.canon != nil {
+		return bs.canon.Fn()
+	} else {
+		return NewCanonicalSpline2d(nil, nil).Fn()
+	}
 }
