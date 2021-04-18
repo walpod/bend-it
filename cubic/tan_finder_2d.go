@@ -1,7 +1,7 @@
 package cubic
 
-// TanFinder2d finds tangents based on given vertices and knots
-type TanFinder2d interface {
+// HermiteTanFinder2d finds tangents based on given vertices and knots
+type HermiteTanFinder2d interface {
 	Find(vertsx, vertsy []float64, knots []float64) (
 		entryTansx, entryTansy []float64, exitTansx, exitTansy []float64)
 }
