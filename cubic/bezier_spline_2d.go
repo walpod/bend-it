@@ -28,13 +28,14 @@ func (bs *BezierSpline2d) SegmentCnt() int {
 	return len(bs.vertsx) - 1
 }
 
-func (bs *BezierSpline2d) Domain() (fr, to float64) {
+func (bs *BezierSpline2d) Domain() bendit.SplineDomain {
+	var to float64
 	if bs.knots == nil {
 		to = float64(bs.SegmentCnt())
 	} else {
 		to = bs.knots[len(bs.knots)-1]
 	}
-	return 0, to
+	return bendit.SplineDomain{From: 0, To: to}
 }
 
 func (bs *BezierSpline2d) Build() {

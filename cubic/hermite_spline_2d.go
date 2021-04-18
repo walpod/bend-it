@@ -34,13 +34,14 @@ func (hs *HermiteSpline2d) SegmentCnt() int {
 	return len(hs.vertsx) - 1
 }
 
-func (hs *HermiteSpline2d) Domain() (fr, to float64) {
+func (hs *HermiteSpline2d) Domain() bendit.SplineDomain {
+	var to float64
 	if hs.knots == nil {
 		to = float64(hs.SegmentCnt())
 	} else {
 		to = hs.knots[len(hs.knots)-1]
 	}
-	return 0, to
+	return bendit.SplineDomain{From: 0, To: to}
 }
 
 // build hermite spline, if knots are empty then spline is uniform

@@ -61,13 +61,14 @@ func (cs *CanonicalSpline2d) SegmentCnt() int {
 	return len(cs.cubics)
 }
 
-func (cs *CanonicalSpline2d) Domain() (fr, to float64) {
+func (cs *CanonicalSpline2d) Domain() bendit.SplineDomain {
+	var to float64
 	if cs.knots == nil {
 		to = float64(cs.SegmentCnt())
 	} else {
 		to = cs.knots[len(cs.knots)-1]
 	}
-	return 0, to
+	return bendit.SplineDomain{From: 0, To: to}
 }
 
 func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
