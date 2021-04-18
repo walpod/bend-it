@@ -57,9 +57,12 @@ func NewCanonicalSpline2d(cubics []Cubic2d, knots []float64) *CanonicalSpline2d 
 	return &CanonicalSpline2d{cubics: cubics, knots: knots}
 }
 
+func (cs *CanonicalSpline2d) SegmentCnt() int {
+	return len(cs.cubics)
+}
+
 func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
-	segmCnt := len(cs.cubics)
-	if segmCnt == 0 {
+	if len(cs.cubics) == 0 {
 		return 0, 0 // TODO or panic? or error?
 	}
 
@@ -69,9 +72,9 @@ func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
 		err    error
 	)
 	if len(cs.knots) == 0 {
-		segmNo, u, err = mapUniToSegm(t, segmCnt)
+		segmNo, u, err = cs.mapUniToSegm(t)
 	} else {
-		segmNo, u, err = mapNonUniToSegm(t, cs.knots)
+		segmNo, u, err = cs.mapNonUniToSegm(t)
 	}
 	if err != nil {
 		return 0, 0 // TODO or panic? or error?
@@ -80,7 +83,8 @@ func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
 	}
 }
 
-func mapUniToSegm(t float64, segmCnt int) (segmNo int, u float64, err error) {
+func (cs *CanonicalSpline2d) mapUniToSegm(t float64) (segmNo int, u float64, err error) {
+	segmCnt := cs.SegmentCnt()
 	upper := float64(segmCnt)
 	if t < 0 {
 		err = fmt.Errorf("%v smaller than 0", t)
@@ -103,24 +107,24 @@ func mapUniToSegm(t float64, segmCnt int) (segmNo int, u float64, err error) {
 	return
 }
 
-func mapNonUniToSegm(t float64, knots []float64) (segmNo int, u float64, err error) {
-	segmCnt := len(knots) - 1
+func (cs *CanonicalSpline2d) mapNonUniToSegm(t float64) (segmNo int, u float64, err error) {
+	segmCnt := len(cs.knots) - 1
 	if segmCnt < 1 {
 		err = errors.New("at least one segment having 2 knots required")
 		return
 	}
-	if t < knots[0] {
-		err = fmt.Errorf("%v smaller than first knot %v", t, knots[0])
+	if t < cs.knots[0] {
+		err = fmt.Errorf("%v smaller than first knot %v", t, cs.knots[0])
 		return
 	}
 
 	// TODO speed up mapping
 	for i := 0; i < segmCnt; i++ {
-		if t <= knots[i+1] {
-			return i, (t - knots[i]) / (knots[i+1] - knots[i]), nil
+		if t <= cs.knots[i+1] {
+			return i, (t - cs.knots[i]) / (cs.knots[i+1] - cs.knots[i]), nil
 		}
 	}
-	err = fmt.Errorf("%v greater than upper limit %v", t, knots[segmCnt+1])
+	err = fmt.Errorf("%v greater than upper limit %v", t, cs.knots[segmCnt+1])
 	return
 }
 
