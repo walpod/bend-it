@@ -28,6 +28,15 @@ func (bs *BezierSpline2d) SegmentCnt() int {
 	return len(bs.vertsx) - 1
 }
 
+func (bs *BezierSpline2d) Domain() (fr, to float64) {
+	if bs.knots == nil {
+		to = float64(bs.SegmentCnt())
+	} else {
+		to = bs.knots[len(bs.knots)-1]
+	}
+	return 0, to
+}
+
 func (bs *BezierSpline2d) Build() {
 	n := len(bs.vertsx)
 	if n >= 2 {
