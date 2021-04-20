@@ -59,11 +59,11 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 		}
 
 		// non-uniform, solve equations
-		// 2	1			...				= 3 * (p1 - p0) / t0
-		// t1 	2*(t1+t0) 	t0			...	= 3 * (t0/t1 * p2 + (t1/t0 - t0/t1) * p1 - t1/t0 * p0)
-		//		t2			2*(t2+t1)	t1	= ...
-		//						...
-		//					1			2	= 3 * (p(n-1) - p(n-2)) / t(n-2)
+		// 2	1           ...             = 3 * (p1 - p0) / t0
+		// t1	2*(t1+t0)   t0       ...    = 3 * (t0/t1 * p2 + (t1/t0 - t0/t1) * p1 - t1/t0 * p0)
+		//      t2          2*(t2+t1)   t1  = ...
+		//                  ...
+		//                  1           2   = 3 * (p(n-1) - p(n-2)) / t(n-2)
 		solve = func(p, m []float64) {
 			// forward elimination
 			r[0] = 2
