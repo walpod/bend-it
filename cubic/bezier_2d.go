@@ -9,15 +9,14 @@ import (
 type BezierSpline2d struct {
 	vertsx, vertsy []float64
 	ctrlx, ctrly   []float64
-	knots          []float64
-	//cubics         []Cubic2d
-	canon *CanonicalSpline2d
+	knots          bendit.Knots
+	canon          *CanonicalSpline2d
 }
 
-func NewBezierSpline2d(vertsx []float64, vertsy []float64, ctrlx []float64, ctrly []float64, knots []float64) *BezierSpline2d {
+func NewBezierSpline2d(vertsx []float64, vertsy []float64, ctrlx []float64, ctrly []float64, knots bendit.Knots) *BezierSpline2d {
 	n := len(vertsx)
 	ctrlCnt := (n - 1) * 2
-	if len(vertsy) != n || len(ctrlx) != ctrlCnt || len(ctrly) != ctrlCnt || (len(knots) > 0 && len(knots) != n) {
+	if len(vertsy) != n || len(ctrlx) != ctrlCnt || len(ctrly) != ctrlCnt || (knots.Count() > 0 && knots.Count() != n) {
 		panic("vertsv, vertsy and (optional) knots must have the same length. ctrlx and ctrly must have twice the length of vertsx minus 2")
 	}
 	bs := &BezierSpline2d{vertsx: vertsx, vertsy: vertsy, ctrlx: ctrlx, ctrly: ctrly, knots: knots}
@@ -30,23 +29,17 @@ func (bs *BezierSpline2d) SegmentCnt() int {
 }
 
 func (bs *BezierSpline2d) Domain() bendit.SplineDomain {
-	var to float64
-	if bs.knots == nil {
-		to = float64(bs.SegmentCnt())
-	} else {
-		to = bs.knots[len(bs.knots)-1]
-	}
-	return bendit.SplineDomain{From: 0, To: to}
+	return bs.knots.Domain(bs.SegmentCnt())
 }
 
 func (bs *BezierSpline2d) Build() {
 	n := len(bs.vertsx)
 	if n >= 2 {
 		var cubics []Cubic2d
-		if len(bs.knots) == 0 {
-			cubics = bs.createUniCubics() // uniform
+		if bs.knots.IsUniform() {
+			cubics = bs.createUniCubics()
 		} else {
-			cubics = bs.createNonUniCubics() // non-uniform
+			cubics = bs.createNonUniCubics()
 		}
 		bs.canon = NewCanonicalSpline2d(cubics, bs.knots)
 	} else {
@@ -107,9 +100,10 @@ func (bs *BezierSpline2d) At(t float64) (x, y float64) {
 }
 
 // alternative method to evaluate bezier spline at given t using de Casteljau algorithm
+// as opposed to At calling Build before is not required
 func (bs *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 	if bs.canon != nil {
-		segmNo, u, err := bs.canon.MapToSegment(t)
+		segmNo, u, err := bs.knots.MapToSegment(t, bs.SegmentCnt())
 		if err != nil {
 			return 0, 0
 		} else {
@@ -133,7 +127,7 @@ func (bs *BezierSpline2d) Fn() bendit.Fn2d {
 	if bs.canon != nil {
 		return bs.canon.Fn()
 	} else {
-		return NewCanonicalSpline2d(nil, nil).Fn()
+		return NewCanonicalSpline2d(nil, bendit.Knots{}).Fn()
 	}
 }
 

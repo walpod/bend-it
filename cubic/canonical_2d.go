@@ -1,10 +1,7 @@
 package cubic
 
 import (
-	"errors"
-	"fmt"
 	bendit "github.com/walpod/bend-it"
-	"math"
 )
 
 // cubic polynomial
@@ -47,11 +44,11 @@ func (cb *Cubic2d) Fn() bendit.Fn2d {
 
 type CanonicalSpline2d struct {
 	cubics []Cubic2d
-	knots  []float64
+	knots  bendit.Knots
 }
 
-func NewCanonicalSpline2d(cubics []Cubic2d, knots []float64) *CanonicalSpline2d {
-	if len(knots) > 0 && len(knots) != len(cubics)+1 {
+func NewCanonicalSpline2d(cubics []Cubic2d, knots bendit.Knots) *CanonicalSpline2d {
+	if knots.Count() > 0 && knots.Count() != len(cubics)+1 {
 		panic("knots must be empty or having length of cubics + 1")
 	}
 	return &CanonicalSpline2d{cubics: cubics, knots: knots}
@@ -62,13 +59,7 @@ func (cs *CanonicalSpline2d) SegmentCnt() int {
 }
 
 func (cs *CanonicalSpline2d) Domain() bendit.SplineDomain {
-	var to float64
-	if cs.knots == nil {
-		to = float64(cs.SegmentCnt())
-	} else {
-		to = cs.knots[len(cs.knots)-1]
-	}
-	return bendit.SplineDomain{From: 0, To: to}
+	return cs.knots.Domain(cs.SegmentCnt())
 }
 
 func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
@@ -76,65 +67,12 @@ func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
 		return 0, 0 // TODO or panic? or error?
 	}
 
-	segmNo, u, err := cs.MapToSegment(t)
+	segmNo, u, err := cs.knots.MapToSegment(t, cs.SegmentCnt())
 	if err != nil {
 		return 0, 0 // TODO or panic? or error?
 	} else {
 		return cs.cubics[segmNo].At(u)
 	}
-}
-
-func (cs *CanonicalSpline2d) MapToSegment(t float64) (segmNo int, u float64, err error) {
-	if len(cs.knots) == 0 {
-		return cs.mapUniToSegment(t)
-	} else {
-		return cs.mapNonUniToSegment(t)
-	}
-}
-
-func (cs *CanonicalSpline2d) mapUniToSegment(t float64) (segmNo int, u float64, err error) {
-	segmCnt := cs.SegmentCnt()
-	upper := float64(segmCnt)
-	if t < 0 {
-		err = fmt.Errorf("%v smaller than 0", t)
-		return
-	}
-	if t > upper {
-		err = fmt.Errorf("%v greater than last knot %v", t, upper)
-		return
-	}
-
-	var ifl float64
-	ifl, u = math.Modf(t)
-	if ifl == upper {
-		// special case t == upper
-		segmNo = segmCnt - 1
-		u = 1
-	} else {
-		segmNo = int(ifl)
-	}
-	return
-}
-
-func (cs *CanonicalSpline2d) mapNonUniToSegment(t float64) (segmNo int, u float64, err error) {
-	segmCnt := len(cs.knots) - 1
-	if segmCnt < 1 {
-		err = errors.New("at least one segment having 2 knots required")
-		return
-	}
-	if t < cs.knots[0] {
-		err = fmt.Errorf("%v smaller than first knot %v", t, cs.knots[0])
-		return
-	}
-
-	// TODO speed up mapping
-	for i := 0; i < segmCnt; i++ {
-		if t <= cs.knots[i+1] {
-			return i, (t - cs.knots[i]) / (cs.knots[i+1] - cs.knots[i]), nil
-		}
-	}
-	err = fmt.Errorf("%v greater than upper limit %v", t, cs.knots[segmCnt+1])
-	return
 }
 
 func (cs *CanonicalSpline2d) Fn() bendit.Fn2d {

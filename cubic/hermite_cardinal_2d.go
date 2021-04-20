@@ -1,5 +1,7 @@
 package cubic
 
+import "github.com/walpod/bend-it"
+
 // hermite tangent finder for cardinal spline
 type CardinalTanf2d struct {
 	tension float64
@@ -13,7 +15,7 @@ func NewCatmullRomTanf2d() CardinalTanf2d {
 	return NewCardinalTanf2d(0)
 }
 
-func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
+func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots bendit.Knots) (
 	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
 
 	// TODO check len of params
@@ -21,7 +23,7 @@ func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 	exitTansx = make([]float64, n)
 	exitTansy = make([]float64, n)
 
-	if len(knots) == 0 {
+	if knots.IsUniform() {
 		// uniform -> single tangent
 		entryTansx = exitTansx
 		entryTansy = exitTansy
@@ -49,9 +51,10 @@ func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 	// non-uniform: copy exit-tangents to entry, then modify tangent lengths to reciprocal of segment length
 	copy(entryTansx, exitTansx)
 	copy(entryTansy, exitTansy)
-	if len(knots) > 0 {
+	if !knots.IsUniform() {
 		for i := 0; i < n-1; i++ {
-			segmLen := knots[i+1] - knots[i]
+			//segmLen := knots[i+1] - knots[i]
+			segmLen := knots.SegmentLength(i)
 			exitTansx[i] /= segmLen
 			exitTansy[i] /= segmLen
 			entryTansx[i+1] /= segmLen

@@ -1,12 +1,14 @@
 package cubic
 
+import "github.com/walpod/bend-it"
+
 // hermite tangent finder for natural spline
 type NaturalTanf2d struct{}
 
 // Find hermite tangents for natural spline
 // mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
-func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
+func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots bendit.Knots) (
 	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
 
 	// TODO check len of params
@@ -22,7 +24,7 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 
 	var solve func(p, m []float64)
 	r := make([]float64, n) // diagonal values
-	if len(knots) == 0 {
+	if knots.IsUniform() {
 		// uniform, solve equations for m[0] ... m[n-1] (A*m = p)
 		// 2 1			= 3 * (p1 - p0)
 		// 1 4 1		= 3 * (p2 - p0)
@@ -55,7 +57,8 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots []float64) (
 		// prepare length of segments
 		t := make([]float64, n)
 		for i := 0; i < n-1; i++ {
-			t[i] = knots[i+1] - knots[i]
+			//t[i] = knots[i+1] - knots[i]
+			t[i] = knots.SegmentLength(i)
 		}
 
 		// non-uniform, solve equations
