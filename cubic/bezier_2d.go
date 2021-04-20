@@ -106,6 +106,29 @@ func (bs *BezierSpline2d) At(t float64) (x, y float64) {
 	}
 }
 
+// alternative method to evaluate bezier spline at given t using de Casteljau algorithm
+func (bs *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
+	if bs.canon != nil {
+		segmNo, u, err := bs.canon.MapToSegment(t)
+		if err != nil {
+			return 0, 0
+		} else {
+			// TODO prepare u for non-uniform
+			linip := func(a, b float64) float64 { // linear interpolation
+				return a + u*(b-a)
+			}
+			x01, y01 := linip(bs.vertsx[segmNo], bs.ctrlx[2*segmNo]), linip(bs.vertsy[segmNo], bs.ctrly[2*segmNo])
+			x11, y11 := linip(bs.ctrlx[2*segmNo], bs.ctrlx[2*segmNo+1]), linip(bs.ctrly[2*segmNo], bs.ctrly[2*segmNo+1])
+			x21, y21 := linip(bs.ctrlx[2*segmNo+1], bs.vertsx[segmNo+1]), linip(bs.ctrly[2*segmNo+1], bs.vertsy[segmNo+1])
+			x02, y02 := linip(x01, x11), linip(y01, y11)
+			x12, y12 := linip(x11, x21), linip(y11, y21)
+			return linip(x02, x12), linip(y02, y12)
+		}
+	} else {
+		return 0, 0
+	}
+}
+
 func (bs *BezierSpline2d) Fn() bendit.Fn2d {
 	if bs.canon != nil {
 		return bs.canon.Fn()
@@ -140,9 +163,9 @@ func (bs *BezierSpline2d) Approximate(
 			x21, y21 := m*x2+m*x3, m*y2+m*y3
 			x02, y02 := m*x01+m*x11, m*y01+m*y11
 			x12, y12 := m*x11+m*x21, m*y11+m*y21
-			xm, ym := m*x02+m*x12, m*y02+m*y12
-			subdivide(x0, y0, x01, y01, x02, y02, xm, ym)
-			subdivide(xm, ym, x12, y12, x21, y21, x3, y3)
+			x03, y03 := m*x02+m*x12, m*y02+m*y12
+			subdivide(x0, y0, x01, y01, x02, y02, x03, y03)
+			subdivide(x03, y03, x12, y12, x21, y21, x3, y3)
 		}
 	}
 

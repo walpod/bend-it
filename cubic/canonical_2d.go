@@ -76,16 +76,7 @@ func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
 		return 0, 0 // TODO or panic? or error?
 	}
 
-	var (
-		segmNo int
-		u      float64
-		err    error
-	)
-	if len(cs.knots) == 0 {
-		segmNo, u, err = cs.mapUniToSegm(t)
-	} else {
-		segmNo, u, err = cs.mapNonUniToSegm(t)
-	}
+	segmNo, u, err := cs.MapToSegment(t)
 	if err != nil {
 		return 0, 0 // TODO or panic? or error?
 	} else {
@@ -93,7 +84,15 @@ func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
 	}
 }
 
-func (cs *CanonicalSpline2d) mapUniToSegm(t float64) (segmNo int, u float64, err error) {
+func (cs *CanonicalSpline2d) MapToSegment(t float64) (segmNo int, u float64, err error) {
+	if len(cs.knots) == 0 {
+		return cs.mapUniToSegment(t)
+	} else {
+		return cs.mapNonUniToSegment(t)
+	}
+}
+
+func (cs *CanonicalSpline2d) mapUniToSegment(t float64) (segmNo int, u float64, err error) {
 	segmCnt := cs.SegmentCnt()
 	upper := float64(segmCnt)
 	if t < 0 {
@@ -117,7 +116,7 @@ func (cs *CanonicalSpline2d) mapUniToSegm(t float64) (segmNo int, u float64, err
 	return
 }
 
-func (cs *CanonicalSpline2d) mapNonUniToSegm(t float64) (segmNo int, u float64, err error) {
+func (cs *CanonicalSpline2d) mapNonUniToSegment(t float64) (segmNo int, u float64, err error) {
 	segmCnt := len(cs.knots) - 1
 	if segmCnt < 1 {
 		err = errors.New("at least one segment having 2 knots required")
