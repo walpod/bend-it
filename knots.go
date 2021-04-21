@@ -8,14 +8,15 @@ import (
 
 type Knots struct {
 	ks []float64
+	// TODO SegmentCnt for uniform
 }
 
-func NewUniformKnots() Knots {
-	return Knots{ks: nil}
+func NewUniformKnots() *Knots {
+	return &Knots{ks: nil}
 }
 
-func NewKnots(ks []float64) Knots {
-	return Knots{ks: ks}
+func NewKnots(ks []float64) *Knots {
+	return &Knots{ks: ks}
 }
 
 func (k *Knots) Count() int {

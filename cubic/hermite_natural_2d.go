@@ -8,7 +8,7 @@ type NaturalTanf2d struct{}
 // Find hermite tangents for natural spline
 // mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
-func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots bendit.Knots) (
+func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots *bendit.Knots) (
 	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
 
 	// TODO check len of params

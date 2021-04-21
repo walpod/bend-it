@@ -9,11 +9,11 @@ import (
 type BezierSpline2d struct {
 	vertsx, vertsy []float64
 	ctrlx, ctrly   []float64
-	knots          bendit.Knots
+	knots          *bendit.Knots
 	canon          *CanonicalSpline2d
 }
 
-func NewBezierSpline2d(vertsx []float64, vertsy []float64, ctrlx []float64, ctrly []float64, knots bendit.Knots) *BezierSpline2d {
+func NewBezierSpline2d(vertsx []float64, vertsy []float64, ctrlx []float64, ctrly []float64, knots *bendit.Knots) *BezierSpline2d {
 	n := len(vertsx)
 	ctrlCnt := (n - 1) * 2
 	if len(vertsy) != n || len(ctrlx) != ctrlCnt || len(ctrly) != ctrlCnt || (knots.Count() > 0 && knots.Count() != n) {
@@ -28,8 +28,8 @@ func (bs *BezierSpline2d) SegmentCnt() int {
 	return len(bs.vertsx) - 1
 }
 
-func (bs *BezierSpline2d) Domain() bendit.SplineDomain {
-	return bs.knots.Domain(bs.SegmentCnt())
+func (bs *BezierSpline2d) Knots() *bendit.Knots {
+	return bs.knots
 }
 
 func (bs *BezierSpline2d) Build() {
@@ -127,7 +127,7 @@ func (bs *BezierSpline2d) Fn() bendit.Fn2d {
 	if bs.canon != nil {
 		return bs.canon.Fn()
 	} else {
-		return NewCanonicalSpline2d(nil, bendit.Knots{}).Fn()
+		return NewCanonicalSpline2d(nil, bendit.NewUniformKnots()).Fn()
 	}
 }
 

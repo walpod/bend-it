@@ -44,10 +44,10 @@ func (cb *Cubic2d) Fn() bendit.Fn2d {
 
 type CanonicalSpline2d struct {
 	cubics []Cubic2d
-	knots  bendit.Knots
+	knots  *bendit.Knots
 }
 
-func NewCanonicalSpline2d(cubics []Cubic2d, knots bendit.Knots) *CanonicalSpline2d {
+func NewCanonicalSpline2d(cubics []Cubic2d, knots *bendit.Knots) *CanonicalSpline2d {
 	if knots.Count() > 0 && knots.Count() != len(cubics)+1 {
 		panic("knots must be empty or having length of cubics + 1")
 	}
@@ -58,8 +58,8 @@ func (cs *CanonicalSpline2d) SegmentCnt() int {
 	return len(cs.cubics)
 }
 
-func (cs *CanonicalSpline2d) Domain() bendit.SplineDomain {
-	return cs.knots.Domain(cs.SegmentCnt())
+func (cs *CanonicalSpline2d) Knots() *bendit.Knots {
+	return cs.knots
 }
 
 func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {

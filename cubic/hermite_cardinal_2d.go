@@ -15,7 +15,7 @@ func NewCatmullRomTanf2d() CardinalTanf2d {
 	return NewCardinalTanf2d(0)
 }
 
-func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots bendit.Knots) (
+func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots *bendit.Knots) (
 	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
 
 	// TODO check len of params

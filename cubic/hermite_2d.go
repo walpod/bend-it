@@ -33,7 +33,7 @@ func (st *SingleTan2d) ExitTan() (mx, my float64) {
 
 // HermiteTanFinder2d finds tangents based on given vertices and knots
 type HermiteTanFinder2d interface {
-	Find(vertsx, vertsy []float64, knots bendit.Knots) (
+	Find(vertsx, vertsy []float64, knots *bendit.Knots) (
 		entryTansx, entryTansy []float64, exitTansx, exitTansy []float64)
 }
 
@@ -43,13 +43,13 @@ type HermiteSpline2d struct {
 	entryTansx, entryTansy []float64
 	exitTansx, exitTansy   []float64
 	// TODO tangents       []VertexTan2d
-	knots bendit.Knots
+	knots *bendit.Knots
 	canon *CanonicalSpline2d
 }
 
 func NewHermiteSpline2d(vertsx []float64, vertsy []float64,
 	entryTansx []float64, entryTansy []float64, exitTansx []float64, exitTansy []float64,
-	knots bendit.Knots) *HermiteSpline2d {
+	knots *bendit.Knots) *HermiteSpline2d {
 
 	herm := &HermiteSpline2d{vertsx: vertsx, vertsy: vertsy,
 		entryTansx: entryTansx, entryTansy: entryTansy, exitTansx: exitTansx, exitTansy: exitTansy, knots: knots}
@@ -57,7 +57,7 @@ func NewHermiteSpline2d(vertsx []float64, vertsy []float64,
 	return herm
 }
 
-func NewHermiteSplineTanFinder2d(vertsx []float64, vertsy []float64, tanFinder HermiteTanFinder2d, knots bendit.Knots) *HermiteSpline2d {
+func NewHermiteSplineTanFinder2d(vertsx []float64, vertsy []float64, tanFinder HermiteTanFinder2d, knots *bendit.Knots) *HermiteSpline2d {
 	herm := &HermiteSpline2d{vertsx: vertsx, vertsy: vertsy, tanFinder: tanFinder, knots: knots}
 	herm.Build()
 	return herm
@@ -94,8 +94,8 @@ func (hs *HermiteSpline2d) SegmentCnt() int {
 	return len(hs.vertsx) - 1
 }
 
-func (hs *HermiteSpline2d) Domain() bendit.SplineDomain {
-	return hs.knots.Domain(hs.SegmentCnt())
+func (hs *HermiteSpline2d) Knots() *bendit.Knots {
+	return hs.knots
 }
 
 // build hermite spline, if knots are empty then spline is uniform
@@ -232,6 +232,6 @@ func (hs *HermiteSpline2d) Fn() bendit.Fn2d {
 	if hs.canon != nil {
 		return hs.canon.Fn()
 	} else {
-		return NewCanonicalSpline2d(nil, bendit.Knots{}).Fn()
+		return NewCanonicalSpline2d(nil, bendit.NewUniformKnots()).Fn()
 	}
 }
