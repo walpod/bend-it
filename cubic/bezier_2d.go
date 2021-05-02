@@ -129,14 +129,16 @@ func (bs *BezierSpline2d) Fn() bendit.Fn2d {
 }
 
 // approximate bezier-spline with line-segments using subdivision
-func (bs *BezierSpline2d) Approximate(flatChecker FlatChecker2d, collector LineCollector2d) {
-	if flatChecker == nil {
-		flatChecker = NewFlatWingsChecker2d(0.5)
+func (bs *BezierSpline2d) Approximate(maxDist float64, collector bendit.LineCollector2d) {
+	isFlat := func(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool {
+		lx, ly := x3-x0, y3-y0
+		return ProjectedVectorDist(x1-x0, y1-y0, lx, ly) <= maxDist &&
+			ProjectedVectorDist(x2-x0, y2-y0, lx, ly) <= maxDist
 	}
 
 	var subdivide func(x0, y0, x1, y1, x2, y2, x3, y3 float64)
 	subdivide = func(x0, y0, x1, y1, x2, y2, x3, y3 float64) {
-		if flatChecker.IsFlat(x0, y0, x1, y1, x2, y2, x3, y3) {
+		if isFlat(x0, y0, x1, y1, x2, y2, x3, y3) {
 			collector.CollectLine(x0, y0, x3, y3)
 		} else {
 			m := 0.5
@@ -160,32 +162,10 @@ func (bs *BezierSpline2d) Approximate(flatChecker FlatChecker2d, collector LineC
 	}
 }
 
-type FlatChecker2d interface {
-	IsFlat(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool
-}
-
-type FlatWingsChecker2d struct {
-	MaxWings float64
-}
-
-func NewFlatWingsChecker2d(maxWings float64) *FlatWingsChecker2d {
-	return &FlatWingsChecker2d{MaxWings: maxWings}
-}
-
-func (lc FlatWingsChecker2d) IsFlat(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool {
-	lx, ly := x3-x0, y3-y0
-	return ProjectedVectorDist(x1-x0, y1-y0, lx, ly) <= lc.MaxWings &&
-		ProjectedVectorDist(x2-x0, y2-y0, lx, ly) <= lc.MaxWings
-}
-
 // calculate distance of vector v to projected vector v on w
 func ProjectedVectorDist(vx, vy, wx, wy float64) float64 {
 	// distance = area of parallelogram(v, w) / length(w)
 	return math.Abs(wx*vy-wy*vx) / math.Sqrt(wx*wx+wy*wy)
-}
-
-type LineCollector2d interface {
-	CollectLine(x0, y0, x3, y3 float64)
 }
 
 type DirectCollector2d struct {
