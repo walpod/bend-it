@@ -122,30 +122,6 @@ func (hs *HermiteSpline2d) Build() {
 	}
 }
 
-/*func (bs *HermiteSpline2d) BuildHermiteSpline2d() {
-	n := len(bs.vertsx)
-
-	if n >= 2 {
-		var cubics []Cubic2d
-		if len(bs.knots) == 0 {
-			// uniform spline
-			cubics = createUniCubics(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy)
-		} else {
-			// non-uniform spline
-			cubics = createNonUniCubics(vertsx, vertsy, entryTansx, entryTansy, exitTansx, exitTansy, knots)
-		}
-		return NewCanonicalSpline2d(cubics, knots).Fn()
-	} else {
-		return func(t float64) (x, y float64) {
-			if n == 1 && ((len(knots) == 0 && t == 0) || (len(knots) == 1 && t == knots[0])) { // TODO delta around
-				return vertsx[0], vertsy[0]
-			} else {
-				return 0, 0
-			}
-		}
-	}
-}*/
-
 // create cubics for uniform spline
 func (hs *HermiteSpline2d) createUniCubics() []Cubic2d {
 	const dim = 2

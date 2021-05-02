@@ -10,7 +10,7 @@ type BezierSpline2d struct {
 	vertsx, vertsy []float64
 	ctrlx, ctrly   []float64
 	knots          *bendit.Knots
-	canon          *CanonicalSpline2d
+	canon          *CanonicalSpline2d // map to canonical, cubic spline
 }
 
 func NewBezierSpline2d(vertsx []float64, vertsy []float64, ctrlx []float64, ctrly []float64, knots *bendit.Knots) *BezierSpline2d {
@@ -91,6 +91,7 @@ func (bs *BezierSpline2d) createNonUniCubics() []Cubic2d {
 	panic("not yet implemented")
 }
 
+// At evaluates point on bezier spline for given parameter t
 func (bs *BezierSpline2d) At(t float64) (x, y float64) {
 	if bs.canon != nil {
 		return bs.canon.At(t)
@@ -99,27 +100,23 @@ func (bs *BezierSpline2d) At(t float64) (x, y float64) {
 	}
 }
 
-// alternative method to evaluate bezier spline at given t using de Casteljau algorithm
-// as opposed to At calling Build before is not required
+// AtDeCasteljau is an alternative to 'At' using De Casteljau algorithm.
+// As opposed to At calling Build beforehand is not required
 func (bs *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
-	if bs.canon != nil {
-		segmNo, u, err := bs.knots.MapToSegment(t, bs.SegmentCnt())
-		if err != nil {
-			return 0, 0
-		} else {
-			// TODO prepare u for non-uniform
-			linip := func(a, b float64) float64 { // linear interpolation
-				return a + u*(b-a)
-			}
-			x01, y01 := linip(bs.vertsx[segmNo], bs.ctrlx[2*segmNo]), linip(bs.vertsy[segmNo], bs.ctrly[2*segmNo])
-			x11, y11 := linip(bs.ctrlx[2*segmNo], bs.ctrlx[2*segmNo+1]), linip(bs.ctrly[2*segmNo], bs.ctrly[2*segmNo+1])
-			x21, y21 := linip(bs.ctrlx[2*segmNo+1], bs.vertsx[segmNo+1]), linip(bs.ctrly[2*segmNo+1], bs.vertsy[segmNo+1])
-			x02, y02 := linip(x01, x11), linip(y01, y11)
-			x12, y12 := linip(x11, x21), linip(y11, y21)
-			return linip(x02, x12), linip(y02, y12)
-		}
-	} else {
+	segmNo, u, err := bs.knots.MapToSegment(t, bs.SegmentCnt())
+	if err != nil {
 		return 0, 0
+	} else {
+		// TODO prepare u for non-uniform
+		linip := func(a, b float64) float64 { // linear interpolation
+			return a + u*(b-a)
+		}
+		x01, y01 := linip(bs.vertsx[segmNo], bs.ctrlx[2*segmNo]), linip(bs.vertsy[segmNo], bs.ctrly[2*segmNo])
+		x11, y11 := linip(bs.ctrlx[2*segmNo], bs.ctrlx[2*segmNo+1]), linip(bs.ctrly[2*segmNo], bs.ctrly[2*segmNo+1])
+		x21, y21 := linip(bs.ctrlx[2*segmNo+1], bs.vertsx[segmNo+1]), linip(bs.ctrly[2*segmNo+1], bs.vertsy[segmNo+1])
+		x02, y02 := linip(x01, x11), linip(y01, y11)
+		x12, y12 := linip(x11, x21), linip(y11, y21)
+		return linip(x02, x12), linip(y02, y12)
 	}
 }
 
@@ -131,25 +128,17 @@ func (bs *BezierSpline2d) Fn() bendit.Fn2d {
 	}
 }
 
-// approximate bezier-spline with polygon using subdivision
-func (bs *BezierSpline2d) Approximate(
-	isFlat func(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool,
-	line func(x0, y0, x1, y1 float64)) {
-
-	myIsFlat := func(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool {
-		if isFlat != nil {
-			return isFlat(x0, y0, x1, y1, x2, y2, x3, y3)
-		} else {
-			const delta = 0.1 // TODO
-			lx, ly := x3-x0, y3-y0
-			return ProjectedVectorDist(x1-x0, y1-y0, lx, ly) <= delta && ProjectedVectorDist(x2-x0, y2-y0, lx, ly) <= delta
-		}
+// approximate bezier-spline with line-segments using subdivision
+func (bs *BezierSpline2d) Approximate(flatChecker FlatChecker2d, collector LineCollector2d) interface{} {
+	if flatChecker == nil {
+		flatChecker = NewFlatWingsChecker2d(0.5)
 	}
+	collection := collector.InitCollection()
 
 	var subdivide func(x0, y0, x1, y1, x2, y2, x3, y3 float64)
 	subdivide = func(x0, y0, x1, y1, x2, y2, x3, y3 float64) {
-		if myIsFlat(x0, y0, x1, y1, x2, y2, x3, y3) {
-			line(x0, y0, x3, y3)
+		if flatChecker.IsFlat(x0, y0, x1, y1, x2, y2, x3, y3) {
+			collector.CollectLine(x0, y0, x3, y3, collection)
 		} else {
 			m := 0.5
 			x01, y01 := m*x0+m*x1, m*y0+m*y1
@@ -163,16 +152,58 @@ func (bs *BezierSpline2d) Approximate(
 		}
 	}
 
+	// subdivide each segment
 	for i := 0; i < len(bs.vertsx)-1; i++ {
 		subdivide(bs.vertsx[i], bs.vertsy[i],
 			bs.ctrlx[2*i], bs.ctrly[2*i],
 			bs.ctrlx[2*i+1], bs.ctrly[2*i+1],
 			bs.vertsx[i+1], bs.vertsy[i+1])
 	}
+
+	return collection
+}
+
+type FlatChecker2d interface {
+	IsFlat(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool
+}
+
+type FlatWingsChecker2d struct {
+	MaxWings float64
+}
+
+func NewFlatWingsChecker2d(maxWings float64) *FlatWingsChecker2d {
+	return &FlatWingsChecker2d{MaxWings: maxWings}
+}
+
+func (lc FlatWingsChecker2d) IsFlat(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool {
+	lx, ly := x3-x0, y3-y0
+	return ProjectedVectorDist(x1-x0, y1-y0, lx, ly) <= lc.MaxWings &&
+		ProjectedVectorDist(x2-x0, y2-y0, lx, ly) <= lc.MaxWings
 }
 
 // calculate distance of vector v to projected vector v on w
 func ProjectedVectorDist(vx, vy, wx, wy float64) float64 {
 	// distance = area of parallelogram(v, w) / length(w)
 	return math.Abs(wx*vy-wy*vx) / math.Sqrt(wx*wx+wy*wy)
+}
+
+type LineCollector2d interface {
+	InitCollection() interface{}
+	CollectLine(x0, y0, x3, y3 float64, collection interface{})
+}
+
+type DirectCollector2d struct {
+	line func(x0, y0, x3, y3 float64)
+}
+
+func NewDirectCollector2d(line func(x0, y0, x3, y3 float64)) *DirectCollector2d {
+	return &DirectCollector2d{line: line}
+}
+
+func (lc DirectCollector2d) InitCollection() interface{} {
+	return nil
+}
+
+func (lc DirectCollector2d) CollectLine(x0, y0, x3, y3 float64, collection interface{}) {
+	lc.line(x0, y0, x3, y3)
 }
