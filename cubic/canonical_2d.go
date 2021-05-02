@@ -80,3 +80,7 @@ func (cs *CanonicalSpline2d) Fn() bendit.Fn2d {
 		return cs.At(t)
 	}
 }
+
+func (cs *CanonicalSpline2d) Approximate(maxDist float64, collector bendit.LineCollector2d) {
+	panic("implement me")
+}

@@ -211,3 +211,7 @@ func (hs *HermiteSpline2d) Fn() bendit.Fn2d {
 		return NewCanonicalSpline2d(nil, bendit.NewUniformKnots()).Fn()
 	}
 }
+
+func (hs *HermiteSpline2d) Approximate(maxDist float64, collector bendit.LineCollector2d) {
+	panic("implement me")
+}
