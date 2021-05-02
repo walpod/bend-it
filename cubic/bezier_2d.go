@@ -129,16 +129,15 @@ func (bs *BezierSpline2d) Fn() bendit.Fn2d {
 }
 
 // approximate bezier-spline with line-segments using subdivision
-func (bs *BezierSpline2d) Approximate(flatChecker FlatChecker2d, collector LineCollector2d) interface{} {
+func (bs *BezierSpline2d) Approximate(flatChecker FlatChecker2d, collector LineCollector2d) {
 	if flatChecker == nil {
 		flatChecker = NewFlatWingsChecker2d(0.5)
 	}
-	collection := collector.InitCollection()
 
 	var subdivide func(x0, y0, x1, y1, x2, y2, x3, y3 float64)
 	subdivide = func(x0, y0, x1, y1, x2, y2, x3, y3 float64) {
 		if flatChecker.IsFlat(x0, y0, x1, y1, x2, y2, x3, y3) {
-			collector.CollectLine(x0, y0, x3, y3, collection)
+			collector.CollectLine(x0, y0, x3, y3)
 		} else {
 			m := 0.5
 			x01, y01 := m*x0+m*x1, m*y0+m*y1
@@ -159,8 +158,6 @@ func (bs *BezierSpline2d) Approximate(flatChecker FlatChecker2d, collector LineC
 			bs.ctrlx[2*i+1], bs.ctrly[2*i+1],
 			bs.vertsx[i+1], bs.vertsy[i+1])
 	}
-
-	return collection
 }
 
 type FlatChecker2d interface {
@@ -188,8 +185,7 @@ func ProjectedVectorDist(vx, vy, wx, wy float64) float64 {
 }
 
 type LineCollector2d interface {
-	InitCollection() interface{}
-	CollectLine(x0, y0, x3, y3 float64, collection interface{})
+	CollectLine(x0, y0, x3, y3 float64)
 }
 
 type DirectCollector2d struct {
@@ -200,10 +196,6 @@ func NewDirectCollector2d(line func(x0, y0, x3, y3 float64)) *DirectCollector2d 
 	return &DirectCollector2d{line: line}
 }
 
-func (lc DirectCollector2d) InitCollection() interface{} {
-	return nil
-}
-
-func (lc DirectCollector2d) CollectLine(x0, y0, x3, y3 float64, collection interface{}) {
+func (lc DirectCollector2d) CollectLine(x0, y0, x3, y3 float64) {
 	lc.line(x0, y0, x3, y3)
 }
