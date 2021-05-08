@@ -16,6 +16,9 @@ type BezierSpline2d struct {
 func NewBezierSpline2d(vertsx []float64, vertsy []float64, ctrlx []float64, ctrly []float64, knots *bendit.Knots) *BezierSpline2d {
 	n := len(vertsx)
 	ctrlCnt := (n - 1) * 2
+	if ctrlCnt < 0 {
+		ctrlCnt = 0
+	}
 	if len(vertsy) != n || len(ctrlx) != ctrlCnt || len(ctrly) != ctrlCnt || (knots.Count() > 0 && knots.Count() != n) {
 		panic("vertsv, vertsy and (optional) knots must have the same length. ctrlx and ctrly must have twice the length of vertsx minus 2")
 	}
@@ -33,27 +36,31 @@ func (bs *BezierSpline2d) Knots() *bendit.Knots {
 }
 
 func (bs *BezierSpline2d) Build() {
+	bs.canon = bs.Canonical()
+}
+
+func (bs *BezierSpline2d) Canonical() *CanonicalSpline2d {
 	n := len(bs.vertsx)
 	if n >= 2 {
-		var cubics []Cubic2d
 		if bs.knots.IsUniform() {
-			cubics = bs.createUniCubics()
+			return bs.uniCanonical()
 		} else {
-			cubics = bs.createNonUniCubics()
+			return bs.nonUniCanonical()
 		}
-		bs.canon = NewCanonicalSpline2d(cubics, bs.knots)
+	} else if n == 1 {
+		// domain with value 0 only, knots '0,0'
+		cubx := NewCubicPoly(bs.vertsx[0], 0, 0, 0)
+		cuby := NewCubicPoly(bs.vertsy[0], 0, 0, 0)
+		return NewCanonicalSpline2d([]Cubic2d{{cubx, cuby}}, bendit.NewKnots([]float64{0, 0}))
 	} else {
-		bs.canon = nil
+		return NewCanonicalSpline2d([]Cubic2d{}, bs.knots)
 	}
 }
 
-func (bs *BezierSpline2d) createUniCubics() []Cubic2d {
+func (bs *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	const dim = 2
-	// precondition: len(vertsx) == len(vertsy) == len(tangents)
+	// precondition: len(vertsx) >= 2, len(vertsx) == len(vertsy) == len(tangents), bs.knots.IsUniform()
 	segmCnt := bs.SegmentCnt()
-	if segmCnt < 1 {
-		return []Cubic2d{}
-	}
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
@@ -73,7 +80,6 @@ func (bs *BezierSpline2d) createUniCubics() []Cubic2d {
 	coefs.Mul(a, b)
 
 	cubics := make([]Cubic2d, segmCnt)
-
 	rowno := 0
 	for i := 0; i < segmCnt; i++ {
 		cubx := NewCubicPoly(coefs.At(rowno, 0), coefs.At(rowno, 1), coefs.At(rowno, 2), coefs.At(rowno, 3))
@@ -83,10 +89,10 @@ func (bs *BezierSpline2d) createUniCubics() []Cubic2d {
 		cubics[i] = NewCubic2d(cubx, cuby)
 	}
 
-	return cubics
+	return NewCanonicalSpline2d(cubics, bs.knots)
 }
 
-func (bs *BezierSpline2d) createNonUniCubics() []Cubic2d {
+func (bs *BezierSpline2d) nonUniCanonical() *CanonicalSpline2d {
 	// TODO
 	panic("not yet implemented")
 }

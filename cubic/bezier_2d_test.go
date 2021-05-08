@@ -32,6 +32,13 @@ func TestBezierSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, spl, .5, .5, .5)
 	AssertSplineAt(t, spl, 0.75, 0.75, 0.75)
 	AssertSplineAt(t, spl, 1, 1, 1)
+
+	// domain with ony one value: 0
+	spl = NewBezierSpline2d([]float64{1}, []float64{2}, []float64{}, []float64{}, bendit.NewUniformKnots())
+	AssertSplineAt(t, spl, 0, 1, 2)
+
+	// empty domain
+	spl = NewBezierSpline2d([]float64{}, []float64{}, []float64{}, []float64{}, bendit.NewUniformKnots())
 }
 
 func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {

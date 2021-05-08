@@ -87,9 +87,14 @@ func (k *Knots) mapNonUniToSegment(t float64) (segmNo int, u float64, err error)
 	// TODO speed up mapping
 	for i := 0; i < segmCnt; i++ {
 		if t <= k.ks[i+1] {
-			return i, (t - k.ks[i]) / (k.ks[i+1] - k.ks[i]), nil
+			if k.ks[i+1] == k.ks[i] {
+				u = 0
+			} else {
+				u = (t - k.ks[i]) / (k.ks[i+1] - k.ks[i])
+			}
+			return i, u, nil
 		}
 	}
-	err = fmt.Errorf("%v greater than upper limit %v", t, k.ks[segmCnt+1])
+	err = fmt.Errorf("%v greater than upper limit %v", t, k.ks[segmCnt])
 	return
 }

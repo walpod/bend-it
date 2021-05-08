@@ -64,12 +64,12 @@ func (cs *CanonicalSpline2d) Knots() *bendit.Knots {
 
 func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
 	if len(cs.cubics) == 0 {
-		return 0, 0 // TODO or panic? or error?
+		return 0, 0
 	}
 
 	segmNo, u, err := cs.knots.MapToSegment(t, cs.SegmentCnt())
 	if err != nil {
-		return 0, 0 // TODO or panic? or error?
+		return 0, 0
 	} else {
 		return cs.cubics[segmNo].At(u)
 	}
@@ -81,6 +81,14 @@ func (cs *CanonicalSpline2d) Fn() bendit.Fn2d {
 	}
 }
 
+func (cs *CanonicalSpline2d) Bezier() *BezierSpline2d {
+	if len(cs.cubics) >= 1 {
+		panic("not yet implemented")
+	} else {
+		return NewBezierSpline2d([]float64{}, []float64{}, []float64{}, []float64{}, bendit.NewUniformKnots())
+	}
+}
+
 func (cs *CanonicalSpline2d) Approximate(maxDist float64, collector bendit.LineCollector2d) {
-	panic("implement me")
+	cs.Bezier().Approximate(maxDist, collector)
 }
