@@ -105,7 +105,7 @@ func (cs *CanonicalSpline2d) Bezier() *BezierSpline2d {
 	if len(cs.cubics) >= 1 {
 		panic("not yet implemented")
 	} else {
-		return NewBezierSpline2d([]float64{}, []float64{}, []float64{}, []float64{}, bendit.NewUniformKnots())
+		return NewBezierSpline2d([]float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, bendit.NewUniformKnots())
 	}
 }
 

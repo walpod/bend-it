@@ -25,7 +25,8 @@ func AssertSplineAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64
 
 func TestBezierSpline2d_At(t *testing.T) {
 	spl := NewBezierSpline2d([]float64{0, 1}, []float64{0, 1},
-		[]float64{1. / 3, 2. / 3}, []float64{1. / 3, 2. / 3},
+		//[]float64{1. / 3, 2. / 3}, []float64{1. / 3, 2. / 3},
+		[]float64{0, 2. / 3}, []float64{0, 2. / 3}, []float64{1. / 3, 0}, []float64{1. / 3, 0},
 		bendit.NewUniformKnots())
 	AssertSplineAt(t, spl, 0, 0, 0)
 	AssertSplineAt(t, spl, 0.25, 0.25, 0.25)
@@ -34,16 +35,17 @@ func TestBezierSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, spl, 1, 1, 1)
 
 	// domain with ony one value: 0
-	spl = NewBezierSpline2d([]float64{1}, []float64{2}, []float64{}, []float64{}, bendit.NewUniformKnots())
+	spl = NewBezierSpline2d([]float64{1}, []float64{2}, []float64{}, []float64{}, []float64{}, []float64{}, bendit.NewUniformKnots())
 	AssertSplineAt(t, spl, 0, 1, 2)
 
 	// empty domain
-	spl = NewBezierSpline2d([]float64{}, []float64{}, []float64{}, []float64{}, bendit.NewUniformKnots())
+	spl = NewBezierSpline2d([]float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, bendit.NewUniformKnots())
 }
 
 func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
 	bezier := NewBezierSpline2d([]float64{0, 1}, []float64{0, 1},
-		[]float64{1, 0}, []float64{0, 1},
+		//[]float64{1, 0}, []float64{0, 1},
+		[]float64{0, 0}, []float64{0, 0}, []float64{1, 0}, []float64{1, 0},
 		bendit.NewUniformKnots())
 	AssertSplineAtDeCasteljau(t, bezier, 0)
 	AssertSplineAtDeCasteljau(t, bezier, 0.1)
