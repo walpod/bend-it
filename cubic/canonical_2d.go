@@ -2,6 +2,7 @@ package cubic
 
 import (
 	bendit "github.com/walpod/bend-it"
+	"gonum.org/v1/gonum/mat"
 )
 
 // cubic polynomial
@@ -50,6 +51,25 @@ type CanonicalSpline2d struct {
 func NewCanonicalSpline2d(cubics []Cubic2d, knots *bendit.Knots) *CanonicalSpline2d {
 	if knots.Count() > 0 && knots.Count() != len(cubics)+1 {
 		panic("knots must be empty or having length of cubics + 1")
+	}
+	return &CanonicalSpline2d{cubics: cubics, knots: knots}
+}
+
+// matrix: (segmCnt*2) x 4
+func NewCanonicalSpline2dByMatrix(coefs mat.Dense, knots *bendit.Knots) *CanonicalSpline2d {
+	r, _ := coefs.Dims()
+	segmCnt := r / 2
+	if knots.Count() > 0 && knots.Count() != segmCnt+1 {
+		panic("knots must be empty or having length or matrix-rows/2 + 1")
+	}
+	cubics := make([]Cubic2d, segmCnt)
+	rowno := 0
+	for i := 0; i < segmCnt; i++ {
+		cubx := NewCubicPoly(coefs.At(rowno, 0), coefs.At(rowno, 1), coefs.At(rowno, 2), coefs.At(rowno, 3))
+		rowno++
+		cuby := NewCubicPoly(coefs.At(rowno, 0), coefs.At(rowno, 1), coefs.At(rowno, 2), coefs.At(rowno, 3))
+		rowno++
+		cubics[i] = NewCubic2d(cubx, cuby)
 	}
 	return &CanonicalSpline2d{cubics: cubics, knots: knots}
 }

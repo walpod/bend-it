@@ -79,17 +79,7 @@ func (bs *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	cubics := make([]Cubic2d, segmCnt)
-	rowno := 0
-	for i := 0; i < segmCnt; i++ {
-		cubx := NewCubicPoly(coefs.At(rowno, 0), coefs.At(rowno, 1), coefs.At(rowno, 2), coefs.At(rowno, 3))
-		rowno++
-		cuby := NewCubicPoly(coefs.At(rowno, 0), coefs.At(rowno, 1), coefs.At(rowno, 2), coefs.At(rowno, 3))
-		rowno++
-		cubics[i] = NewCubic2d(cubx, cuby)
-	}
-
-	return NewCanonicalSpline2d(cubics, bs.knots)
+	return NewCanonicalSpline2dByMatrix(coefs, bs.knots)
 }
 
 func (bs *BezierSpline2d) nonUniCanonical() *CanonicalSpline2d {
