@@ -6,34 +6,39 @@ import (
 	"math"
 )
 
-type BezierSpline2d struct {
-	vertsx, vertsy         []float64
-	entryCtrlx, entryCtrly []float64
-	exitCtrlx, exitCtrly   []float64
-	knots                  *bendit.Knots
-	canon                  *CanonicalSpline2d // map to canonical, cubic spline
+type BezierVertex2d struct {
+	vertsx, vertsy         float64
+	entryCtrlx, entryCtrly float64
+	exitCtrlx, exitCtrly   float64
 }
 
-func NewBezierSpline2d(vertsx []float64, vertsy []float64,
-	entryCtrlx []float64, entryCtrly []float64, exitCtrlx []float64, exitCtrly []float64,
-	knots *bendit.Knots) *BezierSpline2d {
+func NewBezierVertex2d(vertsx float64, vertsy float64, entryCtrlx float64, entryCtrly float64, exitCtrlx float64, exitCtrly float64) *BezierVertex2d {
+	return &BezierVertex2d{vertsx: vertsx, vertsy: vertsy,
+		entryCtrlx: entryCtrlx, entryCtrly: entryCtrly, exitCtrlx: exitCtrlx, exitCtrly: exitCtrly}
+}
 
-	/*	n := len(vertsx)
-		ctrlCnt := (n - 1) * 2
-		if ctrlCnt < 0 {
-			ctrlCnt = 0
-		}
-		if len(vertsy) != n || len(ctrlx) != ctrlCnt || len(ctrly) != ctrlCnt || (knots.Count() > 0 && knots.Count() != n) {
-			panic("vertsv, vertsy and (optional) knots must have the same length. ctrlx and ctrly must have twice the length of vertsx minus 2")
-		}*/
-	bs := &BezierSpline2d{vertsx: vertsx, vertsy: vertsy,
-		entryCtrlx: entryCtrlx, entryCtrly: entryCtrly, exitCtrlx: exitCtrlx, exitCtrly: exitCtrly, knots: knots}
+type BezierSpline2d struct {
+	verts []*BezierVertex2d
+	knots *bendit.Knots
+	canon *CanonicalSpline2d // map to canonical, cubic spline
+}
+
+func NewBezierSpline2d(knots *bendit.Knots, verts ...*BezierVertex2d) *BezierSpline2d {
+	if !knots.IsUniform() && len(verts) != knots.Count() {
+		panic("verts and (optional) knots must have the same length")
+	}
+	bs := &BezierSpline2d{verts: verts, knots: knots}
 	bs.Build()
 	return bs
 }
 
 func (bs *BezierSpline2d) SegmentCnt() int {
-	return len(bs.vertsx) - 1
+	segmCnt := len(bs.verts) - 1
+	if segmCnt >= 0 {
+		return segmCnt
+	} else {
+		return 0
+	}
 }
 
 func (bs *BezierSpline2d) Knots() *bendit.Knots {
@@ -45,7 +50,7 @@ func (bs *BezierSpline2d) Build() {
 }
 
 func (bs *BezierSpline2d) Canonical() *CanonicalSpline2d {
-	n := len(bs.vertsx)
+	n := len(bs.verts)
 	if n >= 2 {
 		if bs.knots.IsUniform() {
 			return bs.uniCanonical()
@@ -54,8 +59,8 @@ func (bs *BezierSpline2d) Canonical() *CanonicalSpline2d {
 		}
 	} else if n == 1 {
 		// domain with value 0 only, knots '0,0'
-		cubx := NewCubicPoly(bs.vertsx[0], 0, 0, 0)
-		cuby := NewCubicPoly(bs.vertsy[0], 0, 0, 0)
+		cubx := NewCubicPoly(bs.verts[0].vertsx, 0, 0, 0)
+		cuby := NewCubicPoly(bs.verts[0].vertsy, 0, 0, 0)
 		return NewCanonicalSpline2d([]Cubic2d{{cubx, cuby}}, bendit.NewKnots([]float64{0, 0}))
 	} else {
 		return NewCanonicalSpline2d([]Cubic2d{}, bs.knots)
@@ -69,8 +74,10 @@ func (bs *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
-		avs = append(avs, bs.vertsx[i], bs.exitCtrlx[i], bs.entryCtrlx[i+1], bs.vertsx[i+1])
-		avs = append(avs, bs.vertsy[i], bs.exitCtrly[i], bs.entryCtrly[i+1], bs.vertsy[i+1])
+		start := bs.verts[i]
+		end := bs.verts[i+1]
+		avs = append(avs, start.vertsx, start.exitCtrlx, end.entryCtrlx, end.vertsx)
+		avs = append(avs, start.vertsy, start.exitCtrly, end.entryCtrly, end.vertsy)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
@@ -112,9 +119,11 @@ func (bs *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 		linip := func(a, b float64) float64 { // linear interpolation
 			return a + u*(b-a)
 		}
-		x01, y01 := linip(bs.vertsx[segmNo], bs.exitCtrlx[segmNo]), linip(bs.vertsy[segmNo], bs.exitCtrly[segmNo])
-		x11, y11 := linip(bs.exitCtrlx[segmNo], bs.entryCtrlx[segmNo+1]), linip(bs.exitCtrly[segmNo], bs.entryCtrly[segmNo+1])
-		x21, y21 := linip(bs.entryCtrlx[segmNo+1], bs.vertsx[segmNo+1]), linip(bs.entryCtrly[segmNo+1], bs.vertsy[segmNo+1])
+		start := bs.verts[segmNo]
+		end := bs.verts[segmNo+1]
+		x01, y01 := linip(start.vertsx, start.exitCtrlx), linip(start.vertsy, start.exitCtrly)
+		x11, y11 := linip(start.exitCtrlx, end.entryCtrlx), linip(start.exitCtrly, end.entryCtrly)
+		x21, y21 := linip(end.entryCtrlx, end.vertsx), linip(end.entryCtrly, end.vertsy)
 		x02, y02 := linip(x01, x11), linip(y01, y11)
 		x12, y12 := linip(x11, x21), linip(y11, y21)
 		return linip(x02, x12), linip(y02, y12)
@@ -155,11 +164,13 @@ func (bs *BezierSpline2d) Approximate(maxDist float64, collector bendit.LineColl
 	}
 
 	// subdivide each segment
-	for i := 0; i < len(bs.vertsx)-1; i++ {
-		subdivide(bs.vertsx[i], bs.vertsy[i],
-			bs.exitCtrlx[i], bs.exitCtrly[i],
-			bs.entryCtrlx[i+1], bs.entryCtrly[i+1],
-			bs.vertsx[i+1], bs.vertsy[i+1])
+	for i := 0; i < bs.SegmentCnt(); i++ {
+		start := bs.verts[i]
+		end := bs.verts[i+1]
+		subdivide(start.vertsx, start.vertsy,
+			start.exitCtrlx, start.exitCtrly,
+			end.entryCtrlx, end.entryCtrly,
+			end.vertsx, end.vertsy)
 	}
 }
 

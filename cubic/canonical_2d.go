@@ -103,10 +103,48 @@ func (cs *CanonicalSpline2d) Fn() bendit.Fn2d {
 
 func (cs *CanonicalSpline2d) Bezier() *BezierSpline2d {
 	if len(cs.cubics) >= 1 {
-		panic("not yet implemented")
+		if cs.knots.IsUniform() {
+			return cs.uniBezier()
+		} else {
+			panic("not yet implemented")
+		}
 	} else {
-		return NewBezierSpline2d([]float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, bendit.NewUniformKnots())
+		return NewBezierSpline2d(bendit.NewUniformKnots())
 	}
+}
+
+func (cs *CanonicalSpline2d) uniBezier() *BezierSpline2d {
+	const dim = 2
+	// precondition: len(verts) >= 2, bs.knots.IsUniform()
+	segmCnt := cs.SegmentCnt()
+
+	avs := make([]float64, 0, dim*4*segmCnt)
+	for i := 0; i < segmCnt; i++ {
+		cubx := cs.cubics[i].cubx
+		avs = append(avs, cubx.a, cubx.b, cubx.c, cubx.d)
+		cuby := cs.cubics[i].cuby
+		avs = append(avs, cuby.a, cuby.b, cuby.c, cuby.d)
+	}
+	a := mat.NewDense(dim*segmCnt, 4, avs)
+
+	b := mat.NewDense(4, 4, []float64{
+		1, 1, 1, 1,
+		0, 1. / 3, 2. / 3, 1,
+		0, 0, 1. / 3, 1,
+		0, 0, 0, 1,
+	})
+
+	var coefs mat.Dense
+	coefs.Mul(a, b)
+
+	// TODO ...
+	vertices := make([]*BezierVertex2d, 0, segmCnt)
+	vertices = append(vertices, NewBezierVertex2d(coefs.At(0, 0), coefs.At(1, 0), 0, 0, coefs.At(0, 1), coefs.At(1, 1)))
+	for i := 0; i < segmCnt; i++ {
+		vertices = append(vertices, NewBezierVertex2d(coefs.At(i, 3), coefs.At(i+1, 3), coefs.At(i, 2), coefs.At(i+1, 2), coefs.At(i+2, 1), coefs.At(i+1, 1)))
+	}
+	vertices = append(vertices, NewBezierVertex2d(coefs.At(segmCnt+1, 0), coefs.At(1, 0), 0, 0, coefs.At(0, 1), coefs.At(1, 1)))
+	return NewBezierSpline2d(cs.knots, vertices...)
 }
 
 func (cs *CanonicalSpline2d) Approximate(maxDist float64, collector bendit.LineCollector2d) {
