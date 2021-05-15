@@ -28,7 +28,7 @@ func (k *Knots) IsUniform() bool {
 }
 
 func (k *Knots) Domain(segmCnt int) SplineDomain {
-	if len(k.ks) == 0 {
+	if k.IsUniform() {
 		return SplineDomain{Start: 0, End: float64(segmCnt)}
 	} else {
 		return SplineDomain{Start: 0, End: k.ks[len(k.ks)-1]}
@@ -36,7 +36,7 @@ func (k *Knots) Domain(segmCnt int) SplineDomain {
 }
 
 func (k *Knots) SegmentLength(segmNo int) float64 {
-	if len(k.ks) == 0 {
+	if k.IsUniform() {
 		return 1
 	} else {
 		return k.ks[segmNo+1] - k.ks[segmNo]
@@ -44,7 +44,7 @@ func (k *Knots) SegmentLength(segmNo int) float64 {
 }
 
 func (k *Knots) SegmentRange(segmNo int) (start, end float64) {
-	if len(k.ks) == 0 {
+	if k.IsUniform() {
 		return float64(segmNo), float64(segmNo + 1)
 	} else {
 		return k.ks[segmNo], k.ks[segmNo+1]
