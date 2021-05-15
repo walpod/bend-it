@@ -12,7 +12,7 @@ type Spline2d interface {
 	Knots() *Knots
 	At(t float64) (x, y float64)
 	Fn() Fn2d
-	Approximate(maxDist float64, collector LineCollector2d)
+	Approx(maxDist float64, collector LineCollector2d)
 }
 
 type LineCollector2d interface {

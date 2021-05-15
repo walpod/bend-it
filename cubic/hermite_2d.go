@@ -212,6 +212,6 @@ func (hs *HermiteSpline2d) Fn() bendit.Fn2d {
 	}
 }
 
-func (hs *HermiteSpline2d) Approximate(maxDist float64, collector bendit.LineCollector2d) {
+func (hs *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
 	panic("implement me")
 }

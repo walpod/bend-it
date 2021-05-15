@@ -137,16 +137,15 @@ func (cs *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	// TODO ...
 	vertices := make([]*BezierVertex2d, 0, segmCnt)
 	vertices = append(vertices, NewBezierVertex2d(coefs.At(0, 0), coefs.At(1, 0), 0, 0, coefs.At(0, 1), coefs.At(1, 1)))
-	for i := 0; i < segmCnt; i++ {
-		vertices = append(vertices, NewBezierVertex2d(coefs.At(i, 3), coefs.At(i+1, 3), coefs.At(i, 2), coefs.At(i+1, 2), coefs.At(i+2, 1), coefs.At(i+1, 1)))
+	for i := 1; i < segmCnt; i++ {
+		vertices = append(vertices, NewBezierVertex2d(coefs.At(i*dim, 0), coefs.At(i*dim+1, 0), coefs.At(i*dim-2, 2), coefs.At(i*dim-1, 2), coefs.At(i*dim, 1), coefs.At(i*dim+1, 1)))
 	}
-	vertices = append(vertices, NewBezierVertex2d(coefs.At(segmCnt+1, 0), coefs.At(1, 0), 0, 0, coefs.At(0, 1), coefs.At(1, 1)))
+	vertices = append(vertices, NewBezierVertex2d(coefs.At(segmCnt*dim-2, 3), coefs.At(segmCnt*dim-1, 3), coefs.At(segmCnt*dim-2, 2), coefs.At(segmCnt*dim-1, 2), 0, 0))
 	return NewBezierSpline2d(cs.knots, vertices...)
 }
 
-func (cs *CanonicalSpline2d) Approximate(maxDist float64, collector bendit.LineCollector2d) {
-	cs.Bezier().Approximate(maxDist, collector)
+func (cs *CanonicalSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
+	cs.Bezier().Approx(maxDist, collector)
 }
