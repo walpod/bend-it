@@ -102,7 +102,7 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezier = createBezierS00to11()
 	lc = NewLineToSliceCollector2d()
-	bezier.Approx(0.3, lc)
+	bezier.Approx(0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	for _, lin := range lc.Lines {
 		x, y := bezier.At(lin.Ts)
