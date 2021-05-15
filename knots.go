@@ -28,18 +28,27 @@ func (k *Knots) IsUniform() bool {
 }
 
 func (k *Knots) Domain(segmCnt int) SplineDomain {
-	var to float64
-	if k.IsUniform() {
-		to = float64(segmCnt)
+	if len(k.ks) == 0 {
+		return SplineDomain{Start: 0, End: float64(segmCnt)}
 	} else {
-		to = k.ks[len(k.ks)-1]
+		return SplineDomain{Start: 0, End: k.ks[len(k.ks)-1]}
 	}
-	return SplineDomain{From: 0, To: to}
 }
 
-// getting segment length, defined for non-uniform knots only
 func (k *Knots) SegmentLength(segmNo int) float64 {
-	return k.ks[segmNo+1] - k.ks[segmNo]
+	if len(k.ks) == 0 {
+		return 1
+	} else {
+		return k.ks[segmNo+1] - k.ks[segmNo]
+	}
+}
+
+func (k *Knots) SegmentRange(segmNo int) (start, end float64) {
+	if len(k.ks) == 0 {
+		return float64(segmNo), float64(segmNo + 1)
+	} else {
+		return k.ks[segmNo], k.ks[segmNo+1]
+	}
 }
 
 func (k *Knots) MapToSegment(t float64, segmCnt int) (segmNo int, u float64, err error) {
