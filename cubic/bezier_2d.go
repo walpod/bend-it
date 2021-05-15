@@ -146,28 +146,32 @@ func (bs *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 			ProjectedVectorDist(x2-x0, y2-y0, lx, ly) <= maxDist
 	}
 
-	var subdivide func(x0, y0, x1, y1, x2, y2, x3, y3 float64)
-	subdivide = func(x0, y0, x1, y1, x2, y2, x3, y3 float64) {
+	var subdivide func(ts, te, x0, y0, x1, y1, x2, y2, x3, y3 float64)
+	subdivide = func(ts, te, x0, y0, x1, y1, x2, y2, x3, y3 float64) {
 		if isFlat(x0, y0, x1, y1, x2, y2, x3, y3) {
-			collector.CollectLine(x0, y0, x3, y3)
+			collector.CollectLine(ts, te, x0, y0, x3, y3)
 		} else {
 			m := 0.5
+			tm := ts*m + te*m
 			x01, y01 := m*x0+m*x1, m*y0+m*y1
 			x11, y11 := m*x1+m*x2, m*y1+m*y2
 			x21, y21 := m*x2+m*x3, m*y2+m*y3
 			x02, y02 := m*x01+m*x11, m*y01+m*y11
 			x12, y12 := m*x11+m*x21, m*y11+m*y21
 			x03, y03 := m*x02+m*x12, m*y02+m*y12
-			subdivide(x0, y0, x01, y01, x02, y02, x03, y03)
-			subdivide(x03, y03, x12, y12, x21, y21, x3, y3)
+			subdivide(ts, tm, x0, y0, x01, y01, x02, y02, x03, y03)
+			subdivide(tm, te, x03, y03, x12, y12, x21, y21, x3, y3)
 		}
 	}
 
 	// subdivide each segment
 	for i := 0; i < bs.SegmentCnt(); i++ {
+		ts, te := bs.knots.SegmentRange(i)
 		start := bs.verts[i]
 		end := bs.verts[i+1]
-		subdivide(start.vertsx, start.vertsy,
+		subdivide(
+			ts, te,
+			start.vertsx, start.vertsy,
 			start.exitCtrlx, start.exitCtrly,
 			end.entryCtrlx, end.entryCtrly,
 			end.vertsx, end.vertsy)
@@ -178,16 +182,4 @@ func (bs *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 func ProjectedVectorDist(vx, vy, wx, wy float64) float64 {
 	// distance = area of parallelogram(v, w) / length(w)
 	return math.Abs(wx*vy-wy*vx) / math.Sqrt(wx*wx+wy*wy)
-}
-
-type DirectCollector2d struct {
-	line func(x0, y0, x3, y3 float64)
-}
-
-func NewDirectCollector2d(line func(x0, y0, x3, y3 float64)) *DirectCollector2d {
-	return &DirectCollector2d{line: line}
-}
-
-func (lc DirectCollector2d) CollectLine(x0, y0, x3, y3 float64) {
-	lc.line(x0, y0, x3, y3)
 }

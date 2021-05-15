@@ -9,6 +9,22 @@ import (
 
 const delta = 0.0000000001
 
+type LineParams struct {
+	Ts, Te, Sx, Sy, Ex, Ey float64
+}
+
+type LineToSliceCollector2d struct {
+	Lines []LineParams
+}
+
+func NewLineToSliceCollector2d() *LineToSliceCollector2d {
+	return &LineToSliceCollector2d{Lines: make([]LineParams, 0)}
+}
+
+func (lc *LineToSliceCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
+	lc.Lines = append(lc.Lines, LineParams{ts, te, sx, sy, ex, ey})
+}
+
 func AssertSplineAt(t *testing.T, spline bendit.Spline2d, atT float64, expx, expy float64) {
 	x, y := spline.At(atT)
 	assert.InDeltaf(t, expx, x, delta, "spline.At(%v).x = %v != expected %v", atT, x, expx)
@@ -75,28 +91,23 @@ func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
 
 func TestBezierSpline2d_Approx(t *testing.T) {
 	bezier := createBezierDiag00to11()
-	lines := make([][4]float64, 0)
-	bezier.Approx(0.1, NewDirectCollector2d(func(x0, y0, x3, y3 float64) {
-		lines = append(lines, [4]float64{x0, y0, x3, y3})
-	}))
-	assert.Len(t, lines, 1, "approximated with one line")
-	assert.InDeltaf(t, 0., lines[0][0], delta, "start point x=0")
-	assert.InDeltaf(t, 0., lines[0][1], delta, "start point y=0")
-	assert.InDeltaf(t, 1., lines[0][2], delta, "end point x=0")
-	assert.InDeltaf(t, 1., lines[0][3], delta, "end point y=0")
+	lc := NewLineToSliceCollector2d()
+	bezier.Approx(0.1, lc)
+	assert.Len(t, lc.Lines, 1, "approximated with one line")
+	assert.InDeltaf(t, 0., lc.Lines[0].Sx, delta, "start point x=0")
+	assert.InDeltaf(t, 0., lc.Lines[0].Sy, delta, "start point y=0")
+	assert.InDeltaf(t, 1., lc.Lines[0].Ex, delta, "end point x=0")
+	assert.InDeltaf(t, 1., lc.Lines[0].Ey, delta, "end point y=0")
 
+	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezier = createBezierS00to11()
-	lines = make([][4]float64, 0)
-	bezier.Approx(0.3, NewDirectCollector2d(func(x0, y0, x3, y3 float64) {
-		lines = append(lines, [4]float64{x0, y0, x3, y3})
-	}))
-	assert.Greater(t, len(lines), 1, "approximated with more than one line")
-	incT := 1. / float64(len(lines)) // TODO get ts, te from collector
-	for i, lin := range lines {
-		atT := float64(i) * incT
-		x, y := bezier.At(atT)
-		assert.InDeltaf(t, lin[0], x, delta, "x value of start points of approximated lines are on bezier curve")
-		assert.InDeltaf(t, lin[1], y, delta, "y value of start points of approximated lines are on bezier curve")
+	lc = NewLineToSliceCollector2d()
+	bezier.Approx(0.3, lc)
+	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
+	for _, lin := range lc.Lines {
+		x, y := bezier.At(lin.Ts)
+		assert.InDeltaf(t, lin.Sx, x, delta, "x value of start points of approximated lines are on bezier curve")
+		assert.InDeltaf(t, lin.Sy, y, delta, "y value of start points of approximated lines are on bezier curve")
 	}
 }
 
