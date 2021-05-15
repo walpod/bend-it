@@ -120,12 +120,9 @@ func (hs *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 			return hs.nonUniCanonical()
 		}
 	} else if n == 1 {
-		// domain with value 0 only, knots '0,0'
-		cubx := NewCubicPoly(hs.vertsx[0], 0, 0, 0)
-		cuby := NewCubicPoly(hs.vertsy[0], 0, 0, 0)
-		return NewCanonicalSpline2d([]Cubic2d{{cubx, cuby}}, bendit.NewKnots([]float64{0, 0}))
+		return NewOneVertexCanonicalSpline2d(hs.vertsx[0], hs.vertsy[0])
 	} else {
-		return NewCanonicalSpline2d([]Cubic2d{}, hs.knots)
+		return NewCanonicalSpline2d(hs.knots)
 	}
 }
 
@@ -159,7 +156,7 @@ func (hs *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 			NewCubicPoly(coefs.At(0, colno+1), coefs.At(1, colno+1), coefs.At(2, colno+1), coefs.At(3, colno+1)))
 		colno += 2
 	}
-	return NewCanonicalSpline2d(cubics, hs.knots)
+	return NewCanonicalSpline2d(hs.knots, cubics...)
 }
 
 func (hs *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
@@ -193,7 +190,7 @@ func (hs *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 			NewCubicPoly(coefs.At(0, 1), coefs.At(1, 1), coefs.At(2, 1), coefs.At(3, 1)))
 	}
 
-	return NewCanonicalSpline2d(cubics, hs.knots)
+	return NewCanonicalSpline2d(hs.knots, cubics...)
 }
 
 func (hs *HermiteSpline2d) At(t float64) (x, y float64) {
@@ -208,7 +205,7 @@ func (hs *HermiteSpline2d) Fn() bendit.Fn2d {
 	if hs.canon != nil {
 		return hs.canon.Fn()
 	} else {
-		return NewCanonicalSpline2d(nil, bendit.NewUniformKnots()).Fn()
+		return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
 	}
 }
 

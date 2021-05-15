@@ -58,12 +58,9 @@ func (bs *BezierSpline2d) Canonical() *CanonicalSpline2d {
 			return bs.nonUniCanonical()
 		}
 	} else if n == 1 {
-		// domain with value 0 only, knots '0,0'
-		cubx := NewCubicPoly(bs.verts[0].vertsx, 0, 0, 0)
-		cuby := NewCubicPoly(bs.verts[0].vertsy, 0, 0, 0)
-		return NewCanonicalSpline2d([]Cubic2d{{cubx, cuby}}, bendit.NewKnots([]float64{0, 0}))
+		return NewOneVertexCanonicalSpline2d(bs.verts[0].vertsx, bs.verts[0].vertsy)
 	} else {
-		return NewCanonicalSpline2d([]Cubic2d{}, bs.knots)
+		return NewCanonicalSpline2d(bs.knots)
 	}
 }
 
@@ -134,7 +131,7 @@ func (bs *BezierSpline2d) Fn() bendit.Fn2d {
 	if bs.canon != nil {
 		return bs.canon.Fn()
 	} else {
-		return NewCanonicalSpline2d(nil, bendit.NewUniformKnots()).Fn()
+		return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
 	}
 }
 

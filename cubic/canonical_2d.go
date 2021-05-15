@@ -48,11 +48,18 @@ type CanonicalSpline2d struct {
 	knots  *bendit.Knots
 }
 
-func NewCanonicalSpline2d(cubics []Cubic2d, knots *bendit.Knots) *CanonicalSpline2d {
+func NewCanonicalSpline2d(knots *bendit.Knots, cubics ...Cubic2d) *CanonicalSpline2d {
 	if knots.Count() > 0 && knots.Count() != len(cubics)+1 {
 		panic("knots must be empty or having length of cubics + 1")
 	}
 	return &CanonicalSpline2d{cubics: cubics, knots: knots}
+}
+
+func NewOneVertexCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
+	// domain with value 0 only, knots '0,0'
+	return NewCanonicalSpline2d(bendit.NewKnots([]float64{0, 0}), NewCubic2d(
+		NewCubicPoly(x, 0, 0, 0),
+		NewCubicPoly(y, 0, 0, 0)))
 }
 
 // matrix: (segmCnt*2) x 4

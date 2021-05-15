@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	bendit "github.com/walpod/bend-it"
 	"math"
+	"math/rand"
 	"testing"
 )
 
@@ -25,11 +26,32 @@ func (lc *LineToSliceCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
 	lc.Lines = append(lc.Lines, LineParams{ts, te, sx, sy, ex, ey})
 }
 
+// some general bend-it spline Asserts
 func AssertSplineAt(t *testing.T, spline bendit.Spline2d, atT float64, expx, expy float64) {
 	x, y := spline.At(atT)
 	assert.InDeltaf(t, expx, x, delta, "spline.At(%v).x = %v != expected %v", atT, x, expx)
 	assert.InDeltaf(t, expy, y, delta, "spline.At(%v).y = %v != expected %v", atT, y, expy)
 }
+
+func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, ts, te float64, sampleCnt int) {
+	for i := 0; i < sampleCnt; i++ {
+		atT := rand.Float64()*(te-ts) + ts
+		x0, y0 := spline0.At(atT)
+		x1, y1 := spline1.At(atT)
+		assert.InDeltaf(t, x0, x1, delta, "spline0.At(%v).x = %v != spline1.At(%v).x = %v", atT, x0, atT, x1)
+		assert.InDeltaf(t, y0, y1, delta, "spline0.At(%v).y = %v != spline1.At(%v).y = %v", atT, y0, atT, y1)
+	}
+}
+
+func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline bendit.Spline2d) {
+	for _, lin := range lines {
+		x, y := spline.At(lin.Ts)
+		assert.InDeltaf(t, x, lin.Sx, delta, "spline.At(%v).x = %v != start-point.x = %v of approximated line", lin.Ts, x, lin.Sx)
+		assert.InDeltaf(t, y, lin.Sy, delta, "spline.At(%v).y = %v != start-point.y = %v of approximated line", lin.Ts, y, lin.Sy)
+	}
+}
+
+// END
 
 func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64) {
 	x, y := bezier.At(atT)
@@ -76,6 +98,7 @@ func TestBezierSpline2d_At(t *testing.T) {
 
 	// empty domain
 	bezier = NewBezierSpline2d(bendit.NewUniformKnots())
+	bezier = NewBezierSpline2d(bendit.NewKnots([]float64{}))
 }
 
 func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
@@ -87,6 +110,12 @@ func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
 	AssertBezierAtDeCasteljau(t, bezier, 0.75)
 	AssertBezierAtDeCasteljau(t, bezier, 0.9)
 	AssertBezierAtDeCasteljau(t, bezier, 1)
+}
+
+func TestBezierSpline2d_Canonical(t *testing.T) {
+	bezier := createBezierS00to11()
+	canon := bezier.Canonical()
+	AssertSplinesEqual(t, bezier, canon, 0, 1, 100)
 }
 
 func TestBezierSpline2d_Approx(t *testing.T) {
@@ -104,11 +133,7 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 	lc = NewLineToSliceCollector2d()
 	bezier.Approx(0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
-	for _, lin := range lc.Lines {
-		x, y := bezier.At(lin.Ts)
-		assert.InDeltaf(t, lin.Sx, x, delta, "x value of start points of approximated lines are on bezier curve")
-		assert.InDeltaf(t, lin.Sy, y, delta, "y value of start points of approximated lines are on bezier curve")
-	}
+	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezier)
 }
 
 func TestProjectedVectorDist(t *testing.T) {
