@@ -7,13 +7,13 @@ import (
 )
 
 type BezierVertex2d struct {
-	vertsx, vertsy         float64
+	x, y                   float64
 	entryCtrlx, entryCtrly float64
 	exitCtrlx, exitCtrly   float64
 }
 
-func NewBezierVertex2d(vertsx float64, vertsy float64, entryCtrlx float64, entryCtrly float64, exitCtrlx float64, exitCtrly float64) *BezierVertex2d {
-	return &BezierVertex2d{vertsx: vertsx, vertsy: vertsy,
+func NewBezierVertex2d(x float64, y float64, entryCtrlx float64, entryCtrly float64, exitCtrlx float64, exitCtrly float64) *BezierVertex2d {
+	return &BezierVertex2d{x: x, y: y,
 		entryCtrlx: entryCtrlx, entryCtrly: entryCtrly, exitCtrlx: exitCtrlx, exitCtrly: exitCtrly}
 }
 
@@ -36,19 +36,19 @@ func NewBezierSpline2dByMatrix(knots *bendit.Knots, mat mat.Dense) *BezierSpline
 	const dim = 2
 	rows, _ := mat.Dims()
 	segmCnt := rows / 2
-	vertices := make([]*BezierVertex2d, 0, segmCnt)
-	vertices = append(vertices, NewBezierVertex2d(mat.At(0, 0), mat.At(1, 0),
+	verts := make([]*BezierVertex2d, 0, segmCnt)
+	verts = append(verts, NewBezierVertex2d(mat.At(0, 0), mat.At(1, 0),
 		0, 0,
 		mat.At(0, 1), mat.At(1, 1)))
 	for i := 1; i < segmCnt; i++ {
-		vertices = append(vertices, NewBezierVertex2d(mat.At(i*dim, 0), mat.At(i*dim+1, 0),
+		verts = append(verts, NewBezierVertex2d(mat.At(i*dim, 0), mat.At(i*dim+1, 0),
 			mat.At(i*dim-2, 2), mat.At(i*dim-1, 2),
 			mat.At(i*dim, 1), mat.At(i*dim+1, 1)))
 	}
-	vertices = append(vertices, NewBezierVertex2d(mat.At(segmCnt*dim-2, 3), mat.At(segmCnt*dim-1, 3),
+	verts = append(verts, NewBezierVertex2d(mat.At(segmCnt*dim-2, 3), mat.At(segmCnt*dim-1, 3),
 		mat.At(segmCnt*dim-2, 2), mat.At(segmCnt*dim-1, 2),
 		0, 0))
-	return NewBezierSpline2d(knots, vertices...)
+	return NewBezierSpline2d(knots, verts...)
 }
 
 func (bs *BezierSpline2d) SegmentCnt() int {
@@ -77,7 +77,7 @@ func (bs *BezierSpline2d) Canonical() *CanonicalSpline2d {
 			return bs.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewOneVertexCanonicalSpline2d(bs.verts[0].vertsx, bs.verts[0].vertsy)
+		return NewOneVertexCanonicalSpline2d(bs.verts[0].x, bs.verts[0].y)
 	} else {
 		return NewCanonicalSpline2d(bs.knots)
 	}
@@ -85,15 +85,15 @@ func (bs *BezierSpline2d) Canonical() *CanonicalSpline2d {
 
 func (bs *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	const dim = 2
-	// precondition: len(vertsx) >= 2, len(vertsx) == len(vertsy) == len(tangents), bs.knots.IsUniform()
+	// precondition: len(x) >= 2, len(x) == len(y) == len(tangents), bs.knots.IsUniform()
 	segmCnt := bs.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
 		start := bs.verts[i]
 		end := bs.verts[i+1]
-		avs = append(avs, start.vertsx, start.exitCtrlx, end.entryCtrlx, end.vertsx)
-		avs = append(avs, start.vertsy, start.exitCtrly, end.entryCtrly, end.vertsy)
+		avs = append(avs, start.x, start.exitCtrlx, end.entryCtrlx, end.x)
+		avs = append(avs, start.y, start.exitCtrly, end.entryCtrly, end.y)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
@@ -137,9 +137,9 @@ func (bs *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 		}
 		start := bs.verts[segmNo]
 		end := bs.verts[segmNo+1]
-		x01, y01 := linip(start.vertsx, start.exitCtrlx), linip(start.vertsy, start.exitCtrly)
+		x01, y01 := linip(start.x, start.exitCtrlx), linip(start.y, start.exitCtrly)
 		x11, y11 := linip(start.exitCtrlx, end.entryCtrlx), linip(start.exitCtrly, end.entryCtrly)
-		x21, y21 := linip(end.entryCtrlx, end.vertsx), linip(end.entryCtrly, end.vertsy)
+		x21, y21 := linip(end.entryCtrlx, end.x), linip(end.entryCtrly, end.y)
 		x02, y02 := linip(x01, x11), linip(y01, y11)
 		x12, y12 := linip(x11, x21), linip(y11, y21)
 		return linip(x02, x12), linip(y02, y12)
@@ -187,10 +187,10 @@ func (bs *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 		end := bs.verts[i+1]
 		subdivide(
 			ts, te,
-			start.vertsx, start.vertsy,
+			start.x, start.y,
 			start.exitCtrlx, start.exitCtrly,
 			end.entryCtrlx, end.entryCtrly,
-			end.vertsx, end.vertsy)
+			end.x, end.y)
 	}
 }
 

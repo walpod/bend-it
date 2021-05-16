@@ -122,7 +122,7 @@ func (cs *CanonicalSpline2d) Bezier() *BezierSpline2d {
 
 func (cs *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	const dim = 2
-	// precondition: len(verts) >= 2, bs.knots.IsUniform()
+	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
 	segmCnt := cs.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
