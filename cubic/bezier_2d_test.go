@@ -8,8 +8,7 @@ import (
 	"testing"
 )
 
-const delta = 0.0000000001
-
+// TODO move LineToSliceCollector2d to another file
 type LineParams struct {
 	Ts, Te, Sx, Sy, Ex, Ey float64
 }
@@ -27,13 +26,15 @@ func (lc *LineToSliceCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
 }
 
 // some general bend-it spline Asserts
+const delta = 0.0000000001
+
 func AssertSplineAt(t *testing.T, spline bendit.Spline2d, atT float64, expx, expy float64) {
 	x, y := spline.At(atT)
 	assert.InDeltaf(t, expx, x, delta, "spline.At(%v).x = %v != expected %v", atT, x, expx)
 	assert.InDeltaf(t, expy, y, delta, "spline.At(%v).y = %v != expected %v", atT, y, expy)
 }
 
-func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, ts, te float64, sampleCnt int) {
+func AssertSplinesEqualInRange(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, ts, te float64, sampleCnt int) {
 	for i := 0; i < sampleCnt; i++ {
 		atT := rand.Float64()*(te-ts) + ts
 		x0, y0 := spline0.At(atT)
@@ -41,6 +42,13 @@ func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Sp
 		assert.InDeltaf(t, x0, x1, delta, "spline0.At(%v).x = %v != spline1.At(%v).x = %v", atT, x0, atT, x1)
 		assert.InDeltaf(t, y0, y1, delta, "spline0.At(%v).y = %v != spline1.At(%v).y = %v", atT, y0, atT, y1)
 	}
+}
+
+// TODO extend knots, drop segmCnt
+func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, segmCnt int, sampleCnt int) {
+	domain := spline0.Knots().Domain(segmCnt)
+	// compare with domain of spline1
+	AssertSplinesEqualInRange(t, spline0, spline1, domain.Start, domain.End, sampleCnt)
 }
 
 func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline bendit.Spline2d) {
@@ -51,7 +59,7 @@ func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline
 	}
 }
 
-// END
+// END general Asserts
 
 func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64) {
 	x, y := bezier.At(atT)
@@ -61,20 +69,32 @@ func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64
 	assert.InDeltaf(t, ydc, y, delta, "spline.At(%v).y = %v != spline.AtDeCasteljau(%v).y = %v", atT, y, atT, ydc)
 }
 
-// createBezierDiag00to11 creates a bezier representing a straight line from 0,0 to 1,1
+// createBezierDiag00to11 creates a bezier representing a straight line from (0,0) to (1,1)
 func createBezierDiag00to11() *BezierSpline2d {
 	return NewBezierSpline2d(
 		bendit.NewUniformKnots(),
 		NewBezierVertex2d(0, 0, 0, 0, 1./3, 1./3),
-		NewBezierVertex2d(1, 1, 2./3, 2./3, 0, 0))
+		NewBezierVertex2d(1, 1, 2./3, 2./3, 0, 0),
+	)
 }
 
-// createBezierDiag00to11 creates a bezier representing an S-formed slope from 0,0 to 1,1
+// createBezierDiag00to11 creates a bezier representing an S-formed slope from (0,0) to (1,1)
 func createBezierS00to11() *BezierSpline2d {
 	return NewBezierSpline2d(
 		bendit.NewUniformKnots(),
 		NewBezierVertex2d(0, 0, 0, 0, 1, 0),
-		NewBezierVertex2d(1, 1, 0, 1, 0, 0))
+		NewBezierVertex2d(1, 1, 0, 1, 0, 0),
+	)
+}
+
+// createBezierDiag00to11 creates two consecutive beziers representing an S-formed slope from (0,0) to (1,1) or (1,1) to (2,2), resp.
+func createDoubleBezierS00to11to22() *BezierSpline2d {
+	return NewBezierSpline2d(
+		bendit.NewUniformKnots(),
+		NewBezierVertex2d(0, 0, 0, 0, 1, 0),
+		NewBezierVertex2d(1, 1, 0, 1, 2, 1),
+		NewBezierVertex2d(2, 2, 1, 2, 0, 0),
+	)
 }
 
 func TestBezierSpline2d_At(t *testing.T) {
@@ -84,6 +104,13 @@ func TestBezierSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, bezier, .5, .5, .5)
 	AssertSplineAt(t, bezier, 0.75, 0.75, 0.75)
 	AssertSplineAt(t, bezier, 1, 1, 1)
+
+	bezier = createDoubleBezierS00to11to22()
+	AssertSplineAt(t, bezier, 0, 0, 0)
+	AssertSplineAt(t, bezier, 0.5, 0.5, 0.5)
+	AssertSplineAt(t, bezier, 1, 1, 1)
+	AssertSplineAt(t, bezier, 1.5, 1.5, 1.5)
+	AssertSplineAt(t, bezier, 2, 2, 2)
 
 	// one vertex, domain with value 0 only
 	bezier = NewBezierSpline2d(
@@ -114,8 +141,10 @@ func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
 
 func TestBezierSpline2d_Canonical(t *testing.T) {
 	bezier := createBezierS00to11()
-	canon := bezier.Canonical()
-	AssertSplinesEqual(t, bezier, canon, 0, 1, 100)
+	AssertSplinesEqual(t, bezier, bezier.Canonical(), 1, 100)
+
+	bezier = createDoubleBezierS00to11to22()
+	AssertSplinesEqual(t, bezier, bezier.Canonical(), 2, 100)
 }
 
 func TestBezierSpline2d_Approx(t *testing.T) {
