@@ -47,9 +47,8 @@ type HermiteSpline2d struct {
 	canon *CanonicalSpline2d
 }
 
-func NewHermiteSpline2d(vertsx []float64, vertsy []float64,
-	entryTansx []float64, entryTansy []float64, exitTansx []float64, exitTansy []float64,
-	knots *bendit.Knots) *HermiteSpline2d {
+func NewHermiteSpline2d(knots *bendit.Knots, vertsx []float64, vertsy []float64,
+	entryTansx []float64, entryTansy []float64, exitTansx []float64, exitTansy []float64) *HermiteSpline2d {
 
 	herm := &HermiteSpline2d{vertsx: vertsx, vertsy: vertsy,
 		entryTansx: entryTansx, entryTansy: entryTansy, exitTansx: exitTansx, exitTansy: exitTansy, knots: knots}
@@ -57,7 +56,7 @@ func NewHermiteSpline2d(vertsx []float64, vertsy []float64,
 	return herm
 }
 
-func NewHermiteSplineTanFinder2d(vertsx []float64, vertsy []float64, tanFinder HermiteTanFinder2d, knots *bendit.Knots) *HermiteSpline2d {
+func NewHermiteSplineTanFinder2d(knots *bendit.Knots, vertsx []float64, vertsy []float64, tanFinder HermiteTanFinder2d) *HermiteSpline2d {
 	herm := &HermiteSpline2d{vertsx: vertsx, vertsy: vertsy, tanFinder: tanFinder, knots: knots}
 	herm.Build()
 	return herm
