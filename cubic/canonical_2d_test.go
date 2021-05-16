@@ -13,15 +13,13 @@ func createCanonLineWithParabolicParam() *CanonicalSpline2d {
 }
 
 func createCanonParabola00to11() *CanonicalSpline2d {
-	return NewCanonicalSpline2d(
-		bendit.NewUniformKnots(),
+	return NewCanonicalSpline2d(bendit.NewUniformKnots(),
 		NewCubic2d(NewCubicPoly(0, 1, 0, 0), NewCubicPoly(0, 0, 1, 0)),
 	)
 }
 
 func createDoubleCanonParabola00to11to22() *CanonicalSpline2d {
-	return NewCanonicalSpline2d(
-		bendit.NewUniformKnots(),
+	return NewCanonicalSpline2d(bendit.NewUniformKnots(),
 		NewCubic2d(NewCubicPoly(0, 1, 0, 0), NewCubicPoly(0, 0, 1, 0)),
 		NewCubic2d(NewCubicPoly(1, 1, 0, 0), NewCubicPoly(1, 0, 1, 0)),
 	)

@@ -28,7 +28,7 @@ func NewBezierSpline2d(knots *bendit.Knots, verts ...*BezierVertex2d) *BezierSpl
 		panic("verts and (optional) knots must have the same length")
 	}
 	bs := &BezierSpline2d{verts: verts, knots: knots}
-	bs.Build()
+	bs.Build() // TODO no automatic build
 	return bs
 }
 
