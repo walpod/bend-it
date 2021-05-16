@@ -63,8 +63,8 @@ func NewOneVertexCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
 }
 
 // matrix: (segmCnt*2) x 4
-func NewCanonicalSpline2dByMatrix(coefs mat.Dense, knots *bendit.Knots) *CanonicalSpline2d {
-	r, _ := coefs.Dims()
+func NewCanonicalSpline2dByMatrix(mat mat.Dense, knots *bendit.Knots) *CanonicalSpline2d {
+	r, _ := mat.Dims()
 	segmCnt := r / 2
 	if knots.Count() > 0 && knots.Count() != segmCnt+1 {
 		panic("knots must be empty or having length or matrix-rows/2 + 1")
@@ -72,9 +72,9 @@ func NewCanonicalSpline2dByMatrix(coefs mat.Dense, knots *bendit.Knots) *Canonic
 	cubics := make([]Cubic2d, segmCnt)
 	rowno := 0
 	for i := 0; i < segmCnt; i++ {
-		cubx := NewCubicPoly(coefs.At(rowno, 0), coefs.At(rowno, 1), coefs.At(rowno, 2), coefs.At(rowno, 3))
+		cubx := NewCubicPoly(mat.At(rowno, 0), mat.At(rowno, 1), mat.At(rowno, 2), mat.At(rowno, 3))
 		rowno++
-		cuby := NewCubicPoly(coefs.At(rowno, 0), coefs.At(rowno, 1), coefs.At(rowno, 2), coefs.At(rowno, 3))
+		cuby := NewCubicPoly(mat.At(rowno, 0), mat.At(rowno, 1), mat.At(rowno, 2), mat.At(rowno, 3))
 		rowno++
 		cubics[i] = NewCubic2d(cubx, cuby)
 	}
@@ -144,13 +144,7 @@ func (cs *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	vertices := make([]*BezierVertex2d, 0, segmCnt)
-	vertices = append(vertices, NewBezierVertex2d(coefs.At(0, 0), coefs.At(1, 0), 0, 0, coefs.At(0, 1), coefs.At(1, 1)))
-	for i := 1; i < segmCnt; i++ {
-		vertices = append(vertices, NewBezierVertex2d(coefs.At(i*dim, 0), coefs.At(i*dim+1, 0), coefs.At(i*dim-2, 2), coefs.At(i*dim-1, 2), coefs.At(i*dim, 1), coefs.At(i*dim+1, 1)))
-	}
-	vertices = append(vertices, NewBezierVertex2d(coefs.At(segmCnt*dim-2, 3), coefs.At(segmCnt*dim-1, 3), coefs.At(segmCnt*dim-2, 2), coefs.At(segmCnt*dim-1, 2), 0, 0))
-	return NewBezierSpline2d(cs.knots, vertices...)
+	return NewBezierSpline2dByMatrix(cs.knots, coefs)
 }
 
 func (cs *CanonicalSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {

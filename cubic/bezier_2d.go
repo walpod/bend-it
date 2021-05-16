@@ -32,6 +32,25 @@ func NewBezierSpline2d(knots *bendit.Knots, verts ...*BezierVertex2d) *BezierSpl
 	return bs
 }
 
+func NewBezierSpline2dByMatrix(knots *bendit.Knots, mat mat.Dense) *BezierSpline2d {
+	const dim = 2
+	rows, _ := mat.Dims()
+	segmCnt := rows / 2
+	vertices := make([]*BezierVertex2d, 0, segmCnt)
+	vertices = append(vertices, NewBezierVertex2d(mat.At(0, 0), mat.At(1, 0),
+		0, 0,
+		mat.At(0, 1), mat.At(1, 1)))
+	for i := 1; i < segmCnt; i++ {
+		vertices = append(vertices, NewBezierVertex2d(mat.At(i*dim, 0), mat.At(i*dim+1, 0),
+			mat.At(i*dim-2, 2), mat.At(i*dim-1, 2),
+			mat.At(i*dim, 1), mat.At(i*dim+1, 1)))
+	}
+	vertices = append(vertices, NewBezierVertex2d(mat.At(segmCnt*dim-2, 3), mat.At(segmCnt*dim-1, 3),
+		mat.At(segmCnt*dim-2, 2), mat.At(segmCnt*dim-1, 2),
+		0, 0))
+	return NewBezierSpline2d(knots, vertices...)
+}
+
 func (bs *BezierSpline2d) SegmentCnt() int {
 	segmCnt := len(bs.verts) - 1
 	if segmCnt >= 0 {
