@@ -63,7 +63,7 @@ func NewOneVertexCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
 }
 
 // matrix: (segmCnt*2) x 4
-func NewCanonicalSpline2dByMatrix(mat mat.Dense, knots *bendit.Knots) *CanonicalSpline2d {
+func NewCanonicalSpline2dByMatrix(knots *bendit.Knots, mat mat.Dense) *CanonicalSpline2d {
 	r, _ := mat.Dims()
 	segmCnt := r / 2
 	if knots.Count() > 0 && knots.Count() != segmCnt+1 {
@@ -81,37 +81,37 @@ func NewCanonicalSpline2dByMatrix(mat mat.Dense, knots *bendit.Knots) *Canonical
 	return &CanonicalSpline2d{cubics: cubics, knots: knots}
 }
 
-func (cs *CanonicalSpline2d) SegmentCnt() int {
-	return len(cs.cubics)
+func (sp *CanonicalSpline2d) SegmentCnt() int {
+	return len(sp.cubics)
 }
 
-func (cs *CanonicalSpline2d) Knots() *bendit.Knots {
-	return cs.knots
+func (sp *CanonicalSpline2d) Knots() *bendit.Knots {
+	return sp.knots
 }
 
-func (cs *CanonicalSpline2d) At(t float64) (x, y float64) {
-	if len(cs.cubics) == 0 {
+func (sp *CanonicalSpline2d) At(t float64) (x, y float64) {
+	if len(sp.cubics) == 0 {
 		return 0, 0
 	}
 
-	segmNo, u, err := cs.knots.MapToSegment(t, cs.SegmentCnt())
+	segmNo, u, err := sp.knots.MapToSegment(t, sp.SegmentCnt())
 	if err != nil {
 		return 0, 0
 	} else {
-		return cs.cubics[segmNo].At(u)
+		return sp.cubics[segmNo].At(u)
 	}
 }
 
-func (cs *CanonicalSpline2d) Fn() bendit.Fn2d {
+func (sp *CanonicalSpline2d) Fn() bendit.Fn2d {
 	return func(t float64) (x, y float64) {
-		return cs.At(t)
+		return sp.At(t)
 	}
 }
 
-func (cs *CanonicalSpline2d) Bezier() *BezierSpline2d {
-	if len(cs.cubics) >= 1 {
-		if cs.knots.IsUniform() {
-			return cs.uniBezier()
+func (sp *CanonicalSpline2d) Bezier() *BezierSpline2d {
+	if len(sp.cubics) >= 1 {
+		if sp.knots.IsUniform() {
+			return sp.uniBezier()
 		} else {
 			panic("not yet implemented")
 		}
@@ -120,16 +120,16 @@ func (cs *CanonicalSpline2d) Bezier() *BezierSpline2d {
 	}
 }
 
-func (cs *CanonicalSpline2d) uniBezier() *BezierSpline2d {
+func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	const dim = 2
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
-	segmCnt := cs.SegmentCnt()
+	segmCnt := sp.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
-		cubx := cs.cubics[i].cubx
+		cubx := sp.cubics[i].cubx
 		avs = append(avs, cubx.a, cubx.b, cubx.c, cubx.d)
-		cuby := cs.cubics[i].cuby
+		cuby := sp.cubics[i].cuby
 		avs = append(avs, cuby.a, cuby.b, cuby.c, cuby.d)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
@@ -144,9 +144,9 @@ func (cs *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewBezierSpline2dByMatrix(cs.knots, coefs)
+	return NewBezierSpline2dByMatrix(sp.knots, coefs)
 }
 
-func (cs *CanonicalSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
-	cs.Bezier().Approx(maxDist, collector)
+func (sp *CanonicalSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
+	sp.Bezier().Approx(maxDist, collector)
 }

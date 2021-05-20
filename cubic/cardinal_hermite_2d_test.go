@@ -1,7 +1,6 @@
 package cubic
 
 import (
-	"github.com/stretchr/testify/assert"
 	bendit "github.com/walpod/bend-it"
 	"math"
 	"math/rand"
@@ -42,10 +41,10 @@ func TestCardinalHermiteSpline_At(t *testing.T) {
 		AssertSplineAt(t, card, 2, 1, 1)
 	}
 	card.SetTension(1) // high tension: stretched to line segments
-	domain := card.Knots().Domain(2)
+	isOnLineSegment := func(x, y float64) bool {
+		return math.Abs(x)-math.Abs(y) < delta
+	}
 	for i := 0; i < 100; i++ {
-		atT := domain.Start + rand.Float64()*(domain.End-domain.Start)
-		x, y := card.At(atT)
-		assert.InDelta(t, math.Abs(x), math.Abs(y), delta, "cardinal point must be on line segment between Vase points")
+		AssertRandSplinePointProperty(t, card, isOnLineSegment, "cardinal point must be on line segment between Vase points")
 	}
 }

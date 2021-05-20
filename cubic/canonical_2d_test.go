@@ -56,10 +56,10 @@ func TestCanonicalSpline2d_At(t *testing.T) {
 
 func TestCanonicalSpline2d_Bezier(t *testing.T) {
 	canon := createCanonParabola00to11()
-	AssertSplinesEqual(t, canon, canon.Bezier(), 1, 100)
+	AssertSplinesEqual(t, canon, canon.Bezier(), 100)
 
 	canon = createDoubleCanonParabola00to11to22()
-	AssertSplinesEqual(t, canon, canon.Bezier(), 2, 100)
+	AssertSplinesEqual(t, canon, canon.Bezier(), 100)
 }
 
 func TestCanonicalSpline2d_Approx(t *testing.T) {

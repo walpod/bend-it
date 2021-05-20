@@ -51,8 +51,8 @@ func NewBezierSpline2dByMatrix(knots *bendit.Knots, mat mat.Dense) *BezierSpline
 	return NewBezierSpline2d(knots, verts...)
 }
 
-func (bs *BezierSpline2d) SegmentCnt() int {
-	segmCnt := len(bs.verts) - 1
+func (sp *BezierSpline2d) SegmentCnt() int {
+	segmCnt := len(sp.verts) - 1
 	if segmCnt >= 0 {
 		return segmCnt
 	} else {
@@ -60,40 +60,39 @@ func (bs *BezierSpline2d) SegmentCnt() int {
 	}
 }
 
-func (bs *BezierSpline2d) Knots() *bendit.Knots {
-	return bs.knots
+func (sp *BezierSpline2d) Knots() *bendit.Knots {
+	return sp.knots
 }
 
-func (bs *BezierSpline2d) Build() {
-	bs.canon = bs.Canonical()
+func (sp *BezierSpline2d) Build() {
+	sp.canon = sp.Canonical()
 }
 
-func (bs *BezierSpline2d) Canonical() *CanonicalSpline2d {
-	n := len(bs.verts)
+func (sp *BezierSpline2d) Canonical() *CanonicalSpline2d {
+	n := len(sp.verts)
 	if n >= 2 {
-		if bs.knots.IsUniform() {
-			return bs.uniCanonical()
+		if sp.knots.IsUniform() {
+			return sp.uniCanonical()
 		} else {
-			return bs.nonUniCanonical()
+			return sp.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewOneVertexCanonicalSpline2d(bs.verts[0].x, bs.verts[0].y)
+		return NewOneVertexCanonicalSpline2d(sp.verts[0].x, sp.verts[0].y)
 	} else {
-		return NewCanonicalSpline2d(bs.knots)
+		return NewCanonicalSpline2d(sp.knots)
 	}
 }
 
-func (bs *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
+func (sp *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	const dim = 2
-	// precondition: segmCnt >= 1, bs.knots.IsUniform()
-	segmCnt := bs.SegmentCnt()
+	// precondition: segmCnt >= 1, sp.knots.IsUniform()
+	segmCnt := sp.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
-		start := bs.verts[i]
-		end := bs.verts[i+1]
-		avs = append(avs, start.x, start.exitCtrlx, end.entryCtrlx, end.x)
-		avs = append(avs, start.y, start.exitCtrly, end.entryCtrly, end.y)
+		vstart, vend := sp.verts[i], sp.verts[i+1]
+		avs = append(avs, vstart.x, vstart.exitCtrlx, vend.entryCtrlx, vend.x)
+		avs = append(avs, vstart.y, vstart.exitCtrly, vend.entryCtrly, vend.y)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
@@ -107,18 +106,18 @@ func (bs *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewCanonicalSpline2dByMatrix(coefs, bs.knots)
+	return NewCanonicalSpline2dByMatrix(sp.knots, coefs)
 }
 
-func (bs *BezierSpline2d) nonUniCanonical() *CanonicalSpline2d {
+func (sp *BezierSpline2d) nonUniCanonical() *CanonicalSpline2d {
 	// TODO
 	panic("not yet implemented")
 }
 
 // At evaluates point on bezier spline for given parameter t
-func (bs *BezierSpline2d) At(t float64) (x, y float64) {
-	if bs.canon != nil {
-		return bs.canon.At(t)
+func (sp *BezierSpline2d) At(t float64) (x, y float64) {
+	if sp.canon != nil {
+		return sp.canon.At(t)
 	} else {
 		return 0, 0
 	}
@@ -126,8 +125,8 @@ func (bs *BezierSpline2d) At(t float64) (x, y float64) {
 
 // AtDeCasteljau is an alternative to 'At' using De Casteljau algorithm.
 // As opposed to At calling Build beforehand is not required
-func (bs *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
-	segmNo, u, err := bs.knots.MapToSegment(t, bs.SegmentCnt())
+func (sp *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
+	segmNo, u, err := sp.knots.MapToSegment(t, sp.SegmentCnt())
 	if err != nil {
 		return 0, 0
 	} else {
@@ -135,8 +134,8 @@ func (bs *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 		linip := func(a, b float64) float64 { // linear interpolation
 			return a + u*(b-a)
 		}
-		start := bs.verts[segmNo]
-		end := bs.verts[segmNo+1]
+		start := sp.verts[segmNo]
+		end := sp.verts[segmNo+1]
 		x01, y01 := linip(start.x, start.exitCtrlx), linip(start.y, start.exitCtrly)
 		x11, y11 := linip(start.exitCtrlx, end.entryCtrlx), linip(start.exitCtrly, end.entryCtrly)
 		x21, y21 := linip(end.entryCtrlx, end.x), linip(end.entryCtrly, end.y)
@@ -146,16 +145,16 @@ func (bs *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 	}
 }
 
-func (bs *BezierSpline2d) Fn() bendit.Fn2d {
-	if bs.canon != nil {
-		return bs.canon.Fn()
+func (sp *BezierSpline2d) Fn() bendit.Fn2d {
+	if sp.canon != nil {
+		return sp.canon.Fn()
 	} else {
 		return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
 	}
 }
 
 // Approx -imate bezier-spline with line-segments using subdivision
-func (bs *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
+func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
 	isFlat := func(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool {
 		lx, ly := x3-x0, y3-y0
 		return ProjectedVectorDist(x1-x0, y1-y0, lx, ly) <= maxDist &&
@@ -181,10 +180,10 @@ func (bs *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 	}
 
 	// subdivide each segment
-	for i := 0; i < bs.SegmentCnt(); i++ {
-		ts, te := bs.knots.SegmentRange(i)
-		start := bs.verts[i]
-		end := bs.verts[i+1]
+	for i := 0; i < sp.SegmentCnt(); i++ {
+		ts, te := sp.knots.SegmentRange(i)
+		start := sp.verts[i]
+		end := sp.verts[i+1]
 		subdivide(
 			ts, te,
 			start.x, start.y,

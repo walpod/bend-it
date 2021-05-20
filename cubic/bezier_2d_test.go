@@ -25,7 +25,7 @@ func (lc *LineToSliceCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
 	lc.Lines = append(lc.Lines, LineParams{ts, te, sx, sy, ex, ey})
 }
 
-// some general bend-it spline Asserts
+// START some general bend-it spline Asserts
 const delta = 0.0000000001
 
 func AssertSplineAt(t *testing.T, spline bendit.Spline2d, atT float64, expx, expy float64) {
@@ -34,9 +34,9 @@ func AssertSplineAt(t *testing.T, spline bendit.Spline2d, atT float64, expx, exp
 	assert.InDeltaf(t, expy, y, delta, "spline.At(%v).y = %v != expected %v", atT, y, expy)
 }
 
-func AssertSplinesEqualInRange(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, ts, te float64, sampleCnt int) {
+func AssertSplinesEqualInRange(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, tstart, tend float64, sampleCnt int) {
 	for i := 0; i < sampleCnt; i++ {
-		atT := rand.Float64()*(te-ts) + ts
+		atT := rand.Float64()*(tend-tstart) + tstart
 		x0, y0 := spline0.At(atT)
 		x1, y1 := spline1.At(atT)
 		assert.InDeltaf(t, x0, x1, delta, "spline0.At(%v).x = %v != spline1.At(%v).x = %v", atT, x0, atT, x1)
@@ -45,9 +45,9 @@ func AssertSplinesEqualInRange(t *testing.T, spline0 bendit.Spline2d, spline1 be
 }
 
 // TODO extend knots, drop segmCnt
-func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, segmCnt int, sampleCnt int) {
-	domain := spline0.Knots().Domain(segmCnt)
-	// compare with domain of spline1
+func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, sampleCnt int) {
+	// assert over full domain
+	domain := spline0.Knots().Domain(spline0.SegmentCnt())
 	AssertSplinesEqualInRange(t, spline0, spline1, domain.Start, domain.End, sampleCnt)
 }
 
@@ -59,7 +59,14 @@ func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline
 	}
 }
 
-// END general Asserts
+func AssertRandSplinePointProperty(t *testing.T, spline bendit.Spline2d, hasProp func(x, y float64) bool, msg string) {
+	domain := spline.Knots().Domain(spline.SegmentCnt())
+	atT := domain.Start + rand.Float64()*(domain.End-domain.Start)
+	x, y := spline.At(atT)
+	assert.True(t, hasProp(x, y), msg)
+}
+
+// END some general bend-it spline Asserts
 
 func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64) {
 	x, y := bezier.At(atT)
@@ -141,10 +148,10 @@ func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
 
 func TestBezierSpline2d_Canonical(t *testing.T) {
 	bezier := createBezierS00to11()
-	AssertSplinesEqual(t, bezier, bezier.Canonical(), 1, 100)
+	AssertSplinesEqual(t, bezier, bezier.Canonical(), 100)
 
 	bezier = createDoubleBezierS00to11to22()
-	AssertSplinesEqual(t, bezier, bezier.Canonical(), 2, 100)
+	AssertSplinesEqual(t, bezier, bezier.Canonical(), 100)
 }
 
 func TestBezierSpline2d_Approx(t *testing.T) {
