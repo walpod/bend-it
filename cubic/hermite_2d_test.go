@@ -7,25 +7,29 @@ import (
 
 func createHermDiag00to11() *HermiteSpline2d {
 	return NewHermiteSpline2d(bendit.NewUniformKnots(),
-		[]float64{0, 1}, []float64{0, 1},
-		[]float64{0, 1}, []float64{0, 1},
-		[]float64{1, 0}, []float64{1, 0},
+		NewHermiteVertex2d(0, 0, 0, 0, 1, 1),
+		NewHermiteVertex2d(1, 1, 1, 1, 0, 0),
 	)
 }
 
 func createHermParabola00to11() *HermiteSpline2d {
 	return NewHermiteSpline2d(bendit.NewUniformKnots(),
-		[]float64{0, 1}, []float64{0, 1},
-		[]float64{0, 1}, []float64{0, 2},
-		[]float64{1, 0}, []float64{0, 0},
+		NewHermiteVertex2d(0, 0, 0, 0, 1, 0),
+		NewHermiteVertex2d(1, 1, 1, 2, 0, 0),
+		//[]float64{0, 1}, []float64{0, 1},
+		//[]float64{0, 1}, []float64{0, 2},
+		//[]float64{1, 0}, []float64{0, 0},
 	)
 }
 
 func createDoubleHermParabola00to11to22() *HermiteSpline2d {
 	return NewHermiteSpline2d(bendit.NewUniformKnots(),
-		[]float64{0, 1, 2}, []float64{0, 1, 2},
-		[]float64{0, 1, 1}, []float64{0, 2, 2},
-		[]float64{1, 1, 0}, []float64{0, 0, 0},
+		NewHermiteVertex2d(0, 0, 0, 0, 1, 0),
+		NewHermiteVertex2d(1, 1, 1, 2, 1, 0),
+		NewHermiteVertex2d(2, 2, 1, 2, 0, 0),
+		//[]float64{0, 1, 2}, []float64{0, 1, 2},
+		//[]float64{0, 1, 1}, []float64{0, 2, 2},
+		//[]float64{1, 1, 0}, []float64{0, 0, 0},
 	)
 }
 
@@ -56,9 +60,9 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 2, 2, 2)
 
 	// domain with ony one value: 0
-	herm = NewHermiteSpline2d(bendit.NewUniformKnots(), []float64{1}, []float64{2}, []float64{0}, []float64{0}, []float64{0}, []float64{0})
+	herm = NewHermiteSpline2d(bendit.NewUniformKnots(), NewHermiteVertex2d(1, 2, 0, 0, 0, 0))
 	AssertSplineAt(t, herm, 0, 1, 2)
 
 	// empty domain
-	herm = NewHermiteSpline2d(bendit.NewUniformKnots(), []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{})
+	herm = NewHermiteSpline2d(bendit.NewUniformKnots())
 }

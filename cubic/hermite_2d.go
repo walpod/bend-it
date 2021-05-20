@@ -31,22 +31,50 @@ func (st *SingleTan2d) ExitTan() (mx, my float64) {
 }
 */
 
+type HermiteVertex2d struct {
+	x, y                 float64
+	entryTanx, entryTany float64
+	exitTanx, exitTany   float64
+}
+
+func NewHermiteVertex2d(x float64, y float64, entryTanx float64, entryTany float64, exitTanx float64, exitTany float64) *HermiteVertex2d {
+	return &HermiteVertex2d{x: x, y: y, entryTanx: entryTanx, entryTany: entryTany, exitTanx: exitTanx, exitTany: exitTany}
+}
+
 // HermiteTanFinder2d finds tangents based on given vertices and knots
-type HermiteTanFinder2d interface {
+/*type HermiteTanFinder2d interface {
 	Find(vertsx, vertsy []float64, knots *bendit.Knots) (
 		entryTansx, entryTansy []float64, exitTansx, exitTansy []float64)
+}*/
+
+// HermiteTanFinder2d finds tangents based on given vertices and knots
+type HermiteTanFinder2d interface {
+	Find(knots *bendit.Knots, verts []*HermiteVertex2d)
 }
 
 type HermiteSpline2d struct {
-	vertsx, vertsy         []float64
-	tanFinder              HermiteTanFinder2d
+	knots     *bendit.Knots
+	verts     []*HermiteVertex2d
+	tanFinder HermiteTanFinder2d
+	/*vertsx, vertsy         []float64
 	entryTansx, entryTansy []float64
-	exitTansx, exitTansy   []float64
-	// TODO tangents       []VertexTan2d
-	knots *bendit.Knots
+	exitTansx, exitTansy   []float64*/
 	canon *CanonicalSpline2d
 }
 
+func NewHermiteSpline2d(knots *bendit.Knots, verts ...*HermiteVertex2d) *HermiteSpline2d {
+	herm := &HermiteSpline2d{knots: knots, verts: verts}
+	herm.Build() // TODO don't build automatically
+	return herm
+}
+
+func NewHermiteSplineTanFinder2d(knots *bendit.Knots, tanFinder HermiteTanFinder2d, verts ...*HermiteVertex2d) *HermiteSpline2d {
+	herm := &HermiteSpline2d{knots: knots, verts: verts, tanFinder: tanFinder}
+	herm.Build() // TODO don't build automatically
+	return herm
+}
+
+/*
 func NewHermiteSpline2d(knots *bendit.Knots, vertsx []float64, vertsy []float64,
 	entryTansx []float64, entryTansy []float64, exitTansx []float64, exitTansy []float64) *HermiteSpline2d {
 
@@ -61,6 +89,7 @@ func NewHermiteSplineTanFinder2d(knots *bendit.Knots, vertsx []float64, vertsy [
 	herm.Build()
 	return herm
 }
+*/
 
 /* TODO variant with  tangents []VertexTan2d
 func (hs *HermiteSpline2d) Add(vertx, verty float64, tangent VertexTan2d) {
@@ -90,7 +119,12 @@ func (hs *HermiteBuilder2d) Build() bendit.Fn2d {
 */
 
 func (hs *HermiteSpline2d) SegmentCnt() int {
-	return len(hs.vertsx) - 1
+	segmCnt := len(hs.verts) - 1
+	if segmCnt >= 0 {
+		return segmCnt
+	} else {
+		return 0
+	}
 }
 
 func (hs *HermiteSpline2d) Knots() *bendit.Knots {
@@ -103,14 +137,10 @@ func (hs *HermiteSpline2d) Build() {
 }
 
 func (hs *HermiteSpline2d) Canonical() *CanonicalSpline2d {
-	n := len(hs.vertsx)
-	/*if len(vertsy) != n || len(entryTansx) != n || len(entryTansy) != n || len(exitTansx) != n || len(exitTansy) != n ||
-		(len(knots) > 0 && len(knots) != n) {
-		panic("versv, vertsy, all tangents and (optional) knots must have the same length")
-	}*/
+	n := len(hs.verts)
 	if n >= 2 {
 		if hs.tanFinder != nil {
-			hs.entryTansx, hs.entryTansy, hs.exitTansx, hs.exitTansy = hs.tanFinder.Find(hs.vertsx, hs.vertsy, hs.knots)
+			hs.tanFinder.Find(hs.knots, hs.verts)
 		}
 
 		if hs.knots.IsUniform() {
@@ -119,7 +149,7 @@ func (hs *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 			return hs.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewOneVertexCanonicalSpline2d(hs.vertsx[0], hs.vertsy[0])
+		return NewOneVertexCanonicalSpline2d(hs.verts[0].x, hs.verts[0].y)
 	} else {
 		return NewCanonicalSpline2d(hs.knots)
 	}
@@ -127,8 +157,8 @@ func (hs *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 
 func (hs *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 	const dim = 2
-	// precondition: len(vertsx) == len(vertsy) == len(tangents)
-	segmCnt := len(hs.vertsx) - 1
+	// precondition: segmCnt >= 1, bs.knots.IsUniform()
+	segmCnt := hs.SegmentCnt()
 
 	a := mat.NewDense(4, 4, []float64{
 		1, 0, 0, 0,
@@ -139,8 +169,9 @@ func (hs *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 
 	bvs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
-		bvs = append(bvs, hs.vertsx[i], hs.vertsx[i+1], hs.exitTansx[i], hs.entryTansx[i+1])
-		bvs = append(bvs, hs.vertsy[i], hs.vertsy[i+1], hs.exitTansy[i], hs.entryTansy[i+1])
+		vstart, vend := hs.verts[i], hs.verts[i+1]
+		bvs = append(bvs, vstart.x, vend.x, vstart.exitTanx, vend.entryTanx)
+		bvs = append(bvs, vstart.y, vend.y, vstart.exitTany, vend.entryTany)
 	}
 	b := mat.NewDense(dim*segmCnt, 4, bvs).T()
 
@@ -161,7 +192,7 @@ func (hs *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 func (hs *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 	const dim = 2
 	// precondition: len(vertsx) == len(vertsy) == len(entryTansx) == len(entryTansy) == len(exitTansx) == len(exitTansy) == len(knots)
-	segmCnt := len(hs.vertsx) - 1
+	segmCnt := hs.SegmentCnt()
 	cubics := make([]Cubic2d, segmCnt)
 
 	for i := 0; i < segmCnt; i++ {
@@ -174,11 +205,12 @@ func (hs *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 			2, -2, tlen, tlen,
 		})
 
+		vstart, vend := hs.verts[i], hs.verts[i+1]
 		b := mat.NewDense(4, dim, []float64{
-			hs.vertsx[i], hs.vertsy[i],
-			hs.vertsx[i+1], hs.vertsy[i+1],
-			hs.exitTansx[i], hs.exitTansy[i],
-			hs.entryTansx[i+1], hs.entryTansy[i+1],
+			vstart.x, vstart.y,
+			vend.x, vend.y,
+			vstart.exitTanx, vstart.exitTany,
+			vend.exitTanx, vend.exitTany,
 		})
 
 		var coefs mat.Dense

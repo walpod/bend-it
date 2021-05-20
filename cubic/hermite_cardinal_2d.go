@@ -15,52 +15,44 @@ func NewCatmullRomTanf2d() CardinalTanf2d {
 	return NewCardinalTanf2d(0)
 }
 
-func (ct CardinalTanf2d) Find(vertsx, vertsy []float64, knots *bendit.Knots) (
-	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
-
-	// TODO check len of params
-	n := len(vertsx)
-	exitTansx = make([]float64, n)
-	exitTansy = make([]float64, n)
-
-	if knots.IsUniform() {
-		// uniform -> single tangent
-		entryTansx = exitTansx
-		entryTansy = exitTansy
-	} else {
-		// non-uniform -> double tangent
-		entryTansx = make([]float64, n)
-		entryTansy = make([]float64, n)
-	}
-
+func (ct CardinalTanf2d) Find(knots *bendit.Knots, verts []*HermiteVertex2d) {
+	n := len(verts)
 	if n < 2 {
 		return
 	}
 
-	// first and last tangents use adjacent vertices, all others use vertices i+1 and i-1
+	// calculate tangents for uniform case: entry and exit tangents are equal
 	b := (1 - ct.tension) / 2
-	exitTansx[0] = b * (vertsx[1] - vertsx[0])
+	setUniformCardinalTan := func(vert *HermiteVertex2d, xstart, xend, ystart, yend float64) {
+		tanx := b * (xend - xstart)
+		tany := b * (yend - ystart)
+		vert.entryTanx, vert.exitTanx = tanx, tanx
+		vert.entryTany, vert.exitTany = tany, tany
+	}
+
+	setUniformCardinalTan(verts[0], verts[0].x, verts[1].x, verts[0].y, verts[1].y)
+	for i := 1; i < n-1; i++ {
+		setUniformCardinalTan(verts[i], verts[i-1].x, verts[i+1].x, verts[i-1].y, verts[i+1].y) // use vertex before and after
+	}
+	setUniformCardinalTan(verts[n-1], verts[n-2].x, verts[n-1].x, verts[n-2].y, verts[n-1].y)
+	/*exitTansx[0] = b * (vertsx[1] - vertsx[0])
 	exitTansy[0] = b * (vertsy[1] - vertsy[0])
 	for i := 1; i < n-1; i++ {
 		exitTansx[i] = b * (vertsx[i+1] - vertsx[i-1])
 		exitTansy[i] = b * (vertsy[i+1] - vertsy[i-1])
 	}
 	exitTansx[n-1] = b * (vertsx[n-1] - vertsx[n-2])
-	exitTansy[n-1] = b * (vertsy[n-1] - vertsy[n-2])
+	exitTansy[n-1] = b * (vertsy[n-1] - vertsy[n-2])*/
 
-	// non-uniform: copy exit-tangents to entry, then modify tangent lengths to reciprocal of segment length
-	copy(entryTansx, exitTansx)
-	copy(entryTansy, exitTansy)
+	// handle non-uniform case: double tangent, same direction but different lengths
 	if !knots.IsUniform() {
 		for i := 0; i < n-1; i++ {
-			//segmLen := knots[i+1] - knots[i]
+			// modify length of uniform tangents according to segment-length
 			segmLen := knots.SegmentLength(i)
-			exitTansx[i] /= segmLen
-			exitTansy[i] /= segmLen
-			entryTansx[i+1] /= segmLen
-			entryTansy[i+1] /= segmLen
+			verts[i].exitTanx /= segmLen // TODO segmLen = 0
+			verts[i].exitTany /= segmLen
+			verts[i+1].entryTanx /= segmLen
+			verts[i+1].entryTany /= segmLen
 		}
 	}
-
-	return
 }
