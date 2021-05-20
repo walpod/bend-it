@@ -18,8 +18,8 @@ func NewBezierVertex2d(x float64, y float64, entryCtrlx float64, entryCtrly floa
 }
 
 type BezierSpline2d struct {
-	verts []*BezierVertex2d
 	knots *bendit.Knots
+	verts []*BezierVertex2d
 	canon *CanonicalSpline2d // map to canonical, cubic spline
 }
 
@@ -27,7 +27,7 @@ func NewBezierSpline2d(knots *bendit.Knots, verts ...*BezierVertex2d) *BezierSpl
 	if !knots.IsUniform() && len(verts) != knots.Count() {
 		panic("verts and (optional) knots must have the same length")
 	}
-	bs := &BezierSpline2d{verts: verts, knots: knots}
+	bs := &BezierSpline2d{knots: knots, verts: verts}
 	bs.Build() // TODO no automatic build
 	return bs
 }
@@ -85,7 +85,7 @@ func (bs *BezierSpline2d) Canonical() *CanonicalSpline2d {
 
 func (bs *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	const dim = 2
-	// precondition: len(x) >= 2, len(x) == len(y) == len(tangents), bs.knots.IsUniform()
+	// precondition: segmCnt >= 1, bs.knots.IsUniform()
 	segmCnt := bs.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
