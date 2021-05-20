@@ -41,6 +41,10 @@ func NewHermiteVertex2d(x float64, y float64, entryTanx float64, entryTany float
 	return &HermiteVertex2d{x: x, y: y, entryTanx: entryTanx, entryTany: entryTany, exitTanx: exitTanx, exitTany: exitTany}
 }
 
+func NewRawHermiteVertex2d(x float64, y float64) *HermiteVertex2d {
+	return NewHermiteVertex2d(x, y, 0, 0, 0, 0)
+}
+
 // HermiteTanFinder2d finds tangents based on given vertices and knots
 /*type HermiteTanFinder2d interface {
 	Find(vertsx, vertsy []float64, knots *bendit.Knots) (
