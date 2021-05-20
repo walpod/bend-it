@@ -1,6 +1,7 @@
 package cubic
 
 import (
+	"github.com/stretchr/testify/assert"
 	bendit "github.com/walpod/bend-it"
 	"math"
 	"testing"
@@ -101,4 +102,25 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	herm = createDoubleHermParabola00to11to22(true)
 	nuherm = createDoubleHermParabola00to11to22(false)
 	AssertSplinesEqual(t, herm, nuherm, 100)
+}
+
+func TestHermiteSpline2d_Canonical(t *testing.T) {
+	herm := createDoubleHermParabola00to11to22(true)
+	AssertSplinesEqual(t, herm, herm.Canonical(), 100)
+
+	herm = createDoubleHermParabola00to11to22(false)
+	AssertSplinesEqual(t, herm, herm.Canonical(), 100)
+}
+
+func TestHermiteSpline2d_Approx(t *testing.T) {
+	herm := createDoubleHermParabola00to11to22(true)
+	lc := NewLineToSliceCollector2d()
+	herm.Approx(0.02, lc)
+	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
+	assert.InDeltaf(t, 0., lc.Lines[0].Sx, delta, "start point x=0")
+	assert.InDeltaf(t, 0., lc.Lines[0].Sy, delta, "start point y=0")
+	assert.InDeltaf(t, 2., lc.Lines[len(lc.Lines)-1].Ex, delta, "end point x=0")
+	assert.InDeltaf(t, 2., lc.Lines[len(lc.Lines)-1].Ey, delta, "end point y=0")
+	// start points of approximated lines must be on bezier curve and match bezier.At
+	AssertApproxStartPointsMatchSpline(t, lc.Lines, herm)
 }

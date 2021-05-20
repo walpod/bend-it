@@ -93,7 +93,7 @@ func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
-	var b = mat.NewDense(4, 4, []float64{
+	b := mat.NewDense(4, 4, []float64{
 		1, 0, -3, 2,
 		0, 0, 3, -2,
 		0, 1, -2, 1,
@@ -127,21 +127,6 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 			0, 0, -sgl, sgl,
 		})
 
-		/*a := coefs.NewDense(4, 4, []float64{
-			1, 0, 0, 0,
-			0, 0, sgl, 0,
-			-3, 3, -2 * sgl, -sgl,
-			2, -2, sgl, sgl,
-		})
-
-		vstart, vend := sp.verts[i], sp.verts[i+1]
-		b := coefs.NewDense(4, dim, []float64{
-			vstart.x, vstart.y,
-			vend.x, vend.y,
-			vstart.exitTanx, vstart.exitTany,
-			vend.exitTanx, vend.exitTany,
-		})*/
-
 		var coefs mat.Dense
 		coefs.Mul(a, b)
 
@@ -169,8 +154,56 @@ func (sp *HermiteSpline2d) Fn() bendit.Fn2d {
 	}
 }
 
+func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
+	n := len(sp.verts)
+	if n >= 2 {
+		// TODO when to call Find ...
+		if sp.tanFinder != nil {
+			sp.tanFinder.Find(sp.knots, sp.verts)
+		}
+
+		if sp.knots.IsUniform() {
+			return sp.uniBezier()
+		} else {
+			panic("not yet implemented")
+		}
+	} else {
+		var bezierVertex *BezierVertex2d
+		if n == 1 {
+			bezierVertex = NewBezierVertex2d(sp.verts[0].x, sp.verts[0].y, 0, 0, 0, 0)
+		}
+		return NewBezierSpline2d(bendit.NewUniformKnots(), bezierVertex)
+	}
+}
+
+func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
+	const dim = 2
+	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
+	segmCnt := sp.SegmentCnt()
+
+	avs := make([]float64, 0, dim*4*segmCnt)
+	for i := 0; i < segmCnt; i++ {
+		vstart, vend := sp.verts[i], sp.verts[i+1]
+		avs = append(avs, vstart.x, vend.x, vstart.exitTanx, vend.entryTanx)
+		avs = append(avs, vstart.y, vend.y, vstart.exitTany, vend.entryTany)
+	}
+	a := mat.NewDense(dim*segmCnt, 4, avs)
+
+	b := mat.NewDense(4, 4, []float64{
+		1, 1, 0, 0,
+		0, 0, 1, 1,
+		0, 1. / 3, 0, 0,
+		0, 0, -1. / 3, 0,
+	})
+
+	var coefs mat.Dense
+	coefs.Mul(a, b)
+
+	return NewBezierSpline2dByMatrix(sp.knots, coefs)
+}
+
 func (sp *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
-	panic("implement me")
+	sp.Bezier().Approx(maxDist, collector)
 }
 
 /*
