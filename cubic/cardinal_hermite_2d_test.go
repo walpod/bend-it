@@ -22,7 +22,7 @@ func createCardinalVase() *CardinalHermiteSpline2d {
 		NewRawHermiteVertex2d(1, 1))
 }
 
-func TestCardinalHmSpline_At(t *testing.T) {
+func TestCardinalHermiteSpline_At(t *testing.T) {
 	card := createCardinalDiag00to11()
 	for i := 0; i < 100; i++ {
 		card.SetTension(rand.Float64()*4 - 2)

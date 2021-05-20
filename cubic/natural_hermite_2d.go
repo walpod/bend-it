@@ -8,22 +8,15 @@ type NaturalTanf2d struct{}
 // Find hermite tangents for natural spline
 // mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
-func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots *bendit.Knots) (
-	entryTansx, entryTansy []float64, exitTansx, exitTansy []float64) {
-
-	// TODO check len of params
-	n := len(vertsx)
-	exitTansx = make([]float64, n)
-	exitTansy = make([]float64, n)
-
+func (nt NaturalTanf2d) Find(knots *bendit.Knots, verts []*HermiteVertex2d) {
+	n := len(verts)
 	if n < 2 {
-		entryTansx = exitTansx
-		entryTansy = exitTansy
 		return
 	}
 
-	var solve func(p, m []float64)
-	r := make([]float64, n) // diagonal values
+	// solve n linear equations of one dimension for given points and return tangents
+	var solve func(p []float64) []float64
+
 	if knots.IsUniform() {
 		// uniform, solve equations for m[0] ... m[n-1] (A*m = p)
 		// 2 1			= 3 * (p1 - p0)
@@ -34,7 +27,10 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots *bendit.Knots) (
 		//			1 2 = 3 * (p(n-1) - p(n-2))
 		// first transform to upper-diagonal matrix: eliminate 1's below diagonal and convert diagonal to r[i]
 		// followed by a back-substitution to yield m[i]
-		solve = func(p, m []float64) {
+		solve = func(p []float64) []float64 {
+			r := make([]float64, n) // diagonal values
+			m := make([]float64, n) // resulting tangents
+
 			// forward elimination
 			r[0] = 2
 			m[0] = 3 * (p[1] - p[0])
@@ -52,6 +48,8 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots *bendit.Knots) (
 			for i := n - 2; i >= 0; i-- {
 				m[i] = (m[i] - m[i+1]) / r[i]
 			}
+
+			return m
 		}
 	} else {
 		// prepare length of segments
@@ -67,7 +65,10 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots *bendit.Knots) (
 		//      t2          2*(t2+t1)   t1  = ...
 		//                  ...
 		//                  1           2   = 3 * (p(n-1) - p(n-2)) / t(n-2)
-		solve = func(p, m []float64) {
+		solve = func(p []float64) []float64 {
+			r := make([]float64, n) // diagonal values
+			m := make([]float64, n) // resulting tangents
+
 			// forward elimination
 			r[0] = 2
 			m[0] = 3 * (p[1] - p[0]) / t[0]
@@ -94,16 +95,39 @@ func (nt NaturalTanf2d) Find(vertsx, vertsy []float64, knots *bendit.Knots) (
 				m[i] = (m[i] - m[i+1]*t[i-1]) / r[i]
 			}
 			m[0] = (m[0] - m[1]) / r[0]
+
+			return m
 		}
 	}
 
-	// solve n linear equations
-	solve(vertsx, exitTansx)
-	solve(vertsy, exitTansy)
+	// prepare intermediate slices of vertices
+	vertsx := make([]float64, n)
+	vertsy := make([]float64, n)
+	for i := 0; i < n; i++ {
+		vertsx[i] = verts[i].x
+		vertsy[i] = verts[i].y
+	}
 
-	// single tangent
-	entryTansx = exitTansx
-	entryTansy = exitTansy
+	// solve linear equations to find tangents
+	tansx := solve(vertsx)
+	tansy := solve(vertsy)
 
-	return
+	// write intermediate result to vertices
+	for i := 0; i < n; i++ {
+		verts[i].entryTanx = tansx[i]
+		verts[i].exitTanx = tansx[i]
+		verts[i].entryTany = tansy[i]
+		verts[i].exitTany = tansy[i]
+	}
+}
+
+type NaturalHermiteSpline2d struct {
+	HermiteSpline2d
+}
+
+func NewNaturalHermiteSpline2d(knots *bendit.Knots, verts ...*HermiteVertex2d) *NaturalHermiteSpline2d {
+	cs := &NaturalHermiteSpline2d{
+		HermiteSpline2d: *NewHermiteSplineTanFinder2d(knots, NaturalTanf2d{}, verts...)}
+	cs.Build() // TODO don't build automatically
+	return cs
 }
