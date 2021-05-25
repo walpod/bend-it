@@ -8,7 +8,7 @@ import (
 
 type Knots struct {
 	ks []float64
-	// TODO SegmentCnt for uniform
+	// TODO SegmentCnt or spline.SegmentCnt for uniform
 }
 
 func NewUniformKnots() *Knots {
@@ -19,19 +19,30 @@ func NewKnots(ks []float64) *Knots {
 	return &Knots{ks: ks}
 }
 
-func (k *Knots) Count() int {
-	return len(k.ks)
-}
-
 func (k *Knots) IsUniform() bool {
 	return len(k.ks) == 0
 }
 
+// TODO without segmCnt parameter
 func (k *Knots) Domain(segmCnt int) SplineDomain {
 	if k.IsUniform() {
 		return SplineDomain{Start: 0, End: float64(segmCnt)}
 	} else {
 		return SplineDomain{Start: 0, End: k.ks[len(k.ks)-1]}
+	}
+}
+
+func (k *Knots) Count() int {
+	// TODO extend for uniform-case (using segmCnt)
+	return len(k.ks)
+}
+
+func (k *Knots) Knot(knotNo int) float64 {
+	// TODO assert knotNo <= segmCnt
+	if k.IsUniform() {
+		return float64(knotNo)
+	} else {
+		return k.ks[knotNo]
 	}
 }
 
@@ -43,13 +54,13 @@ func (k *Knots) SegmentLength(segmNo int) float64 {
 	}
 }
 
-func (k *Knots) SegmentRange(segmNo int) (start, end float64) {
+/*func (k *Knots) SegmentRange(segmNo int) (start, end float64) {
 	if k.IsUniform() {
 		return float64(segmNo), float64(segmNo + 1)
 	} else {
 		return k.ks[segmNo], k.ks[segmNo+1]
 	}
-}
+}*/
 
 func (k *Knots) MapToSegment(t float64, segmCnt int) (segmNo int, u float64, err error) {
 	if k.IsUniform() {

@@ -181,15 +181,14 @@ func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 
 	// subdivide each segment
 	for i := 0; i < sp.SegmentCnt(); i++ {
-		ts, te := sp.knots.SegmentRange(i)
-		start := sp.verts[i]
-		end := sp.verts[i+1]
+		tstart, tend := sp.knots.Knot(i), sp.knots.Knot(i+1)
+		vstart, vend := sp.verts[i], sp.verts[i+1]
 		subdivide(
-			ts, te,
-			start.x, start.y,
-			start.exitCtrlx, start.exitCtrly,
-			end.entryCtrlx, end.entryCtrly,
-			end.x, end.y)
+			tstart, tend,
+			vstart.x, vstart.y,
+			vstart.exitCtrlx, vstart.exitCtrly,
+			vend.entryCtrlx, vend.entryCtrly,
+			vend.x, vend.y)
 	}
 }
 
