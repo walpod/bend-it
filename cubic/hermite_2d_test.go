@@ -9,15 +9,15 @@ import (
 
 func createHermDiag00to11() *HermiteSpline2d {
 	return NewHermiteSpline2d(bendit.NewUniformKnots(),
-		NewHermiteVertex2d(0, 0, 0, 0, 1, 1),
-		NewHermiteVertex2d(1, 1, 1, 1, 0, 0),
+		NewHermiteVx2(0, 0, 0, 0, 1, 1),
+		NewHermiteVx2(1, 1, 1, 1, 0, 0),
 	)
 }
 
 func createNonUniHermDiag00to11() *HermiteSpline2d {
 	return NewHermiteSpline2d(bendit.NewKnots([]float64{0, math.Sqrt2}),
-		NewHermiteVertex2d(0, 0, 0, 0, 1, 1),
-		NewHermiteVertex2d(1, 1, 1, 1, 0, 0),
+		NewHermiteVx2(0, 0, 0, 0, 1, 1),
+		NewHermiteVx2(1, 1, 1, 1, 0, 0),
 	)
 }
 
@@ -33,8 +33,8 @@ func createHermParabola00to11(uniform bool) *HermiteSpline2d {
 		knots = bendit.NewKnots([]float64{0, 1}) // is in fact uniform but specified as non-uniform
 	}
 	return NewHermiteSpline2d(knots,
-		NewHermiteVertex2d(0, 0, 0, 0, 1, 0),
-		NewHermiteVertex2d(1, 1, 1, 2, 0, 0),
+		NewHermiteVx2(0, 0, 0, 0, 1, 0),
+		NewHermiteVx2(1, 1, 1, 2, 0, 0),
 	)
 }
 
@@ -46,9 +46,9 @@ func createDoubleHermParabola00to11to22(uniform bool) *HermiteSpline2d {
 		knots = bendit.NewKnots([]float64{0, 1, 2}) // is in fact uniform but specified as non-uniform
 	}
 	return NewHermiteSpline2d(knots,
-		NewHermiteVertex2d(0, 0, 0, 0, 1, 0),
-		NewHermiteVertex2d(1, 1, 1, 2, 1, 0),
-		NewHermiteVertex2d(2, 2, 1, 2, 0, 0),
+		NewHermiteVx2(0, 0, 0, 0, 1, 0),
+		NewHermiteVx2(1, 1, 1, 2, 1, 0),
+		NewHermiteVx2(2, 2, 1, 2, 0, 0),
 	)
 }
 
@@ -88,7 +88,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 2, 2, 2)
 
 	// domain with ony one value: 0
-	herm = NewHermiteSpline2d(bendit.NewUniformKnots(), NewHermiteVertex2d(1, 2, 0, 0, 0, 0))
+	herm = NewHermiteSpline2d(bendit.NewUniformKnots(), NewHermiteVx2(1, 2, 0, 0, 0, 0))
 	AssertSplineAt(t, herm, 0, 1, 2)
 
 	// empty domain

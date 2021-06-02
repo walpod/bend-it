@@ -9,16 +9,16 @@ import (
 
 func createCardinalDiag00to11() *CardinalHermiteSpline2d {
 	return NewCardinalHermiteSpline2d(bendit.NewUniformKnots(), 0,
-		NewRawHermiteVertex2d(0, 0),
-		NewRawHermiteVertex2d(1, 1))
+		NewHermiteRawVx2(0, 0),
+		NewHermiteRawVx2(1, 1))
 }
 
 func createCardinalVase() *CardinalHermiteSpline2d {
 	return NewCardinalHermiteSpline2d(
 		bendit.NewUniformKnots(), 0,
-		NewRawHermiteVertex2d(-1, 1),
-		NewRawHermiteVertex2d(0, 0),
-		NewRawHermiteVertex2d(1, 1))
+		NewHermiteRawVx2(-1, 1),
+		NewHermiteRawVx2(0, 0),
+		NewHermiteRawVx2(1, 1))
 }
 
 func TestCardinalHermiteSpline_At(t *testing.T) {

@@ -45,8 +45,8 @@ func TestCanonicalSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, canon, 1.5, 1.5, 1+0.5*0.5)
 	AssertSplineAt(t, canon, 2, 2, 2)
 
-	// one vertex only
-	canon = NewOneVertexCanonicalSpline2d(1, 2)
+	// single vertex only
+	canon = NewSingleVxCanonicalSpline2d(1, 2)
 	AssertSplineAt(t, canon, 0, 1, 2)
 
 	// empty domain

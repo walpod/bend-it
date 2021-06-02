@@ -80,8 +80,8 @@ func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64
 func createBezierDiag00to11() *BezierSpline2d {
 	return NewBezierSpline2d(
 		bendit.NewUniformKnots(),
-		NewBezierVertex2d(0, 0, 0, 0, 1./3, 1./3),
-		NewBezierVertex2d(1, 1, 2./3, 2./3, 0, 0),
+		NewBezierVx2(0, 0, 0, 0, 1./3, 1./3),
+		NewBezierVx2(1, 1, 2./3, 2./3, 0, 0),
 	)
 }
 
@@ -89,8 +89,8 @@ func createBezierDiag00to11() *BezierSpline2d {
 func createBezierS00to11() *BezierSpline2d {
 	return NewBezierSpline2d(
 		bendit.NewUniformKnots(),
-		NewBezierVertex2d(0, 0, 0, 0, 1, 0),
-		NewBezierVertex2d(1, 1, 0, 1, 0, 0),
+		NewBezierVx2(0, 0, 0, 0, 1, 0),
+		NewBezierVx2(1, 1, 0, 1, 0, 0),
 	)
 }
 
@@ -98,9 +98,9 @@ func createBezierS00to11() *BezierSpline2d {
 func createDoubleBezierS00to11to22() *BezierSpline2d {
 	return NewBezierSpline2d(
 		bendit.NewUniformKnots(),
-		NewBezierVertex2d(0, 0, 0, 0, 1, 0),
-		NewBezierVertex2d(1, 1, 0, 1, 2, 1),
-		NewBezierVertex2d(2, 2, 1, 2, 0, 0),
+		NewBezierVx2(0, 0, 0, 0, 1, 0),
+		NewBezierVx2(1, 1, 0, 1, 2, 1),
+		NewBezierVx2(2, 2, 1, 2, 0, 0),
 	)
 }
 
@@ -119,15 +119,15 @@ func TestBezierSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, bezier, 1.5, 1.5, 1.5)
 	AssertSplineAt(t, bezier, 2, 2, 2)
 
-	// one vertex, domain with value 0 only
+	// single vertex, domain with value 0 only
 	bezier = NewBezierSpline2d(
 		bendit.NewUniformKnots(),
-		NewBezierVertex2d(1, 2, 0, 0, 0, 0))
+		NewBezierVx2(1, 2, 0, 0, 0, 0))
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	bezier = NewBezierSpline2d(
 		bendit.NewKnots([]float64{0}),
-		NewBezierVertex2d(1, 2, 0, 0, 0, 0))
+		NewBezierVx2(1, 2, 0, 0, 0, 0))
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	// empty domain

@@ -8,8 +8,8 @@ type NaturalTanf2d struct{}
 // Find hermite tangents for natural spline
 // mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
-func (nt NaturalTanf2d) Find(knots *bendit.Knots, verts []*HermiteVertex2d) {
-	n := len(verts)
+func (nt NaturalTanf2d) Find(knots *bendit.Knots, vertices []*HermiteVx2) {
+	n := len(vertices)
 	if n < 2 {
 		return
 	}
@@ -101,23 +101,23 @@ func (nt NaturalTanf2d) Find(knots *bendit.Knots, verts []*HermiteVertex2d) {
 	}
 
 	// prepare intermediate slices of vertices
-	vertsx := make([]float64, n)
-	vertsy := make([]float64, n)
+	vcsx := make([]float64, n)
+	vcsy := make([]float64, n)
 	for i := 0; i < n; i++ {
-		vertsx[i] = verts[i].x
-		vertsy[i] = verts[i].y
+		vcsx[i] = vertices[i].x
+		vcsy[i] = vertices[i].y
 	}
 
 	// solve linear equations to find tangents
-	tansx := solve(vertsx)
-	tansy := solve(vertsy)
+	tansx := solve(vcsx)
+	tansy := solve(vcsy)
 
 	// write intermediate result to vertices
 	for i := 0; i < n; i++ {
-		verts[i].entryTanx = tansx[i]
-		verts[i].exitTanx = tansx[i]
-		verts[i].entryTany = tansy[i]
-		verts[i].exitTany = tansy[i]
+		vertices[i].entryTanx = tansx[i]
+		vertices[i].exitTanx = tansx[i]
+		vertices[i].entryTany = tansy[i]
+		vertices[i].exitTany = tansy[i]
 	}
 }
 
@@ -125,9 +125,9 @@ type NaturalHermiteSpline2d struct {
 	HermiteSpline2d
 }
 
-func NewNaturalHermiteSpline2d(knots *bendit.Knots, verts ...*HermiteVertex2d) *NaturalHermiteSpline2d {
+func NewNaturalHermiteSpline2d(knots *bendit.Knots, vertices ...*HermiteVx2) *NaturalHermiteSpline2d {
 	cs := &NaturalHermiteSpline2d{
-		HermiteSpline2d: *NewHermiteSplineTanFinder2d(knots, NaturalTanf2d{}, verts...)}
+		HermiteSpline2d: *NewHermiteSplineTanFinder2d(knots, NaturalTanf2d{}, vertices...)}
 	cs.Build() // TODO don't build automatically
 	return cs
 }

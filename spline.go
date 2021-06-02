@@ -7,6 +7,10 @@ type SplineDomain struct {
 	Start, End float64
 }
 
+type Vertex2d interface {
+	Coord() (x, y float64)
+}
+
 type Spline2d interface {
 	SegmentCnt() int
 	Knots() *Knots
