@@ -46,21 +46,13 @@ func (k *Knots) Knot(knotNo int) float64 {
 	}
 }
 
-func (k *Knots) SegmentLength(segmNo int) float64 {
+func (k *Knots) SegmentLen(segmNo int) float64 {
 	if k.IsUniform() {
 		return 1
 	} else {
 		return k.ks[segmNo+1] - k.ks[segmNo]
 	}
 }
-
-/*func (k *Knots) SegmentRange(segmNo int) (start, end float64) {
-	if k.IsUniform() {
-		return float64(segmNo), float64(segmNo + 1)
-	} else {
-		return k.ks[segmNo], k.ks[segmNo+1]
-	}
-}*/
 
 func (k *Knots) MapToSegment(t float64, segmCnt int) (segmNo int, u float64, err error) {
 	if k.IsUniform() {

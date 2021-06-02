@@ -34,7 +34,7 @@ func (ct CardinalTanf2d) Find(knots *bendit.Knots, vertices []*HermiteVx2) {
 	if !knots.IsUniform() {
 		for i := 0; i < n-1; i++ {
 			// modify length of uniform tangents according to segment-length
-			segmLen := knots.SegmentLength(i)
+			segmLen := knots.SegmentLen(i)
 			vertices[i].exitTanx /= segmLen // TODO segmLen == 0
 			vertices[i].exitTany /= segmLen
 			vertices[i+1].entryTanx /= segmLen

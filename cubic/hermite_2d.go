@@ -15,7 +15,7 @@ func NewHermiteVx2(x float64, y float64, entryTanx float64, entryTany float64, e
 	return &HermiteVx2{x, y, entryTanx, entryTany, exitTanx, exitTany}
 }
 
-func NewHermiteRawVx2(x float64, y float64) *HermiteVx2 {
+func NewHermiteVx2Raw(x float64, y float64) *HermiteVx2 {
 	return NewHermiteVx2(x, y, 0, 0, 0, 0)
 }
 
@@ -130,7 +130,7 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 			vstart.y, vend.y, vstart.exitTany, vend.entryTany,
 		})
 
-		sgl := sp.knots.SegmentLength(i)
+		sgl := sp.knots.SegmentLen(i)
 		b := mat.NewDense(4, 4, []float64{
 			1, 0, -3, 2,
 			0, 0, 3, -2,

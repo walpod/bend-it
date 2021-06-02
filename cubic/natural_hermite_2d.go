@@ -56,7 +56,7 @@ func (nt NaturalTanf2d) Find(knots *bendit.Knots, vertices []*HermiteVx2) {
 		t := make([]float64, n)
 		for i := 0; i < n-1; i++ {
 			//t[i] = knots[i+1] - knots[i]
-			t[i] = knots.SegmentLength(i)
+			t[i] = knots.SegmentLen(i)
 		}
 
 		// non-uniform, solve equations

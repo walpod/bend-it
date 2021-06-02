@@ -9,16 +9,16 @@ import (
 
 func createNaturalDiag00to11() *NaturalHermiteSpline2d {
 	return NewNaturalHermiteSpline2d(bendit.NewUniformKnots(),
-		NewHermiteRawVx2(0, 0),
-		NewHermiteRawVx2(1, 1))
+		NewHermiteVx2Raw(0, 0),
+		NewHermiteVx2Raw(1, 1))
 }
 
 func createNaturalVase() *NaturalHermiteSpline2d {
 	return NewNaturalHermiteSpline2d(
 		bendit.NewUniformKnots(),
-		NewHermiteRawVx2(-1, 1),
-		NewHermiteRawVx2(0, 0),
-		NewHermiteRawVx2(1, 1))
+		NewHermiteVx2Raw(-1, 1),
+		NewHermiteVx2Raw(0, 0),
+		NewHermiteVx2Raw(1, 1))
 }
 
 func TestNaturalHermiteSpline_At(t *testing.T) {
