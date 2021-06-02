@@ -34,7 +34,7 @@ func TestNaturalHermiteSpline_At(t *testing.T) {
 	AssertSplineAt(t, nat, 1, 0, 0)
 	AssertSplineAt(t, nat, 2, 1, 1)
 
-	domain := nat.Knots().Domain(2)
+	domain := nat.Knots().Domain()
 	for i := 0; i < 100; i++ {
 		atT := domain.Start + rand.Float64()*(domain.End-domain.Start)
 		x, y := nat.At(atT)

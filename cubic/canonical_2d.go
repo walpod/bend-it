@@ -45,25 +45,39 @@ func (cb *Cubic2d) Fn() bendit.Fn2d {
 
 type CanonicalSpline2d struct {
 	cubics []Cubic2d
-	knots  *bendit.Knots
+	knots  bendit.Knots
 }
 
-func NewCanonicalSpline2d(knots *bendit.Knots, cubics ...Cubic2d) *CanonicalSpline2d {
-	if knots.Count() > 0 && knots.Count() != len(cubics)+1 {
-		panic("knots must be empty or having length of cubics + 1")
+func NewCanonicalSpline2d(knots bendit.Knots, cubics ...Cubic2d) *CanonicalSpline2d {
+	if knots == nil {
+		knots = bendit.NewUniformKnots()
 	}
-	return &CanonicalSpline2d{cubics: cubics, knots: knots}
+	if !knots.IsUniform() {
+		lencub := len(cubics)
+		if lencub == 0 && knots.Count() != 0 {
+			panic("knots must be empty if no cubics specified")
+		}
+		if lencub > 0 && knots.Count() != lencub+1 {
+			panic("there must be on more knot than cubics")
+		}
+	}
+
+	canon := &CanonicalSpline2d{cubics: cubics, knots: knots}
+	if knots.IsUniform() {
+		knots.(*bendit.UniformKnots).SetSplineIfEmpty(canon)
+	}
+	return canon
 }
 
 func NewSingleVxCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
 	// domain with value 0 only, knots '0,0'
-	return NewCanonicalSpline2d(bendit.NewKnots([]float64{0, 0}), NewCubic2d(
+	return NewCanonicalSpline2d(bendit.NewNonUniformKnots([]float64{0, 0}), NewCubic2d(
 		NewCubicPoly(x, 0, 0, 0),
 		NewCubicPoly(y, 0, 0, 0)))
 }
 
 // matrix: (segmCnt*2) x 4
-func NewCanonicalSpline2dByMatrix(knots *bendit.Knots, mat mat.Dense) *CanonicalSpline2d {
+func NewCanonicalSpline2dByMatrix(knots bendit.Knots, mat mat.Dense) *CanonicalSpline2d {
 	r, _ := mat.Dims()
 	segmCnt := r / 2
 	if knots.Count() > 0 && knots.Count() != segmCnt+1 {
@@ -85,7 +99,7 @@ func (sp *CanonicalSpline2d) SegmentCnt() int {
 	return len(sp.cubics)
 }
 
-func (sp *CanonicalSpline2d) Knots() *bendit.Knots {
+func (sp *CanonicalSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
@@ -94,7 +108,7 @@ func (sp *CanonicalSpline2d) At(t float64) (x, y float64) {
 		return 0, 0
 	}
 
-	segmNo, u, err := sp.knots.MapToSegment(t, sp.SegmentCnt())
+	segmNo, u, err := sp.knots.MapToSegment(t)
 	if err != nil {
 		return 0, 0
 	} else {

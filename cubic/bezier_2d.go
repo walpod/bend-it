@@ -22,21 +22,28 @@ func (vx BezierVx2) Coord() (x, y float64) {
 }
 
 type BezierSpline2d struct {
-	knots    *bendit.Knots
+	knots    bendit.Knots
 	vertices []*BezierVx2
 	canon    *CanonicalSpline2d // map to canonical, cubic spline
 }
 
-func NewBezierSpline2d(knots *bendit.Knots, vertices ...*BezierVx2) *BezierSpline2d {
-	if !knots.IsUniform() && len(vertices) != knots.Count() {
-		panic("vertices and (optional) knots must have the same length")
+func NewBezierSpline2d(knots bendit.Knots, vertices ...*BezierVx2) *BezierSpline2d {
+	if knots == nil {
+		knots = bendit.NewUniformKnots()
 	}
-	bs := &BezierSpline2d{knots: knots, vertices: vertices}
-	bs.Build() // TODO no automatic build
-	return bs
+	if !knots.IsUniform() && knots.Count() != len(vertices) {
+		panic("knots and vertices must have same length")
+	}
+
+	bez := &BezierSpline2d{knots: knots, vertices: vertices}
+	if knots.IsUniform() {
+		knots.(*bendit.UniformKnots).SetSplineIfEmpty(bez)
+	}
+	bez.Build() // TODO no automatic build
+	return bez
 }
 
-func NewBezierSpline2dByMatrix(knots *bendit.Knots, mat mat.Dense) *BezierSpline2d {
+func NewBezierSpline2dByMatrix(knots bendit.Knots, mat mat.Dense) *BezierSpline2d {
 	const dim = 2
 	rows, _ := mat.Dims()
 	segmCnt := rows / 2
@@ -64,7 +71,7 @@ func (sp *BezierSpline2d) SegmentCnt() int {
 	}
 }
 
-func (sp *BezierSpline2d) Knots() *bendit.Knots {
+func (sp *BezierSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
@@ -130,7 +137,7 @@ func (sp *BezierSpline2d) At(t float64) (x, y float64) {
 // AtDeCasteljau is an alternative to 'At' using De Casteljau algorithm.
 // As opposed to At calling Build beforehand is not required
 func (sp *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
-	segmNo, u, err := sp.knots.MapToSegment(t, sp.SegmentCnt())
+	segmNo, u, err := sp.knots.MapToSegment(t)
 	if err != nil {
 		return 0, 0
 	} else {
@@ -185,7 +192,8 @@ func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 
 	// subdivide each segment
 	for i := 0; i < sp.SegmentCnt(); i++ {
-		tstart, tend := sp.knots.Knot(i), sp.knots.Knot(i+1)
+		tstart, _ := sp.knots.Knot(i)
+		tend, _ := sp.knots.Knot(i + 1)
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
 		subdivide(
 			tstart, tend,

@@ -47,7 +47,7 @@ func AssertSplinesEqualInRange(t *testing.T, spline0 bendit.Spline2d, spline1 be
 // TODO extend knots, drop segmCnt
 func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, sampleCnt int) {
 	// assert over full domain
-	domain := spline0.Knots().Domain(spline0.SegmentCnt())
+	domain := spline0.Knots().Domain()
 	AssertSplinesEqualInRange(t, spline0, spline1, domain.Start, domain.End, sampleCnt)
 }
 
@@ -60,7 +60,7 @@ func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline
 }
 
 func AssertRandSplinePointProperty(t *testing.T, spline bendit.Spline2d, hasProp func(x, y float64) bool, msg string) {
-	domain := spline.Knots().Domain(spline.SegmentCnt())
+	domain := spline.Knots().Domain()
 	atT := domain.Start + rand.Float64()*(domain.End-domain.Start)
 	x, y := spline.At(atT)
 	assert.True(t, hasProp(x, y), msg)
@@ -120,19 +120,18 @@ func TestBezierSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, bezier, 2, 2, 2)
 
 	// single vertex, domain with value 0 only
-	bezier = NewBezierSpline2d(
-		bendit.NewUniformKnots(),
+	bezier = NewBezierSpline2d(nil,
 		NewBezierVx2(1, 2, 0, 0, 0, 0))
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	bezier = NewBezierSpline2d(
-		bendit.NewKnots([]float64{0}),
+		bendit.NewNonUniformKnots([]float64{0}),
 		NewBezierVx2(1, 2, 0, 0, 0, 0))
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	// empty domain
 	bezier = NewBezierSpline2d(bendit.NewUniformKnots())
-	bezier = NewBezierSpline2d(bendit.NewKnots([]float64{}))
+	bezier = NewBezierSpline2d(bendit.NewNonUniformKnots([]float64{}))
 }
 
 func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {

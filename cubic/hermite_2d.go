@@ -33,24 +33,39 @@ func (vx HermiteVx2) ExitTan() (mx, my float64) {
 
 // HermiteTanFinder2d finds tangents based on given vertices and knots
 type HermiteTanFinder2d interface {
-	Find(knots *bendit.Knots, vertices []*HermiteVx2)
+	Find(knots bendit.Knots, vertices []*HermiteVx2)
 }
 
 type HermiteSpline2d struct {
-	knots     *bendit.Knots
+	knots     bendit.Knots
 	vertices  []*HermiteVx2
 	tanFinder HermiteTanFinder2d
 	canon     *CanonicalSpline2d
 }
 
-func NewHermiteSpline2d(knots *bendit.Knots, vertices ...*HermiteVx2) *HermiteSpline2d {
+func NewHermiteSpline2d(knots bendit.Knots, vertices ...*HermiteVx2) *HermiteSpline2d {
+	if knots == nil {
+		knots = bendit.NewUniformKnots()
+	}
+	if !knots.IsUniform() && knots.Count() != len(vertices) {
+		panic("knots and vertices must have same length")
+	}
+
 	herm := &HermiteSpline2d{knots: knots, vertices: vertices}
+	if knots.IsUniform() {
+		knots.(*bendit.UniformKnots).SetSplineIfEmpty(herm)
+	}
 	herm.Build() // TODO don't build automatically
 	return herm
 }
 
-func NewHermiteSplineTanFinder2d(knots *bendit.Knots, tanFinder HermiteTanFinder2d, vertices ...*HermiteVx2) *HermiteSpline2d {
-	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder}
+func NewHermiteSplineTanFinder2d(knots bendit.Knots, tanFinder HermiteTanFinder2d, vertices ...*HermiteVx2) *HermiteSpline2d {
+	if knots == nil {
+		knots = bendit.NewUniformKnots()
+	}
+	herm := NewHermiteSpline2d(knots, vertices...)
+	herm.tanFinder = tanFinder
+	//herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder}
 	herm.Build() // TODO don't build automatically
 	return herm
 }
@@ -64,7 +79,7 @@ func (sp *HermiteSpline2d) SegmentCnt() int {
 	}
 }
 
-func (sp *HermiteSpline2d) Knots() *bendit.Knots {
+func (sp *HermiteSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
@@ -130,7 +145,7 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 			vstart.y, vend.y, vstart.exitTany, vend.entryTany,
 		})
 
-		sgl := sp.knots.SegmentLen(i)
+		sgl, _ := sp.knots.SegmentLen(i)
 		b := mat.NewDense(4, 4, []float64{
 			1, 0, -3, 2,
 			0, 0, 3, -2,

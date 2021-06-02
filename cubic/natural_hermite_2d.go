@@ -8,7 +8,7 @@ type NaturalTanf2d struct{}
 // Find hermite tangents for natural spline
 // mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
-func (nt NaturalTanf2d) Find(knots *bendit.Knots, vertices []*HermiteVx2) {
+func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 	n := len(vertices)
 	if n < 2 {
 		return
@@ -56,7 +56,7 @@ func (nt NaturalTanf2d) Find(knots *bendit.Knots, vertices []*HermiteVx2) {
 		t := make([]float64, n)
 		for i := 0; i < n-1; i++ {
 			//t[i] = knots[i+1] - knots[i]
-			t[i] = knots.SegmentLen(i)
+			t[i], _ = knots.SegmentLen(i)
 		}
 
 		// non-uniform, solve equations
@@ -125,7 +125,7 @@ type NaturalHermiteSpline2d struct {
 	HermiteSpline2d
 }
 
-func NewNaturalHermiteSpline2d(knots *bendit.Knots, vertices ...*HermiteVx2) *NaturalHermiteSpline2d {
+func NewNaturalHermiteSpline2d(knots bendit.Knots, vertices ...*HermiteVx2) *NaturalHermiteSpline2d {
 	cs := &NaturalHermiteSpline2d{
 		HermiteSpline2d: *NewHermiteSplineTanFinder2d(knots, NaturalTanf2d{}, vertices...)}
 	cs.Build() // TODO don't build automatically

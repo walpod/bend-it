@@ -7,7 +7,7 @@ type CardinalTanf2d struct {
 	tension float64
 }
 
-func (ct CardinalTanf2d) Find(knots *bendit.Knots, vertices []*HermiteVx2) {
+func (ct CardinalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 	n := len(vertices)
 	if n < 2 {
 		return
@@ -34,11 +34,11 @@ func (ct CardinalTanf2d) Find(knots *bendit.Knots, vertices []*HermiteVx2) {
 	if !knots.IsUniform() {
 		for i := 0; i < n-1; i++ {
 			// modify length of uniform tangents according to segment-length
-			segmLen := knots.SegmentLen(i)
-			vertices[i].exitTanx /= segmLen // TODO segmLen == 0
-			vertices[i].exitTany /= segmLen
-			vertices[i+1].entryTanx /= segmLen
-			vertices[i+1].entryTany /= segmLen
+			segmentLen, _ := knots.SegmentLen(i)
+			vertices[i].exitTanx /= segmentLen // TODO segmentLen == 0
+			vertices[i].exitTany /= segmentLen
+			vertices[i+1].entryTanx /= segmentLen
+			vertices[i+1].entryTany /= segmentLen
 		}
 	}
 }
@@ -48,7 +48,7 @@ type CardinalHermiteSpline2d struct {
 	tension float64
 }
 
-func NewCardinalHermiteSpline2d(knots *bendit.Knots, tension float64, vertices ...*HermiteVx2) *CardinalHermiteSpline2d {
+func NewCardinalHermiteSpline2d(knots bendit.Knots, tension float64, vertices ...*HermiteVx2) *CardinalHermiteSpline2d {
 	cs := &CardinalHermiteSpline2d{
 		HermiteSpline2d: *NewHermiteSplineTanFinder2d(knots, CardinalTanf2d{tension: tension}, vertices...),
 		tension:         tension}
@@ -56,7 +56,7 @@ func NewCardinalHermiteSpline2d(knots *bendit.Knots, tension float64, vertices .
 	return cs
 }
 
-func NewCatmullRomHermiteSpline2d(knots *bendit.Knots, vertices ...*HermiteVx2) *CardinalHermiteSpline2d {
+func NewCatmullRomHermiteSpline2d(knots bendit.Knots, vertices ...*HermiteVx2) *CardinalHermiteSpline2d {
 	return NewCardinalHermiteSpline2d(knots, 0, vertices...)
 }
 

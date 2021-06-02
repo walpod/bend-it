@@ -15,7 +15,7 @@ func createHermDiag00to11() *HermiteSpline2d {
 }
 
 func createNonUniHermDiag00to11() *HermiteSpline2d {
-	return NewHermiteSpline2d(bendit.NewKnots([]float64{0, math.Sqrt2}),
+	return NewHermiteSpline2d(bendit.NewNonUniformKnots([]float64{0, math.Sqrt2}),
 		NewHermiteVx2(0, 0, 0, 0, 1, 1),
 		NewHermiteVx2(1, 1, 1, 1, 0, 0),
 	)
@@ -26,11 +26,11 @@ func isOnDiag(x, y float64) bool {
 }
 
 func createHermParabola00to11(uniform bool) *HermiteSpline2d {
-	var knots *bendit.Knots
+	var knots bendit.Knots
 	if uniform {
 		knots = bendit.NewUniformKnots()
 	} else {
-		knots = bendit.NewKnots([]float64{0, 1}) // is in fact uniform but specified as non-uniform
+		knots = bendit.NewNonUniformKnots([]float64{0, 1}) // is in fact uniform but specified as non-uniform
 	}
 	return NewHermiteSpline2d(knots,
 		NewHermiteVx2(0, 0, 0, 0, 1, 0),
@@ -39,11 +39,11 @@ func createHermParabola00to11(uniform bool) *HermiteSpline2d {
 }
 
 func createDoubleHermParabola00to11to22(uniform bool) *HermiteSpline2d {
-	var knots *bendit.Knots
+	var knots bendit.Knots
 	if uniform {
 		knots = bendit.NewUniformKnots()
 	} else {
-		knots = bendit.NewKnots([]float64{0, 1, 2}) // is in fact uniform but specified as non-uniform
+		knots = bendit.NewNonUniformKnots([]float64{0, 1, 2}) // is in fact uniform but specified as non-uniform
 	}
 	return NewHermiteSpline2d(knots,
 		NewHermiteVx2(0, 0, 0, 0, 1, 0),
@@ -61,7 +61,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 1, 1, 1)
 
 	herm = createNonUniHermDiag00to11()
-	domain := herm.knots.Domain(herm.SegmentCnt())
+	domain := herm.knots.Domain()
 	AssertSplineAt(t, herm, domain.Start, 0, 0)
 	AssertSplineAt(t, herm, domain.End/2, .5, .5)
 	AssertSplineAt(t, herm, domain.End, 1, 1)
@@ -88,7 +88,8 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 2, 2, 2)
 
 	// domain with ony one value: 0
-	herm = NewHermiteSpline2d(bendit.NewUniformKnots(), NewHermiteVx2(1, 2, 0, 0, 0, 0))
+	herm = NewHermiteSpline2d(nil,
+		NewHermiteVx2(1, 2, 0, 0, 0, 0))
 	AssertSplineAt(t, herm, 0, 1, 2)
 
 	// empty domain

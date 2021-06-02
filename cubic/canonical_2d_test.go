@@ -45,13 +45,14 @@ func TestCanonicalSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, canon, 1.5, 1.5, 1+0.5*0.5)
 	AssertSplineAt(t, canon, 2, 2, 2)
 
-	// single vertex only
+	// single vertex
 	canon = NewSingleVxCanonicalSpline2d(1, 2)
 	AssertSplineAt(t, canon, 0, 1, 2)
 
 	// empty domain
+	canon = NewCanonicalSpline2d(nil)
 	canon = NewCanonicalSpline2d(bendit.NewUniformKnots())
-	canon = NewCanonicalSpline2d(bendit.NewKnots([]float64{}))
+	canon = NewCanonicalSpline2d(bendit.NewNonUniformKnots([]float64{}))
 }
 
 func TestCanonicalSpline2d_Bezier(t *testing.T) {

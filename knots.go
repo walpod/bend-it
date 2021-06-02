@@ -6,63 +6,60 @@ import (
 	"math"
 )
 
-type Knots struct {
-	ks []float64
-	// TODO SegmentCnt or spline.SegmentCnt for uniform
+type Knots interface {
+	IsUniform() bool
+	Domain() SplineDomain
+	Count() int
+	Knot(knotNo int) (t float64, err error)
+	SegmentLen(segmentNo int) (t float64, err error)
+	MapToSegment(t float64) (segmentNo int, u float64, err error)
 }
 
-func NewUniformKnots() *Knots {
-	return &Knots{ks: nil}
+// range of parameter t for which the spline is defined
+type SplineDomain struct {
+	Start, End float64
 }
 
-func NewKnots(ks []float64) *Knots {
-	return &Knots{ks: ks}
+type UniformKnots struct {
+	Spline Spline2d
 }
 
-func (k *Knots) IsUniform() bool {
-	return len(k.ks) == 0
+func NewUniformKnots() *UniformKnots {
+	// TODO validate ks: monotonically increasing
+	return &UniformKnots{}
 }
 
-// TODO without segmCnt parameter
-func (k *Knots) Domain(segmCnt int) SplineDomain {
-	if k.IsUniform() {
-		return SplineDomain{Start: 0, End: float64(segmCnt)}
-	} else {
-		return SplineDomain{Start: 0, End: k.ks[len(k.ks)-1]}
-	}
+func (k *UniformKnots) IsUniform() bool {
+	return true
 }
 
-func (k *Knots) Count() int {
-	// TODO extend for uniform-case (using segmCnt)
-	return len(k.ks)
+func (k *UniformKnots) Domain() SplineDomain {
+	return SplineDomain{Start: 0, End: float64(k.Spline.SegmentCnt())}
 }
 
-func (k *Knots) Knot(knotNo int) float64 {
+func (k *UniformKnots) Count() int {
+	return k.Spline.SegmentCnt() + 1
+}
+
+func (k *UniformKnots) Knot(knotNo int) (t float64, err error) {
 	// TODO assert knotNo <= segmCnt
-	if k.IsUniform() {
-		return float64(knotNo)
+	if knotNo < 0 || knotNo >= k.Count() {
+		return 0, errors.New("knot doesn't exist")
 	} else {
-		return k.ks[knotNo]
+		return float64(knotNo), nil
 	}
 }
 
-func (k *Knots) SegmentLen(segmNo int) float64 {
-	if k.IsUniform() {
-		return 1
+func (k *UniformKnots) SegmentLen(segmentNo int) (t float64, err error) {
+	if segmentNo < 0 || segmentNo >= k.Count()-1 {
+		return 0, errors.New("segment doesn't exist")
 	} else {
-		return k.ks[segmNo+1] - k.ks[segmNo]
+		return 1, nil
 	}
 }
 
-func (k *Knots) MapToSegment(t float64, segmCnt int) (segmNo int, u float64, err error) {
-	if k.IsUniform() {
-		return k.mapUniToSegment(t, segmCnt)
-	} else {
-		return k.mapNonUniToSegment(t)
-	}
-}
-
-func (k *Knots) mapUniToSegment(t float64, segmCnt int) (segmNo int, u float64, err error) {
+func (k *UniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err error) {
+	segmCnt := k.Spline.SegmentCnt()
 	upper := float64(segmCnt)
 	if t < 0 {
 		err = fmt.Errorf("%v smaller than 0", t)
@@ -77,15 +74,59 @@ func (k *Knots) mapUniToSegment(t float64, segmCnt int) (segmNo int, u float64, 
 	ifl, u = math.Modf(t)
 	if ifl == upper {
 		// special case t == upper
-		segmNo = segmCnt - 1
+		segmentNo = segmCnt - 1
 		u = 1
 	} else {
-		segmNo = int(ifl)
+		segmentNo = int(ifl)
 	}
 	return
 }
 
-func (k *Knots) mapNonUniToSegment(t float64) (segmNo int, u float64, err error) {
+func (k *UniformKnots) SetSplineIfEmpty(spline Spline2d) {
+	if k.Spline == nil {
+		k.Spline = spline
+	}
+}
+
+type NonUniformKnots struct {
+	ks []float64
+}
+
+func NewNonUniformKnots(ks []float64) *NonUniformKnots {
+	// TODO validate ks: monotonically increasing
+	return &NonUniformKnots{ks}
+}
+
+func (k *NonUniformKnots) IsUniform() bool {
+	return false
+}
+
+func (k *NonUniformKnots) Domain() SplineDomain {
+	return SplineDomain{Start: 0, End: k.ks[len(k.ks)-1]}
+}
+
+func (k *NonUniformKnots) Count() int {
+	return len(k.ks)
+}
+
+func (k *NonUniformKnots) Knot(knotNo int) (t float64, err error) {
+	// TODO assert knotNo <= segmCnt
+	if knotNo < 0 || knotNo >= len(k.ks) {
+		return 0, errors.New("knot doesn't exist")
+	} else {
+		return k.ks[knotNo], nil
+	}
+}
+
+func (k *NonUniformKnots) SegmentLen(segmentNo int) (t float64, err error) {
+	if segmentNo < 0 || segmentNo >= len(k.ks)-1 {
+		return 0, errors.New("segment doesn't exist")
+	} else {
+		return k.ks[segmentNo+1] - k.ks[segmentNo], nil
+	}
+}
+
+func (k *NonUniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err error) {
 	segmCnt := len(k.ks) - 1
 	if segmCnt < 1 {
 		err = errors.New("at least one segment having 2 knots required")
