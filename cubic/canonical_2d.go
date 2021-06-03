@@ -44,8 +44,8 @@ func (cb *Cubic2d) Fn() bendit.Fn2d {
 }
 
 type CanonicalSpline2d struct {
-	cubics []Cubic2d
 	knots  bendit.Knots
+	cubics []Cubic2d
 }
 
 func NewCanonicalSpline2d(knots bendit.Knots, cubics ...Cubic2d) *CanonicalSpline2d {
@@ -62,7 +62,7 @@ func NewCanonicalSpline2d(knots bendit.Knots, cubics ...Cubic2d) *CanonicalSplin
 		}
 	}
 
-	canon := &CanonicalSpline2d{cubics: cubics, knots: knots}
+	canon := &CanonicalSpline2d{knots: knots, cubics: cubics}
 	return canon
 }
 

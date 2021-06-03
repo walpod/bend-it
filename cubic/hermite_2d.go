@@ -205,12 +205,11 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 		} else {
 			panic("not yet implemented")
 		}
+	} else if n == 1 {
+		return NewBezierSpline2d(sp.knots,
+			NewBezierVx2(sp.vertices[0].x, sp.vertices[0].y, 0, 0, 0, 0))
 	} else {
-		var vx *BezierVx2
-		if n == 1 {
-			vx = NewBezierVx2(sp.vertices[0].x, sp.vertices[0].y, 0, 0, 0, 0)
-		}
-		return NewBezierSpline2d(sp.knots, vx)
+		return NewBezierSpline2d(sp.knots)
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 
 // TODO move LineToSliceCollector2d to another file
 type LineParams struct {
-	Ts, Te, Sx, Sy, Ex, Ey float64
+	Tstart, Tend, Pstartx, Pstarty, Pendx, Pendy float64
 }
 
 type LineToSliceCollector2d struct {
@@ -21,8 +21,8 @@ func NewLineToSliceCollector2d() *LineToSliceCollector2d {
 	return &LineToSliceCollector2d{Lines: make([]LineParams, 0)}
 }
 
-func (lc *LineToSliceCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
-	lc.Lines = append(lc.Lines, LineParams{ts, te, sx, sy, ex, ey})
+func (lc *LineToSliceCollector2d) CollectLine(tstart, tend, pstartx, pstarty, pendx, pendy float64) {
+	lc.Lines = append(lc.Lines, LineParams{tstart, tend, pstartx, pstarty, pendx, pendy})
 }
 
 // START some general bend-it spline Asserts
@@ -52,9 +52,9 @@ func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Sp
 
 func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline bendit.Spline2d) {
 	for _, lin := range lines {
-		x, y := spline.At(lin.Ts)
-		assert.InDeltaf(t, x, lin.Sx, delta, "spline.At(%v).x = %v != start-point.x = %v of approximated line", lin.Ts, x, lin.Sx)
-		assert.InDeltaf(t, y, lin.Sy, delta, "spline.At(%v).y = %v != start-point.y = %v of approximated line", lin.Ts, y, lin.Sy)
+		x, y := spline.At(lin.Tstart)
+		assert.InDeltaf(t, x, lin.Pstartx, delta, "spline.At(%v).x = %v != start-point.x = %v of approximated line", lin.Tstart, x, lin.Pstartx)
+		assert.InDeltaf(t, y, lin.Pstarty, delta, "spline.At(%v).y = %v != start-point.y = %v of approximated line", lin.Tstart, y, lin.Pstarty)
 	}
 }
 
@@ -154,10 +154,10 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 	lc := NewLineToSliceCollector2d()
 	bezier.Approx(0.1, lc)
 	assert.Len(t, lc.Lines, 1, "approximated with one line")
-	assert.InDeltaf(t, 0., lc.Lines[0].Sx, delta, "start point x=0")
-	assert.InDeltaf(t, 0., lc.Lines[0].Sy, delta, "start point y=0")
-	assert.InDeltaf(t, 1., lc.Lines[0].Ex, delta, "end point x=0")
-	assert.InDeltaf(t, 1., lc.Lines[0].Ey, delta, "end point y=0")
+	assert.InDeltaf(t, 0., lc.Lines[0].Pstartx, delta, "start point x=0")
+	assert.InDeltaf(t, 0., lc.Lines[0].Pstarty, delta, "start point y=0")
+	assert.InDeltaf(t, 1., lc.Lines[0].Pendx, delta, "end point x=0")
+	assert.InDeltaf(t, 1., lc.Lines[0].Pendy, delta, "end point y=0")
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezier = createBezierS00to11()

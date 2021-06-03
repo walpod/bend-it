@@ -15,18 +15,20 @@ type Spline2d interface {
 }
 
 type LineCollector2d interface {
-	// CollectLine from start (sx,sy) to end point (ex,ey) for parameter range (ts..te)
-	CollectLine(ts, te, sx, sy, ex, ey float64)
+	// CollectLine from start (pstartx,pstarty) to end point (pendx,pendy) for parameter range (tstart..tend)
+	CollectLine(tstart, tend, pstartx, pstarty, pendx, pendy float64)
 }
 
+// DirectCollector2d supports the simple case of using a single collect func
+// TODO move to other file
 type DirectCollector2d struct {
-	line func(ts, te, sx, sy, ex, ey float64)
+	line func(tstart, tend, pstartx, pstarty, pendx, pendy float64)
 }
 
-func NewDirectCollector2d(line func(ts, te, sx, sy, ex, ey float64)) *DirectCollector2d {
+func NewDirectCollector2d(line func(tstart, tend, pstartx, pstarty, pendx, pendy float64)) *DirectCollector2d {
 	return &DirectCollector2d{line: line}
 }
 
-func (lc DirectCollector2d) CollectLine(ts, te, sx, sy, ex, ey float64) {
-	lc.line(ts, te, sx, sy, ex, ey)
+func (lc DirectCollector2d) CollectLine(tstart, tend, pstartx, pstarty, pendx, pendy float64) {
+	lc.line(tstart, tend, pstartx, pstarty, pendx, pendy)
 }
