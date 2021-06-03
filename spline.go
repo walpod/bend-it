@@ -8,6 +8,7 @@ type Knots interface {
 	Knot(knotNo int) (t float64, err error)
 	SegmentLen(segmentNo int) (t float64, err error)
 	MapToSegment(t float64) (segmentNo int, u float64, err error)
+	External() []float64 // external representation: uniform = nil, non-uniform = slice (non nil)
 }
 
 type Vertex2d interface {

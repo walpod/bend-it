@@ -48,38 +48,40 @@ type CanonicalSpline2d struct {
 	cubics []Cubic2d
 }
 
-func NewCanonicalSpline2d(knots bendit.Knots, cubics ...Cubic2d) *CanonicalSpline2d {
-	if knots == nil {
+// tknots: nil = uniform else non-uniform
+func NewCanonicalSpline2d(tknots []float64, cubics ...Cubic2d) *CanonicalSpline2d {
+	var knots bendit.Knots
+	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(cubics) + 1)
-	}
-	if !knots.IsUniform() {
-		lencub := len(cubics)
-		if lencub == 0 && knots.Count() != 0 {
-			panic("knots must be empty if no cubics specified")
+	} else {
+		if len(cubics) == 0 && len(tknots) != 0 {
+			panic("knots must be empty (not nil) if no cubics specified")
 		}
-		if lencub > 0 && knots.Count() != lencub+1 {
-			panic("there must be on more knot than cubics")
+		if len(cubics) > 0 && len(tknots) != len(cubics)+1 {
+			panic("there must be one more knot than cubics")
 		}
+		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	canon := &CanonicalSpline2d{knots: knots, cubics: cubics}
+	canon := &CanonicalSpline2d{knots, cubics}
 	return canon
 }
 
 func NewSingleVxCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
 	// domain with value 0 only, knots '0,0'
-	return NewCanonicalSpline2d(bendit.NewNonUniformKnots([]float64{0, 0}), NewCubic2d(
+	return NewCanonicalSpline2d([]float64{0, 0}, NewCubic2d(
 		NewCubicPoly(x, 0, 0, 0),
 		NewCubicPoly(y, 0, 0, 0)))
 }
 
 // matrix: (segmCnt*2) x 4
-func NewCanonicalSpline2dByMatrix(knots bendit.Knots, mat mat.Dense) *CanonicalSpline2d {
+func NewCanonicalSpline2dByMatrix(tknots []float64, mat mat.Dense) *CanonicalSpline2d {
 	r, _ := mat.Dims()
 	segmCnt := r / 2
-	if !knots.IsUniform() && knots.Count() != segmCnt+1 {
+	if tknots != nil && len(tknots) != segmCnt+1 {
 		panic("non-uniform knots must have length matrix-rows/2 + 1")
 	}
+
 	cubics := make([]Cubic2d, segmCnt)
 	rowno := 0
 	for i := 0; i < segmCnt; i++ {
@@ -89,7 +91,7 @@ func NewCanonicalSpline2dByMatrix(knots bendit.Knots, mat mat.Dense) *CanonicalS
 		rowno++
 		cubics[i] = NewCubic2d(cubx, cuby)
 	}
-	return &CanonicalSpline2d{cubics: cubics, knots: knots}
+	return NewCanonicalSpline2d(tknots, cubics...)
 }
 
 func (sp *CanonicalSpline2d) SegmentCnt() int {
@@ -155,7 +157,7 @@ func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewBezierSpline2dByMatrix(sp.knots, coefs)
+	return NewBezierSpline2dByMatrix(sp.knots.External(), coefs)
 }
 
 func (sp *CanonicalSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {

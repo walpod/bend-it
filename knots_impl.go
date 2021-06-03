@@ -70,6 +70,10 @@ func (k *UniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err er
 	return
 }
 
+func (k *UniformKnots) External() []float64 {
+	return nil
+}
+
 func (k *UniformKnots) Add(segmentLen float64) error {
 	if segmentLen != 1 {
 		return errors.New("cannot add length != 1 to uniform knots")
@@ -79,12 +83,12 @@ func (k *UniformKnots) Add(segmentLen float64) error {
 }
 
 type NonUniformKnots struct {
-	ks []float64
+	tknots []float64
 }
 
-func NewNonUniformKnots(knots []float64) *NonUniformKnots {
+func NewNonUniformKnots(tknots []float64) *NonUniformKnots {
 	// TODO validate knots: monotonically increasing
-	return &NonUniformKnots{knots}
+	return &NonUniformKnots{tknots}
 }
 
 func (k *NonUniformKnots) IsUniform() bool {
@@ -96,60 +100,66 @@ func (k *NonUniformKnots) Tstart() float64 {
 }
 
 func (k *NonUniformKnots) Tend() float64 {
-	if len(k.ks) == 0 {
+	if len(k.tknots) == 0 {
 		return 0
 	} else {
-		return k.ks[len(k.ks)-1]
+		return k.tknots[len(k.tknots)-1]
 	}
 }
 
 func (k *NonUniformKnots) Count() int {
-	return len(k.ks)
+	return len(k.tknots)
 }
 
 func (k *NonUniformKnots) Knot(knotNo int) (t float64, err error) {
 	// TODO assert knotNo <= segmCnt
-	if knotNo < 0 || knotNo >= len(k.ks) {
+	if knotNo < 0 || knotNo >= len(k.tknots) {
 		return 0, errors.New("knot doesn't exist")
 	} else {
-		return k.ks[knotNo], nil
+		return k.tknots[knotNo], nil
 	}
 }
 
 func (k *NonUniformKnots) SegmentLen(segmentNo int) (t float64, err error) {
-	if segmentNo < 0 || segmentNo >= len(k.ks)-1 {
+	if segmentNo < 0 || segmentNo >= len(k.tknots)-1 {
 		return 0, errors.New("segment doesn't exist")
 	} else {
-		return k.ks[segmentNo+1] - k.ks[segmentNo], nil
+		return k.tknots[segmentNo+1] - k.tknots[segmentNo], nil
 	}
 }
 
 func (k *NonUniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err error) {
-	segmCnt := len(k.ks) - 1
+	segmCnt := len(k.tknots) - 1
 	if segmCnt < 1 {
 		err = errors.New("at least one segment having 2 knots required")
 		return
 	}
-	if t < k.ks[0] {
-		err = fmt.Errorf("%v smaller than first knot %v", t, k.ks[0])
+	if t < k.tknots[0] {
+		err = fmt.Errorf("%v smaller than first knot %v", t, k.tknots[0])
 		return
 	}
 
 	// TODO speed up mapping
 	for i := 0; i < segmCnt; i++ {
-		if t <= k.ks[i+1] {
-			if k.ks[i+1] == k.ks[i] {
+		if t <= k.tknots[i+1] {
+			if k.tknots[i+1] == k.tknots[i] {
 				u = 0
 			} else {
-				u = (t - k.ks[i]) / (k.ks[i+1] - k.ks[i])
+				u = (t - k.tknots[i]) / (k.tknots[i+1] - k.tknots[i])
 			}
 			return i, u, nil
 		}
 	}
-	err = fmt.Errorf("%v greater than upper limit %v", t, k.ks[segmCnt])
+	err = fmt.Errorf("%v greater than upper limit %v", t, k.tknots[segmCnt])
 	return
 }
 
+func (k *NonUniformKnots) External() []float64 {
+	xtknots := make([]float64, len(k.tknots))
+	copy(xtknots, k.tknots)
+	return xtknots
+}
+
 func (k *NonUniformKnots) Add(segmentLen float64) {
-	k.ks = append(k.ks, k.Tend()+segmentLen)
+	k.tknots = append(k.tknots, k.Tend()+segmentLen)
 }

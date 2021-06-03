@@ -52,7 +52,7 @@ func TestCanonicalSpline2d_At(t *testing.T) {
 	// empty domain
 	canon = NewCanonicalSpline2d(nil)
 	canon = NewCanonicalSpline2d(nil)
-	canon = NewCanonicalSpline2d(bendit.NewNonUniformKnots([]float64{}))
+	canon = NewCanonicalSpline2d([]float64{})
 }
 
 func TestCanonicalSpline2d_Bezier(t *testing.T) {

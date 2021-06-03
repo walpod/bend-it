@@ -48,16 +48,16 @@ type CardinalHermiteSpline2d struct {
 	tension float64
 }
 
-func NewCardinalHermiteSpline2d(knots bendit.Knots, tension float64, vertices ...*HermiteVx2) *CardinalHermiteSpline2d {
+func NewCardinalHermiteSpline2d(tknots []float64, tension float64, vertices ...*HermiteVx2) *CardinalHermiteSpline2d {
 	cs := &CardinalHermiteSpline2d{
-		HermiteSpline2d: *NewHermiteSplineTanFinder2d(knots, CardinalTanf2d{tension: tension}, vertices...),
+		HermiteSpline2d: *NewHermiteSplineTanFinder2d(tknots, CardinalTanf2d{tension: tension}, vertices...),
 		tension:         tension}
 	cs.Build() // TODO don't build automatically
 	return cs
 }
 
-func NewCatmullRomHermiteSpline2d(knots bendit.Knots, vertices ...*HermiteVx2) *CardinalHermiteSpline2d {
-	return NewCardinalHermiteSpline2d(knots, 0, vertices...)
+func NewCatmullRomHermiteSpline2d(tknots []float64, vertices ...*HermiteVx2) *CardinalHermiteSpline2d {
+	return NewCardinalHermiteSpline2d(tknots, 0, vertices...)
 }
 
 func (cs *CardinalHermiteSpline2d) Tension() float64 {

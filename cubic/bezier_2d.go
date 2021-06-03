@@ -27,12 +27,15 @@ type BezierSpline2d struct {
 	canon    *CanonicalSpline2d // map to canonical, cubic spline
 }
 
-func NewBezierSpline2d(knots bendit.Knots, vertices ...*BezierVx2) *BezierSpline2d {
-	if knots == nil {
+func NewBezierSpline2d(tknots []float64, vertices ...*BezierVx2) *BezierSpline2d {
+	var knots bendit.Knots
+	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(vertices))
-	}
-	if !knots.IsUniform() && knots.Count() != len(vertices) {
-		panic("knots and vertices must have same length")
+	} else {
+		if len(tknots) != len(vertices) {
+			panic("knots and vertices must have same length")
+		}
+		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
 	bez := &BezierSpline2d{knots: knots, vertices: vertices}
@@ -40,7 +43,7 @@ func NewBezierSpline2d(knots bendit.Knots, vertices ...*BezierVx2) *BezierSpline
 	return bez
 }
 
-func NewBezierSpline2dByMatrix(knots bendit.Knots, mat mat.Dense) *BezierSpline2d {
+func NewBezierSpline2dByMatrix(tknots []float64, mat mat.Dense) *BezierSpline2d {
 	const dim = 2
 	rows, _ := mat.Dims()
 	segmCnt := rows / 2
@@ -56,7 +59,8 @@ func NewBezierSpline2dByMatrix(knots bendit.Knots, mat mat.Dense) *BezierSpline2
 	vertices = append(vertices, NewBezierVx2(mat.At(segmCnt*dim-2, 3), mat.At(segmCnt*dim-1, 3),
 		mat.At(segmCnt*dim-2, 2), mat.At(segmCnt*dim-1, 2),
 		0, 0))
-	return NewBezierSpline2d(knots, vertices...)
+
+	return NewBezierSpline2d(tknots, vertices...)
 }
 
 func (sp *BezierSpline2d) SegmentCnt() int {
@@ -87,7 +91,7 @@ func (sp *BezierSpline2d) Canonical() *CanonicalSpline2d {
 	} else if n == 1 {
 		return NewSingleVxCanonicalSpline2d(sp.vertices[0].x, sp.vertices[0].y)
 	} else {
-		return NewCanonicalSpline2d(sp.knots)
+		return NewCanonicalSpline2d(sp.knots.External())
 	}
 }
 
@@ -114,7 +118,7 @@ func (sp *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewCanonicalSpline2dByMatrix(sp.knots, coefs)
+	return NewCanonicalSpline2dByMatrix(sp.knots.External(), coefs)
 }
 
 func (sp *BezierSpline2d) nonUniCanonical() *CanonicalSpline2d {

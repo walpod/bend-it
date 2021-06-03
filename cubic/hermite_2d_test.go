@@ -15,7 +15,7 @@ func createHermDiag00to11() *HermiteSpline2d {
 }
 
 func createNonUniHermDiag00to11() *HermiteSpline2d {
-	return NewHermiteSpline2d(bendit.NewNonUniformKnots([]float64{0, math.Sqrt2}),
+	return NewHermiteSpline2d([]float64{0, math.Sqrt2},
 		NewHermiteVx2(0, 0, 0, 0, 1, 1),
 		NewHermiteVx2(1, 1, 1, 1, 0, 0),
 	)
@@ -26,26 +26,26 @@ func isOnDiag(x, y float64) bool {
 }
 
 func createHermParabola00to11(uniform bool) *HermiteSpline2d {
-	var knots bendit.Knots
+	var tknots []float64
 	if uniform {
-		knots = nil
+		tknots = nil
 	} else {
-		knots = bendit.NewNonUniformKnots([]float64{0, 1}) // is in fact uniform but specified as non-uniform
+		tknots = []float64{0, 1} // is in fact uniform but specified as non-uniform
 	}
-	return NewHermiteSpline2d(knots,
+	return NewHermiteSpline2d(tknots,
 		NewHermiteVx2(0, 0, 0, 0, 1, 0),
 		NewHermiteVx2(1, 1, 1, 2, 0, 0),
 	)
 }
 
 func createDoubleHermParabola00to11to22(uniform bool) *HermiteSpline2d {
-	var knots bendit.Knots
+	var tknots []float64
 	if uniform {
-		knots = nil
+		tknots = nil
 	} else {
-		knots = bendit.NewNonUniformKnots([]float64{0, 1, 2}) // is in fact uniform but specified as non-uniform
+		tknots = []float64{0, 1, 2} // is in fact uniform but specified as non-uniform
 	}
-	return NewHermiteSpline2d(knots,
+	return NewHermiteSpline2d(tknots,
 		NewHermiteVx2(0, 0, 0, 0, 1, 0),
 		NewHermiteVx2(1, 1, 1, 2, 1, 0),
 		NewHermiteVx2(2, 2, 1, 2, 0, 0),

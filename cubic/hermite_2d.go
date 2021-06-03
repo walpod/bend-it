@@ -43,16 +43,19 @@ type HermiteSpline2d struct {
 	canon     *CanonicalSpline2d
 }
 
-func NewHermiteSpline2d(knots bendit.Knots, vertices ...*HermiteVx2) *HermiteSpline2d {
-	return NewHermiteSplineTanFinder2d(knots, nil, vertices...)
+func NewHermiteSpline2d(tknots []float64, vertices ...*HermiteVx2) *HermiteSpline2d {
+	return NewHermiteSplineTanFinder2d(tknots, nil, vertices...)
 }
 
-func NewHermiteSplineTanFinder2d(knots bendit.Knots, tanFinder HermiteTanFinder2d, vertices ...*HermiteVx2) *HermiteSpline2d {
-	if knots == nil {
+func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d, vertices ...*HermiteVx2) *HermiteSpline2d {
+	var knots bendit.Knots
+	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(vertices))
-	}
-	if !knots.IsUniform() && knots.Count() != len(vertices) {
-		panic("knots and vertices must have same length")
+	} else {
+		if len(tknots) != len(vertices) {
+			panic("tknots and vertices must have same length")
+		}
+		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
 	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder}
@@ -114,7 +117,7 @@ func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 	} else if n == 1 {
 		return NewSingleVxCanonicalSpline2d(sp.vertices[0].x, sp.vertices[0].y)
 	} else {
-		return NewCanonicalSpline2d(sp.knots)
+		return NewCanonicalSpline2d(sp.knots.External())
 	}
 }
 
@@ -141,7 +144,7 @@ func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewCanonicalSpline2dByMatrix(sp.knots, coefs)
+	return NewCanonicalSpline2dByMatrix(sp.knots.External(), coefs)
 }
 
 func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
@@ -172,7 +175,7 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 			NewCubicPoly(coefs.At(1, 0), coefs.At(1, 1), coefs.At(1, 2), coefs.At(1, 3)))
 	}
 
-	return NewCanonicalSpline2d(sp.knots, cubics...)
+	return NewCanonicalSpline2d(sp.knots.External(), cubics...)
 }
 
 func (sp *HermiteSpline2d) At(t float64) (x, y float64) {
@@ -206,10 +209,10 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 			panic("not yet implemented")
 		}
 	} else if n == 1 {
-		return NewBezierSpline2d(sp.knots,
+		return NewBezierSpline2d(sp.knots.External(),
 			NewBezierVx2(sp.vertices[0].x, sp.vertices[0].y, 0, 0, 0, 0))
 	} else {
-		return NewBezierSpline2d(sp.knots)
+		return NewBezierSpline2d(sp.knots.External())
 	}
 }
 
@@ -236,7 +239,7 @@ func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewBezierSpline2dByMatrix(sp.knots, coefs)
+	return NewBezierSpline2dByMatrix(sp.knots.External(), coefs)
 }
 
 func (sp *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
