@@ -47,8 +47,7 @@ func AssertSplinesEqualInRange(t *testing.T, spline0 bendit.Spline2d, spline1 be
 // TODO extend knots, drop segmCnt
 func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, sampleCnt int) {
 	// assert over full domain
-	domain := spline0.Knots().Domain()
-	AssertSplinesEqualInRange(t, spline0, spline1, domain.Start, domain.End, sampleCnt)
+	AssertSplinesEqualInRange(t, spline0, spline1, spline0.Knots().Tstart(), spline0.Knots().Tend(), sampleCnt)
 }
 
 func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline bendit.Spline2d) {
@@ -60,8 +59,8 @@ func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline
 }
 
 func AssertRandSplinePointProperty(t *testing.T, spline bendit.Spline2d, hasProp func(x, y float64) bool, msg string) {
-	domain := spline.Knots().Domain()
-	atT := domain.Start + rand.Float64()*(domain.End-domain.Start)
+	ts, te := spline.Knots().Tstart(), spline.Knots().Tend()
+	atT := ts + rand.Float64()*(te-ts)
 	x, y := spline.At(atT)
 	assert.True(t, hasProp(x, y), msg)
 }

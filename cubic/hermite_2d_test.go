@@ -61,10 +61,10 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 1, 1, 1)
 
 	herm = createNonUniHermDiag00to11()
-	domain := herm.knots.Domain()
-	AssertSplineAt(t, herm, domain.Start, 0, 0)
-	AssertSplineAt(t, herm, domain.End/2, .5, .5)
-	AssertSplineAt(t, herm, domain.End, 1, 1)
+	ts, te := herm.knots.Tstart(), herm.knots.Tend()
+	AssertSplineAt(t, herm, ts, 0, 0)
+	AssertSplineAt(t, herm, te/2, .5, .5)
+	AssertSplineAt(t, herm, te, 1, 1)
 	for i := 0; i < 100; i++ {
 		AssertRandSplinePointProperty(t, herm, isOnDiag, "hermite point must be on diagonal")
 	}

@@ -8,16 +8,12 @@ import (
 
 type Knots interface {
 	IsUniform() bool
-	Domain() Tdomain
 	Count() int
+	Tstart() float64
+	Tend() float64
 	Knot(knotNo int) (t float64, err error)
 	SegmentLen(segmentNo int) (t float64, err error)
 	MapToSegment(t float64) (segmentNo int, u float64, err error)
-}
-
-// range of parameter t for which the spline is defined
-type Tdomain struct {
-	Start, End float64
 }
 
 type UniformKnots struct {
@@ -38,10 +34,6 @@ func (k *UniformKnots) Tstart() float64 {
 
 func (k *UniformKnots) Tend() float64 {
 	return float64(k.cnt - 1)
-}
-
-func (k *UniformKnots) Domain() Tdomain {
-	return Tdomain{Start: k.Tstart(), End: k.Tend()}
 }
 
 func (k *UniformKnots) Count() int {
@@ -119,10 +111,6 @@ func (k *NonUniformKnots) Tend() float64 {
 	} else {
 		return k.ks[len(k.ks)-1]
 	}
-}
-
-func (k *NonUniformKnots) Domain() Tdomain {
-	return Tdomain{Start: k.Tstart(), End: k.Tend()}
 }
 
 func (k *NonUniformKnots) Count() int {
