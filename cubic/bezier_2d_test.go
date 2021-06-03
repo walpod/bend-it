@@ -8,23 +8,6 @@ import (
 	"testing"
 )
 
-// TODO move LineToSliceCollector2d to another file
-type LineParams struct {
-	Tstart, Tend, Pstartx, Pstarty, Pendx, Pendy float64
-}
-
-type LineToSliceCollector2d struct {
-	Lines []LineParams
-}
-
-func NewLineToSliceCollector2d() *LineToSliceCollector2d {
-	return &LineToSliceCollector2d{Lines: make([]LineParams, 0)}
-}
-
-func (lc *LineToSliceCollector2d) CollectLine(tstart, tend, pstartx, pstarty, pendx, pendy float64) {
-	lc.Lines = append(lc.Lines, LineParams{tstart, tend, pstartx, pstarty, pendx, pendy})
-}
-
 // START some general bend-it spline Asserts
 const delta = 0.0000000001
 
@@ -50,7 +33,7 @@ func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Sp
 	AssertSplinesEqualInRange(t, spline0, spline1, spline0.Knots().Tstart(), spline0.Knots().Tend(), sampleCnt)
 }
 
-func AssertApproxStartPointsMatchSpline(t *testing.T, lines []LineParams, spline bendit.Spline2d) {
+func AssertApproxStartPointsMatchSpline(t *testing.T, lines []bendit.LineParams, spline bendit.Spline2d) {
 	for _, lin := range lines {
 		x, y := spline.At(lin.Tstart)
 		assert.InDeltaf(t, x, lin.Pstartx, delta, "spline.At(%v).x = %v != start-point.x = %v of approximated line", lin.Tstart, x, lin.Pstartx)
@@ -151,7 +134,7 @@ func TestBezierSpline2d_Canonical(t *testing.T) {
 
 func TestBezierSpline2d_Approx(t *testing.T) {
 	bezier := createBezierDiag00to11()
-	lc := NewLineToSliceCollector2d()
+	lc := bendit.NewLineToSliceCollector2d()
 	bezier.Approx(0.1, lc)
 	assert.Len(t, lc.Lines, 1, "approximated with one line")
 	assert.InDeltaf(t, 0., lc.Lines[0].Pstartx, delta, "start point x=0")
@@ -161,7 +144,7 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezier = createBezierS00to11()
-	lc = NewLineToSliceCollector2d()
+	lc = bendit.NewLineToSliceCollector2d()
 	bezier.Approx(0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezier)

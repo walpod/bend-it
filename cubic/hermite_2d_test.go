@@ -127,7 +127,7 @@ func TestHermiteSpline2d_Canonical(t *testing.T) {
 
 func TestHermiteSpline2d_Approx(t *testing.T) {
 	herm := createDoubleHermParabola00to11to22(true)
-	lc := NewLineToSliceCollector2d()
+	lc := bendit.NewLineToSliceCollector2d()
 	herm.Approx(0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	assert.InDeltaf(t, 0., lc.Lines[0].Pstartx, delta, "start point x=0")

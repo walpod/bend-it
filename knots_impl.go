@@ -6,16 +6,6 @@ import (
 	"math"
 )
 
-type Knots interface {
-	IsUniform() bool
-	Count() int
-	Tstart() float64
-	Tend() float64
-	Knot(knotNo int) (t float64, err error)
-	SegmentLen(segmentNo int) (t float64, err error)
-	MapToSegment(t float64) (segmentNo int, u float64, err error)
-}
-
 type UniformKnots struct {
 	cnt int // number of knots
 }
