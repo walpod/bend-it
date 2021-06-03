@@ -78,8 +78,7 @@ func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64
 
 // createBezierDiag00to11 creates a bezier representing a straight line from (0,0) to (1,1)
 func createBezierDiag00to11() *BezierSpline2d {
-	return NewBezierSpline2d(
-		bendit.NewUniformKnots(),
+	return NewBezierSpline2d(nil,
 		NewBezierVx2(0, 0, 0, 0, 1./3, 1./3),
 		NewBezierVx2(1, 1, 2./3, 2./3, 0, 0),
 	)
@@ -87,8 +86,7 @@ func createBezierDiag00to11() *BezierSpline2d {
 
 // createBezierDiag00to11 creates a bezier representing an S-formed slope from (0,0) to (1,1)
 func createBezierS00to11() *BezierSpline2d {
-	return NewBezierSpline2d(
-		bendit.NewUniformKnots(),
+	return NewBezierSpline2d(nil,
 		NewBezierVx2(0, 0, 0, 0, 1, 0),
 		NewBezierVx2(1, 1, 0, 1, 0, 0),
 	)
@@ -96,8 +94,7 @@ func createBezierS00to11() *BezierSpline2d {
 
 // createBezierDiag00to11 creates two consecutive beziers representing an S-formed slope from (0,0) to (1,1) or (1,1) to (2,2), resp.
 func createDoubleBezierS00to11to22() *BezierSpline2d {
-	return NewBezierSpline2d(
-		bendit.NewUniformKnots(),
+	return NewBezierSpline2d(nil,
 		NewBezierVx2(0, 0, 0, 0, 1, 0),
 		NewBezierVx2(1, 1, 0, 1, 2, 1),
 		NewBezierVx2(2, 2, 1, 2, 0, 0),
@@ -130,7 +127,7 @@ func TestBezierSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	// empty domain
-	bezier = NewBezierSpline2d(bendit.NewUniformKnots())
+	bezier = NewBezierSpline2d(nil)
 	bezier = NewBezierSpline2d(bendit.NewNonUniformKnots([]float64{}))
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func createHermDiag00to11() *HermiteSpline2d {
-	return NewHermiteSpline2d(bendit.NewUniformKnots(),
+	return NewHermiteSpline2d(nil,
 		NewHermiteVx2(0, 0, 0, 0, 1, 1),
 		NewHermiteVx2(1, 1, 1, 1, 0, 0),
 	)
@@ -28,7 +28,7 @@ func isOnDiag(x, y float64) bool {
 func createHermParabola00to11(uniform bool) *HermiteSpline2d {
 	var knots bendit.Knots
 	if uniform {
-		knots = bendit.NewUniformKnots()
+		knots = nil
 	} else {
 		knots = bendit.NewNonUniformKnots([]float64{0, 1}) // is in fact uniform but specified as non-uniform
 	}
@@ -41,7 +41,7 @@ func createHermParabola00to11(uniform bool) *HermiteSpline2d {
 func createDoubleHermParabola00to11to22(uniform bool) *HermiteSpline2d {
 	var knots bendit.Knots
 	if uniform {
-		knots = bendit.NewUniformKnots()
+		knots = nil
 	} else {
 		knots = bendit.NewNonUniformKnots([]float64{0, 1, 2}) // is in fact uniform but specified as non-uniform
 	}
@@ -93,7 +93,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 0, 1, 2)
 
 	// empty domain
-	herm = NewHermiteSpline2d(bendit.NewUniformKnots())
+	herm = NewHermiteSpline2d(nil)
 
 	// uniform and regular non-uniform must match
 	herm = createHermParabola00to11(true)
@@ -103,6 +103,18 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	herm = createDoubleHermParabola00to11to22(true)
 	nuherm = createDoubleHermParabola00to11to22(false)
 	AssertSplinesEqual(t, herm, nuherm, 100)
+}
+
+func TestHermiteSpline2d_Add(t *testing.T) {
+	herm := NewHermiteSpline2d(nil)
+	assert.Equal(t, 0, herm.Knots().Count(), "wrong number of knots")
+	assert.Equal(t, 0, herm.SegmentCnt(), "wrong number of segments")
+	herm.Add(NewHermiteVx2Raw(0.5, 0.5))
+	assert.Equal(t, 1, herm.Knots().Count(), "wrong number of knots")
+	assert.Equal(t, 0, herm.SegmentCnt(), "wrong number of segments")
+	herm.Add(NewHermiteVx2Raw(1, 1))
+	assert.Equal(t, 2, herm.Knots().Count(), "wrong number of knots")
+	assert.Equal(t, 1, herm.SegmentCnt(), "wrong number of segments")
 }
 
 func TestHermiteSpline2d_Canonical(t *testing.T) {

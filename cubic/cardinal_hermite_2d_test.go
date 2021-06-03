@@ -1,21 +1,20 @@
 package cubic
 
 import (
-	bendit "github.com/walpod/bend-it"
 	"math"
 	"math/rand"
 	"testing"
 )
 
 func createCardinalDiag00to11() *CardinalHermiteSpline2d {
-	return NewCardinalHermiteSpline2d(bendit.NewUniformKnots(), 0,
+	return NewCardinalHermiteSpline2d(nil, 0,
 		NewHermiteVx2Raw(0, 0),
 		NewHermiteVx2Raw(1, 1))
 }
 
 func createCardinalVase() *CardinalHermiteSpline2d {
 	return NewCardinalHermiteSpline2d(
-		bendit.NewUniformKnots(), 0,
+		nil, 0,
 		NewHermiteVx2Raw(-1, 1),
 		NewHermiteVx2Raw(0, 0),
 		NewHermiteVx2Raw(1, 1))

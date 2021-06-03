@@ -2,20 +2,18 @@ package cubic
 
 import (
 	"github.com/stretchr/testify/assert"
-	bendit "github.com/walpod/bend-it"
 	"math/rand"
 	"testing"
 )
 
 func createNaturalDiag00to11() *NaturalHermiteSpline2d {
-	return NewNaturalHermiteSpline2d(bendit.NewUniformKnots(),
+	return NewNaturalHermiteSpline2d(nil,
 		NewHermiteVx2Raw(0, 0),
 		NewHermiteVx2Raw(1, 1))
 }
 
 func createNaturalVase() *NaturalHermiteSpline2d {
-	return NewNaturalHermiteSpline2d(
-		bendit.NewUniformKnots(),
+	return NewNaturalHermiteSpline2d(nil,
 		NewHermiteVx2Raw(-1, 1),
 		NewHermiteVx2Raw(0, 0),
 		NewHermiteVx2Raw(1, 1))

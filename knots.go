@@ -8,7 +8,7 @@ import (
 
 type Knots interface {
 	IsUniform() bool
-	Domain() SplineDomain
+	Domain() Tdomain
 	Count() int
 	Knot(knotNo int) (t float64, err error)
 	SegmentLen(segmentNo int) (t float64, err error)
@@ -16,34 +16,41 @@ type Knots interface {
 }
 
 // range of parameter t for which the spline is defined
-type SplineDomain struct {
+type Tdomain struct {
 	Start, End float64
 }
 
 type UniformKnots struct {
-	Spline Spline2d
+	cnt int // number of knots
 }
 
-func NewUniformKnots() *UniformKnots {
-	// TODO validate ks: monotonically increasing
-	return &UniformKnots{}
+func NewUniformKnots(knotsCnt int) *UniformKnots {
+	return &UniformKnots{cnt: knotsCnt}
 }
 
 func (k *UniformKnots) IsUniform() bool {
 	return true
 }
 
-func (k *UniformKnots) Domain() SplineDomain {
-	return SplineDomain{Start: 0, End: float64(k.Spline.SegmentCnt())}
+func (k *UniformKnots) Tstart() float64 {
+	return 0
+}
+
+func (k *UniformKnots) Tend() float64 {
+	return float64(k.cnt - 1)
+}
+
+func (k *UniformKnots) Domain() Tdomain {
+	return Tdomain{Start: k.Tstart(), End: k.Tend()}
 }
 
 func (k *UniformKnots) Count() int {
-	return k.Spline.SegmentCnt() + 1
+	return k.cnt
 }
 
 func (k *UniformKnots) Knot(knotNo int) (t float64, err error) {
 	// TODO assert knotNo <= segmCnt
-	if knotNo < 0 || knotNo >= k.Count() {
+	if knotNo < 0 || knotNo >= k.cnt {
 		return 0, errors.New("knot doesn't exist")
 	} else {
 		return float64(knotNo), nil
@@ -51,7 +58,7 @@ func (k *UniformKnots) Knot(knotNo int) (t float64, err error) {
 }
 
 func (k *UniformKnots) SegmentLen(segmentNo int) (t float64, err error) {
-	if segmentNo < 0 || segmentNo >= k.Count()-1 {
+	if segmentNo < 0 || segmentNo >= k.cnt-1 {
 		return 0, errors.New("segment doesn't exist")
 	} else {
 		return 1, nil
@@ -59,50 +66,63 @@ func (k *UniformKnots) SegmentLen(segmentNo int) (t float64, err error) {
 }
 
 func (k *UniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err error) {
-	segmCnt := k.Spline.SegmentCnt()
-	upper := float64(segmCnt)
+	tend := k.Tend()
 	if t < 0 {
 		err = fmt.Errorf("%v smaller than 0", t)
 		return
 	}
-	if t > upper {
-		err = fmt.Errorf("%v greater than last knot %v", t, upper)
+	if t > tend {
+		err = fmt.Errorf("%v greater than last knot %v", t, tend)
 		return
 	}
 
 	var ifl float64
 	ifl, u = math.Modf(t)
-	if ifl == upper {
-		// special case t == upper
-		segmentNo = segmCnt - 1
+	segmentNo = int(ifl)
+
+	// special case t == tend
+	if ifl == tend {
+		segmentNo -= 1
 		u = 1
-	} else {
-		segmentNo = int(ifl)
 	}
 	return
 }
 
-func (k *UniformKnots) SetSplineIfEmpty(spline Spline2d) {
-	if k.Spline == nil {
-		k.Spline = spline
+func (k *UniformKnots) Add(segmentLen float64) error {
+	if segmentLen != 1 {
+		return errors.New("cannot add length != 1 to uniform knots")
 	}
+	k.cnt += 1
+	return nil
 }
 
 type NonUniformKnots struct {
 	ks []float64
 }
 
-func NewNonUniformKnots(ks []float64) *NonUniformKnots {
-	// TODO validate ks: monotonically increasing
-	return &NonUniformKnots{ks}
+func NewNonUniformKnots(knots []float64) *NonUniformKnots {
+	// TODO validate knots: monotonically increasing
+	return &NonUniformKnots{knots}
 }
 
 func (k *NonUniformKnots) IsUniform() bool {
 	return false
 }
 
-func (k *NonUniformKnots) Domain() SplineDomain {
-	return SplineDomain{Start: 0, End: k.ks[len(k.ks)-1]}
+func (k *NonUniformKnots) Tstart() float64 {
+	return 0
+}
+
+func (k *NonUniformKnots) Tend() float64 {
+	if len(k.ks) == 0 {
+		return 0
+	} else {
+		return k.ks[len(k.ks)-1]
+	}
+}
+
+func (k *NonUniformKnots) Domain() Tdomain {
+	return Tdomain{Start: k.Tstart(), End: k.Tend()}
 }
 
 func (k *NonUniformKnots) Count() int {
@@ -150,4 +170,8 @@ func (k *NonUniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err
 	}
 	err = fmt.Errorf("%v greater than upper limit %v", t, k.ks[segmCnt])
 	return
+}
+
+func (k *NonUniformKnots) Add(segmentLen float64) {
+	k.ks = append(k.ks, k.Tend()+segmentLen)
 }

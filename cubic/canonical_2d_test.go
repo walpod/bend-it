@@ -8,18 +8,18 @@ import (
 
 func createCanonLineWithParabolicParam() *CanonicalSpline2d {
 	cp := NewCubicPoly(0, 0, 1, 0)
-	canon := NewCanonicalSpline2d(bendit.NewUniformKnots(), NewCubic2d(cp, cp))
+	canon := NewCanonicalSpline2d(nil, NewCubic2d(cp, cp))
 	return canon
 }
 
 func createCanonParabola00to11() *CanonicalSpline2d {
-	return NewCanonicalSpline2d(bendit.NewUniformKnots(),
+	return NewCanonicalSpline2d(nil,
 		NewCubic2d(NewCubicPoly(0, 1, 0, 0), NewCubicPoly(0, 0, 1, 0)),
 	)
 }
 
 func createDoubleCanonParabola00to11to22() *CanonicalSpline2d {
-	return NewCanonicalSpline2d(bendit.NewUniformKnots(),
+	return NewCanonicalSpline2d(nil,
 		NewCubic2d(NewCubicPoly(0, 1, 0, 0), NewCubicPoly(0, 0, 1, 0)),
 		NewCubic2d(NewCubicPoly(1, 1, 0, 0), NewCubicPoly(1, 0, 1, 0)),
 	)
@@ -51,7 +51,7 @@ func TestCanonicalSpline2d_At(t *testing.T) {
 
 	// empty domain
 	canon = NewCanonicalSpline2d(nil)
-	canon = NewCanonicalSpline2d(bendit.NewUniformKnots())
+	canon = NewCanonicalSpline2d(nil)
 	canon = NewCanonicalSpline2d(bendit.NewNonUniformKnots([]float64{}))
 }
 

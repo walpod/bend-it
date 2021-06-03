@@ -29,16 +29,13 @@ type BezierSpline2d struct {
 
 func NewBezierSpline2d(knots bendit.Knots, vertices ...*BezierVx2) *BezierSpline2d {
 	if knots == nil {
-		knots = bendit.NewUniformKnots()
+		knots = bendit.NewUniformKnots(len(vertices))
 	}
 	if !knots.IsUniform() && knots.Count() != len(vertices) {
 		panic("knots and vertices must have same length")
 	}
 
 	bez := &BezierSpline2d{knots: knots, vertices: vertices}
-	if knots.IsUniform() {
-		knots.(*bendit.UniformKnots).SetSplineIfEmpty(bez)
-	}
 	bez.Build() // TODO no automatic build
 	return bez
 }
@@ -160,7 +157,8 @@ func (sp *BezierSpline2d) Fn() bendit.Fn2d {
 	if sp.canon != nil {
 		return sp.canon.Fn()
 	} else {
-		return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
+		// TODO implicit build? return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
+		return nil
 	}
 }
 

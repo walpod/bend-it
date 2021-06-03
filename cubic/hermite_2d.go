@@ -44,28 +44,18 @@ type HermiteSpline2d struct {
 }
 
 func NewHermiteSpline2d(knots bendit.Knots, vertices ...*HermiteVx2) *HermiteSpline2d {
+	return NewHermiteSplineTanFinder2d(knots, nil, vertices...)
+}
+
+func NewHermiteSplineTanFinder2d(knots bendit.Knots, tanFinder HermiteTanFinder2d, vertices ...*HermiteVx2) *HermiteSpline2d {
 	if knots == nil {
-		knots = bendit.NewUniformKnots()
+		knots = bendit.NewUniformKnots(len(vertices))
 	}
 	if !knots.IsUniform() && knots.Count() != len(vertices) {
 		panic("knots and vertices must have same length")
 	}
 
-	herm := &HermiteSpline2d{knots: knots, vertices: vertices}
-	if knots.IsUniform() {
-		knots.(*bendit.UniformKnots).SetSplineIfEmpty(herm)
-	}
-	herm.Build() // TODO don't build automatically
-	return herm
-}
-
-func NewHermiteSplineTanFinder2d(knots bendit.Knots, tanFinder HermiteTanFinder2d, vertices ...*HermiteVx2) *HermiteSpline2d {
-	if knots == nil {
-		knots = bendit.NewUniformKnots()
-	}
-	herm := NewHermiteSpline2d(knots, vertices...)
-	herm.tanFinder = tanFinder
-	//herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder}
+	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder}
 	herm.Build() // TODO don't build automatically
 	return herm
 }
@@ -81,6 +71,27 @@ func (sp *HermiteSpline2d) SegmentCnt() int {
 
 func (sp *HermiteSpline2d) Knots() bendit.Knots {
 	return sp.knots
+}
+
+func (sp *HermiteSpline2d) Add(vertex *HermiteVx2) {
+	if sp.knots.IsUniform() {
+		sp.knots.(*bendit.UniformKnots).Add(1)
+	} else {
+		sp.knots.(*bendit.NonUniformKnots).Add(1)
+	}
+	sp.vertices = append(sp.vertices, vertex)
+}
+
+func (sp *HermiteSpline2d) AddL(segmentLen float64, vertex *HermiteVx2) {
+	if sp.knots.IsUniform() {
+		err := sp.knots.(*bendit.UniformKnots).Add(1)
+		if err != nil {
+			panic(err.Error())
+		}
+	} else {
+		sp.knots.(*bendit.NonUniformKnots).Add(segmentLen)
+	}
+	sp.vertices = append(sp.vertices, vertex)
 }
 
 // Build hermite spline by mapping to canonical representation
@@ -176,7 +187,8 @@ func (sp *HermiteSpline2d) Fn() bendit.Fn2d {
 	if sp.canon != nil {
 		return sp.canon.Fn()
 	} else {
-		return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
+		// TODO implicit build? return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
+		return nil
 	}
 }
 
@@ -198,7 +210,7 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 		if n == 1 {
 			vx = NewBezierVx2(sp.vertices[0].x, sp.vertices[0].y, 0, 0, 0, 0)
 		}
-		return NewBezierSpline2d(bendit.NewUniformKnots(), vx)
+		return NewBezierSpline2d(sp.knots, vx)
 	}
 }
 
@@ -233,34 +245,34 @@ func (sp *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollecto
 }
 
 /*
-// TODO currently deactivated
-// entry and exit tangents for given vertex
-type VertexTan2d interface {
-	EntryTan() (lx, ly float64)
-	ExitTan() (mx, my float64)
-}
+   // TODO currently deactivated
+   // entry and exit tangents for given vertex
+   type VertexTan2d interface {
+   	EntryTan() (lx, ly float64)
+   	ExitTan() (mx, my float64)
+   }
 
-type SingleTan2d struct {
-	Mx, My float64
-}
+   type SingleTan2d struct {
+   	Mx, My float64
+   }
 
-func NewSingleTan2d(mx float64, my float64) *SingleTan2d {
-	return &SingleTan2d{Mx: mx, My: my}
-}
+   func NewSingleTan2d(mx float64, my float64) *SingleTan2d {
+   	return &SingleTan2d{Mx: mx, My: my}
+   }
 
-func (st *SingleTan2d) EntryTan() (lx, ly float64) {
-	// entry = exit tangent
-	return st.Mx, st.My
-}
+   func (st *SingleTan2d) EntryTan() (lx, ly float64) {
+   	// entry = exit tangent
+   	return st.Mx, st.My
+   }
 
-func (st *SingleTan2d) ExitTan() (mx, my float64) {
-	return st.Mx, st.My
-}
+   func (st *SingleTan2d) ExitTan() (mx, my float64) {
+   	return st.Mx, st.My
+   }
 
-func (hs *HermiteSpline2d) Add(vertx, verty float64, tangent VertexTan2d) {
-	hs.vertsx = append(hs.vertsx, vertx)
-	hs.vertsy = append(hs.vertsy, verty)
-	hs.tangents = append(hs.tangents, tangent)
-	hs.knots = append(hs.knots, hs.KnotN()+1) // TODO currently for uniform splines
-}
+   func (hs *HermiteSpline2d) Add(vertx, verty float64, tangent VertexTan2d) {
+   	hs.vertsx = append(hs.vertsx, vertx)
+   	hs.vertsy = append(hs.vertsy, verty)
+   	hs.tangents = append(hs.tangents, tangent)
+   	hs.knots = append(hs.knots, hs.KnotN()+1) // TODO currently for uniform splines
+   }
 */

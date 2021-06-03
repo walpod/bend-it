@@ -50,7 +50,7 @@ type CanonicalSpline2d struct {
 
 func NewCanonicalSpline2d(knots bendit.Knots, cubics ...Cubic2d) *CanonicalSpline2d {
 	if knots == nil {
-		knots = bendit.NewUniformKnots()
+		knots = bendit.NewUniformKnots(len(cubics) + 1)
 	}
 	if !knots.IsUniform() {
 		lencub := len(cubics)
@@ -63,9 +63,6 @@ func NewCanonicalSpline2d(knots bendit.Knots, cubics ...Cubic2d) *CanonicalSplin
 	}
 
 	canon := &CanonicalSpline2d{cubics: cubics, knots: knots}
-	if knots.IsUniform() {
-		knots.(*bendit.UniformKnots).SetSplineIfEmpty(canon)
-	}
 	return canon
 }
 
@@ -80,8 +77,8 @@ func NewSingleVxCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
 func NewCanonicalSpline2dByMatrix(knots bendit.Knots, mat mat.Dense) *CanonicalSpline2d {
 	r, _ := mat.Dims()
 	segmCnt := r / 2
-	if knots.Count() > 0 && knots.Count() != segmCnt+1 {
-		panic("knots must be empty or having length or matrix-rows/2 + 1")
+	if !knots.IsUniform() && knots.Count() != segmCnt+1 {
+		panic("non-uniform knots must have length matrix-rows/2 + 1")
 	}
 	cubics := make([]Cubic2d, segmCnt)
 	rowno := 0
@@ -130,7 +127,7 @@ func (sp *CanonicalSpline2d) Bezier() *BezierSpline2d {
 			panic("not yet implemented")
 		}
 	} else {
-		return NewBezierSpline2d(bendit.NewUniformKnots())
+		return NewBezierSpline2d(nil)
 	}
 }
 
