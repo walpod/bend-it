@@ -126,8 +126,7 @@ type NaturalHermiteSpline2d struct {
 }
 
 func NewNaturalHermiteSpline2d(tknots []float64, vertices ...*HermiteVx2) *NaturalHermiteSpline2d {
-	cs := &NaturalHermiteSpline2d{
+	sp := &NaturalHermiteSpline2d{
 		HermiteSpline2d: *NewHermiteSplineTanFinder2d(tknots, NaturalTanf2d{}, vertices...)}
-	cs.Build() // TODO don't build automatically
-	return cs
+	return sp
 }

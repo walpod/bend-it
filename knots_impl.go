@@ -31,7 +31,6 @@ func (k *UniformKnots) Count() int {
 }
 
 func (k *UniformKnots) Knot(knotNo int) (t float64, err error) {
-	// TODO assert knotNo <= segmCnt
 	if knotNo < 0 || knotNo >= k.cnt {
 		return 0, errors.New("knot doesn't exist")
 	} else {
@@ -112,7 +111,6 @@ func (k *NonUniformKnots) Count() int {
 }
 
 func (k *NonUniformKnots) Knot(knotNo int) (t float64, err error) {
-	// TODO assert knotNo <= segmCnt
 	if knotNo < 0 || knotNo >= len(k.tknots) {
 		return 0, errors.New("knot doesn't exist")
 	} else {
@@ -141,13 +139,16 @@ func (k *NonUniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err
 
 	// TODO speed up mapping
 	for i := 0; i < segmCnt; i++ {
-		if t <= k.tknots[i+1] {
+		if t < k.tknots[i+1] {
 			if k.tknots[i+1] == k.tknots[i] {
 				u = 0
 			} else {
 				u = (t - k.tknots[i]) / (k.tknots[i+1] - k.tknots[i])
 			}
 			return i, u, nil
+		}
+		if t == k.Tend() { // TODO within-delta
+			return segmCnt - 1, 1, nil
 		}
 	}
 	err = fmt.Errorf("%v greater than upper limit %v", t, k.tknots[segmCnt])

@@ -40,7 +40,10 @@ type HermiteSpline2d struct {
 	knots     bendit.Knots
 	vertices  []*HermiteVx2
 	tanFinder HermiteTanFinder2d
-	canon     *CanonicalSpline2d
+	// internal cache of prepare
+	canon    *CanonicalSpline2d
+	bezier   *BezierSpline2d
+	tanFound bool
 }
 
 func NewHermiteSpline2d(tknots []float64, vertices ...*HermiteVx2) *HermiteSpline2d {
@@ -58,8 +61,7 @@ func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d,
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder}
-	herm.Build() // TODO don't build automatically
+	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder, canon: nil, bezier: nil, tanFound: false}
 	return herm
 }
 
@@ -83,6 +85,7 @@ func (sp *HermiteSpline2d) Add(vertex *HermiteVx2) {
 		sp.knots.(*bendit.NonUniformKnots).Add(1)
 	}
 	sp.vertices = append(sp.vertices, vertex)
+	sp.ResetPrepare()
 }
 
 func (sp *HermiteSpline2d) AddL(segmentLen float64, vertex *HermiteVx2) {
@@ -97,18 +100,35 @@ func (sp *HermiteSpline2d) AddL(segmentLen float64, vertex *HermiteVx2) {
 	sp.vertices = append(sp.vertices, vertex)
 }
 
-// Build hermite spline by mapping to canonical representation
-func (sp *HermiteSpline2d) Build() {
+// Prepare execution of hermite spline by mapping to canonical and bezier representation
+func (sp *HermiteSpline2d) Prepare() {
+	sp.prepareCanon()
+	sp.prepareBezier()
+}
+
+func (sp *HermiteSpline2d) ResetPrepare() {
+	sp.tanFound = false
+	sp.canon = nil
+	sp.bezier = nil
+}
+
+func (sp *HermiteSpline2d) prepareTan() {
+	if sp.tanFinder != nil {
+		sp.tanFinder.Find(sp.knots, sp.vertices)
+	}
+	sp.tanFound = true
+}
+
+func (sp *HermiteSpline2d) prepareCanon() {
+	if !sp.tanFound {
+		sp.prepareTan()
+	}
 	sp.canon = sp.Canonical()
 }
 
 func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 	n := len(sp.vertices)
 	if n >= 2 {
-		if sp.tanFinder != nil {
-			sp.tanFinder.Find(sp.knots, sp.vertices)
-		}
-
 		if sp.knots.IsUniform() {
 			return sp.uniCanonical()
 		} else {
@@ -179,30 +199,29 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 }
 
 func (sp *HermiteSpline2d) At(t float64) (x, y float64) {
-	if sp.canon != nil {
-		return sp.canon.At(t)
-	} else {
-		return 0, 0
+	if sp.canon == nil {
+		sp.prepareCanon()
 	}
+	return sp.canon.At(t)
 }
 
 func (sp *HermiteSpline2d) Fn() bendit.Fn2d {
-	if sp.canon != nil {
-		return sp.canon.Fn()
-	} else {
-		// TODO implicit build? return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
-		return nil
+	if sp.canon == nil {
+		sp.prepareCanon()
 	}
+	return sp.canon.Fn()
+}
+
+func (sp *HermiteSpline2d) prepareBezier() {
+	if !sp.tanFound {
+		sp.prepareTan()
+	}
+	sp.bezier = sp.Bezier()
 }
 
 func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 	n := len(sp.vertices)
 	if n >= 2 {
-		// TODO when to call Find ...
-		if sp.tanFinder != nil {
-			sp.tanFinder.Find(sp.knots, sp.vertices)
-		}
-
 		if sp.knots.IsUniform() {
 			return sp.uniBezier()
 		} else {
@@ -243,7 +262,10 @@ func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 }
 
 func (sp *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
-	sp.Bezier().Approx(maxDist, collector)
+	if sp.bezier == nil {
+		sp.prepareBezier()
+	}
+	sp.bezier.Approx(maxDist, collector)
 }
 
 /*
@@ -269,12 +291,5 @@ func (sp *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollecto
 
    func (st *SingleTan2d) ExitTan() (mx, my float64) {
    	return st.Mx, st.My
-   }
-
-   func (hs *HermiteSpline2d) Add(vertx, verty float64, tangent VertexTan2d) {
-   	hs.vertsx = append(hs.vertsx, vertx)
-   	hs.vertsy = append(hs.vertsy, verty)
-   	hs.tangents = append(hs.tangents, tangent)
-   	hs.knots = append(hs.knots, hs.KnotN()+1) // TODO currently for uniform splines
    }
 */

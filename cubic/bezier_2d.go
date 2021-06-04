@@ -39,7 +39,6 @@ func NewBezierSpline2d(tknots []float64, vertices ...*BezierVx2) *BezierSpline2d
 	}
 
 	bez := &BezierSpline2d{knots: knots, vertices: vertices}
-	bez.Build() // TODO no automatic build
 	return bez
 }
 
@@ -76,7 +75,15 @@ func (sp *BezierSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *BezierSpline2d) Build() {
+func (sp *BezierSpline2d) Prepare() {
+	sp.prepareCanon()
+}
+
+func (sp *BezierSpline2d) ResetPrepare() {
+	sp.canon = nil
+}
+
+func (sp *BezierSpline2d) prepareCanon() {
 	sp.canon = sp.Canonical()
 }
 
@@ -122,21 +129,19 @@ func (sp *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 }
 
 func (sp *BezierSpline2d) nonUniCanonical() *CanonicalSpline2d {
-	// TODO
+	// TODO implement non-uniform
 	panic("not yet implemented")
 }
 
 // At evaluates point on bezier spline for given parameter t
 func (sp *BezierSpline2d) At(t float64) (x, y float64) {
-	if sp.canon != nil {
-		return sp.canon.At(t)
-	} else {
-		return 0, 0
+	if sp.canon == nil {
+		sp.prepareCanon()
 	}
+	return sp.canon.At(t)
 }
 
 // AtDeCasteljau is an alternative to 'At' using De Casteljau algorithm.
-// As opposed to At calling Build beforehand is not required
 func (sp *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 	segmNo, u, err := sp.knots.MapToSegment(t)
 	if err != nil {
@@ -158,12 +163,10 @@ func (sp *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 }
 
 func (sp *BezierSpline2d) Fn() bendit.Fn2d {
-	if sp.canon != nil {
-		return sp.canon.Fn()
-	} else {
-		// TODO implicit build? return NewCanonicalSpline2d(bendit.NewUniformKnots()).Fn()
-		return nil
+	if sp.canon == nil {
+		sp.prepareCanon()
 	}
+	return sp.canon.Fn()
 }
 
 // Approx -imate bezier-spline with line-segments using subdivision

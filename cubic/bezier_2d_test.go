@@ -27,7 +27,6 @@ func AssertSplinesEqualInRange(t *testing.T, spline0 bendit.Spline2d, spline1 be
 	}
 }
 
-// TODO extend knots, drop segmCnt
 func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, sampleCnt int) {
 	// assert over full domain
 	AssertSplinesEqualInRange(t, spline0, spline1, spline0.Knots().Tstart(), spline0.Knots().Tend(), sampleCnt)
