@@ -115,18 +115,19 @@ func (sp *HermiteSpline2d) ResetPrepare() {
 func (sp *HermiteSpline2d) prepareTan() {
 	if sp.tanFinder != nil {
 		sp.tanFinder.Find(sp.knots, sp.vertices)
+		sp.tanFound = true
 	}
-	sp.tanFound = true
 }
 
 func (sp *HermiteSpline2d) prepareCanon() {
-	if !sp.tanFound {
-		sp.prepareTan()
-	}
 	sp.canon = sp.Canonical()
 }
 
 func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
+	if sp.tanFinder != nil && !sp.tanFound {
+		sp.prepareTan()
+	}
+
 	n := len(sp.vertices)
 	if n >= 2 {
 		if sp.knots.IsUniform() {
@@ -213,13 +214,14 @@ func (sp *HermiteSpline2d) Fn() bendit.Fn2d {
 }
 
 func (sp *HermiteSpline2d) prepareBezier() {
-	if !sp.tanFound {
-		sp.prepareTan()
-	}
 	sp.bezier = sp.Bezier()
 }
 
 func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
+	if sp.tanFinder != nil && !sp.tanFound {
+		sp.prepareTan()
+	}
+
 	n := len(sp.vertices)
 	if n >= 2 {
 		if sp.knots.IsUniform() {
