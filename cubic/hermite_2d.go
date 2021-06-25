@@ -65,15 +65,6 @@ func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d,
 	return herm
 }
 
-func (sp *HermiteSpline2d) SegmentCnt() int {
-	segmCnt := len(sp.vertices) - 1
-	if segmCnt >= 0 {
-		return segmCnt
-	} else {
-		return 0
-	}
-}
-
 func (sp *HermiteSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
@@ -145,7 +136,7 @@ func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 	const dim = 2
 	// precondition: segmCnt >= 1, bs.knots.IsUniform()
-	segmCnt := sp.SegmentCnt()
+	segmCnt := sp.knots.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
@@ -170,7 +161,7 @@ func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 
 func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 	const dim = 2
-	segmCnt := sp.SegmentCnt()
+	segmCnt := sp.knots.SegmentCnt()
 	cubics := make([]Cubic2d, segmCnt)
 
 	for i := 0; i < segmCnt; i++ {
@@ -240,7 +231,7 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 	const dim = 2
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
-	segmCnt := sp.SegmentCnt()
+	segmCnt := sp.knots.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {

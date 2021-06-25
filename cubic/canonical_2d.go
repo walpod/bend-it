@@ -94,10 +94,6 @@ func NewCanonicalSpline2dByMatrix(tknots []float64, mat mat.Dense) *CanonicalSpl
 	return NewCanonicalSpline2d(tknots, cubics...)
 }
 
-func (sp *CanonicalSpline2d) SegmentCnt() int {
-	return len(sp.cubics)
-}
-
 func (sp *CanonicalSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
@@ -136,7 +132,7 @@ func (sp *CanonicalSpline2d) Bezier() *BezierSpline2d {
 func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	const dim = 2
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
-	segmCnt := sp.SegmentCnt()
+	segmCnt := sp.knots.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {

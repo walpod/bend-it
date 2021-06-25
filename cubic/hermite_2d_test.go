@@ -108,13 +108,13 @@ func TestHermiteSpline2d_At(t *testing.T) {
 func TestHermiteSpline2d_Add(t *testing.T) {
 	herm := NewHermiteSpline2d(nil)
 	assert.Equal(t, 0, herm.Knots().Count(), "wrong number of knots")
-	assert.Equal(t, 0, herm.SegmentCnt(), "wrong number of segments")
+	assert.Equal(t, 0, herm.Knots().SegmentCnt(), "wrong number of segments")
 	herm.Add(NewHermiteVx2Raw(0.5, 0.5))
 	assert.Equal(t, 1, herm.Knots().Count(), "wrong number of knots")
-	assert.Equal(t, 0, herm.SegmentCnt(), "wrong number of segments")
+	assert.Equal(t, 0, herm.Knots().SegmentCnt(), "wrong number of segments")
 	herm.Add(NewHermiteVx2Raw(1, 1))
 	assert.Equal(t, 2, herm.Knots().Count(), "wrong number of knots")
-	assert.Equal(t, 1, herm.SegmentCnt(), "wrong number of segments")
+	assert.Equal(t, 1, herm.Knots().SegmentCnt(), "wrong number of segments")
 }
 
 func TestHermiteSpline2d_Canonical(t *testing.T) {
