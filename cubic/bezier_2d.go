@@ -62,15 +62,6 @@ func NewBezierSpline2dByMatrix(tknots []float64, mat mat.Dense) *BezierSpline2d 
 	return NewBezierSpline2d(tknots, vertices...)
 }
 
-func (sp *BezierSpline2d) SegmentCnt() int {
-	segmCnt := len(sp.vertices) - 1
-	if segmCnt >= 0 {
-		return segmCnt
-	} else {
-		return 0
-	}
-}
-
 func (sp *BezierSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
@@ -105,7 +96,7 @@ func (sp *BezierSpline2d) Canonical() *CanonicalSpline2d {
 func (sp *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	const dim = 2
 	// precondition: segmCnt >= 1, sp.knots.IsUniform()
-	segmCnt := sp.SegmentCnt()
+	segmCnt := sp.knots.SegmentCnt()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
@@ -196,7 +187,7 @@ func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 	}
 
 	// subdivide each segment
-	for i := 0; i < sp.SegmentCnt(); i++ {
+	for i := 0; i < sp.knots.SegmentCnt(); i++ {
 		tstart, _ := sp.knots.Knot(i)
 		tend, _ := sp.knots.Knot(i + 1)
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]

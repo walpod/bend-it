@@ -6,6 +6,7 @@ type Knots interface {
 	Tstart() float64
 	Tend() float64
 	Knot(knotNo int) (t float64, err error)
+	SegmentCnt() int
 	SegmentLen(segmentNo int) (t float64, err error)
 	MapToSegment(t float64) (segmentNo int, u float64, err error)
 	External() []float64 // external representation: uniform = nil, non-uniform = slice (non nil)
@@ -18,11 +19,10 @@ type Vertex2d interface {
 type Fn2d func(t float64) (x, y float64)
 
 type Spline2d interface {
-	SegmentCnt() int
 	Knots() Knots
 	At(t float64) (x, y float64)
 	Fn() Fn2d
-	Approx(maxDist float64, collector LineCollector2d)
+	Approx(maxDist float64, collector LineCollector2d) // TODO from-to knot
 }
 
 type LineCollector2d interface {

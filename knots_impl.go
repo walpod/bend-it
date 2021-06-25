@@ -38,6 +38,15 @@ func (k *UniformKnots) Knot(knotNo int) (t float64, err error) {
 	}
 }
 
+func (k *UniformKnots) SegmentCnt() int {
+	sc := k.cnt - 1
+	if sc < 0 {
+		return 0
+	} else {
+		return sc
+	}
+}
+
 func (k *UniformKnots) SegmentLen(segmentNo int) (t float64, err error) {
 	if segmentNo < 0 || segmentNo >= k.cnt-1 {
 		return 0, errors.New("segment doesn't exist")
@@ -115,6 +124,15 @@ func (k *NonUniformKnots) Knot(knotNo int) (t float64, err error) {
 		return 0, errors.New("knot doesn't exist")
 	} else {
 		return k.tknots[knotNo], nil
+	}
+}
+
+func (k *NonUniformKnots) SegmentCnt() int {
+	sc := len(k.tknots) - 1
+	if sc < 0 {
+		return 0
+	} else {
+		return sc
 	}
 }
 
