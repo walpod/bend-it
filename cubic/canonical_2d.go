@@ -1,6 +1,7 @@
 package cubic
 
 import (
+	"fmt"
 	bendit "github.com/walpod/bend-it"
 	"gonum.org/v1/gonum/mat"
 )
@@ -96,6 +97,20 @@ func NewCanonicalSpline2dByMatrix(tknots []float64, mat mat.Dense) *CanonicalSpl
 
 func (sp *CanonicalSpline2d) Knots() bendit.Knots {
 	return sp.knots
+}
+
+func (sp *CanonicalSpline2d) Vertex(knotNo int) (vertex bendit.Vertex2d, err error) {
+	if knotNo > len(sp.cubics) {
+		err = fmt.Errorf("knotNo %v does not exist", knotNo)
+		return
+	} else if knotNo == len(sp.cubics) {
+		x, y := sp.cubics[knotNo-1].At(1)
+		vertex = NewHermiteVx2Raw(x, y)
+	} else {
+		x, y := sp.cubics[knotNo].At(0)
+		vertex = NewHermiteVx2Raw(x, y)
+	}
+	return
 }
 
 func (sp *CanonicalSpline2d) At(t float64) (x, y float64) {

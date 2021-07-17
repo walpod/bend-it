@@ -1,6 +1,7 @@
 package cubic
 
 import (
+	"fmt"
 	bendit "github.com/walpod/bend-it"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -64,6 +65,15 @@ func NewBezierSpline2dByMatrix(tknots []float64, mat mat.Dense) *BezierSpline2d 
 
 func (sp *BezierSpline2d) Knots() bendit.Knots {
 	return sp.knots
+}
+
+func (sp *BezierSpline2d) Vertex(knotNo int) (vertex bendit.Vertex2d, err error) {
+	if knotNo >= len(sp.vertices) {
+		err = fmt.Errorf("knotNo %v does not exist", knotNo)
+		return
+	}
+	vertex = sp.vertices[knotNo]
+	return
 }
 
 func (sp *BezierSpline2d) Prepare() {

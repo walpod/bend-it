@@ -1,6 +1,7 @@
 package cubic
 
 import (
+	"fmt"
 	"github.com/walpod/bend-it"
 	"gonum.org/v1/gonum/mat"
 )
@@ -67,6 +68,15 @@ func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d,
 
 func (sp *HermiteSpline2d) Knots() bendit.Knots {
 	return sp.knots
+}
+
+func (sp *HermiteSpline2d) Vertex(knotNo int) (vertex bendit.Vertex2d, err error) {
+	if knotNo >= len(sp.vertices) {
+		err = fmt.Errorf("knotNo %v does not exist", knotNo)
+		return
+	}
+	vertex = sp.vertices[knotNo]
+	return
 }
 
 func (sp *HermiteSpline2d) Add(vertex *HermiteVx2) {

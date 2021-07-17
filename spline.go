@@ -20,6 +20,7 @@ type Fn2d func(t float64) (x, y float64)
 
 type Spline2d interface {
 	Knots() Knots
+	Vertex(knotNo int) (vertex Vertex2d, err error)
 	At(t float64) (x, y float64)
 	Fn() Fn2d
 	Approx(maxDist float64, collector LineCollector2d) // TODO from-to knot
