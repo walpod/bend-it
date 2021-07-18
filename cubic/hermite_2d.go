@@ -1,7 +1,6 @@
 package cubic
 
 import (
-	"fmt"
 	"github.com/walpod/bend-it"
 	"gonum.org/v1/gonum/mat"
 )
@@ -41,6 +40,7 @@ type HermiteSpline2d struct {
 	knots     bendit.Knots
 	vertices  []*HermiteVx2
 	tanFinder HermiteTanFinder2d
+	annex     *bendit.Annex
 	// internal cache of prepare
 	canon    *CanonicalSpline2d
 	bezier   *BezierSpline2d
@@ -62,7 +62,7 @@ func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d,
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder, canon: nil, bezier: nil, tanFound: false}
+	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder, annex: bendit.NewAnnex(knots), canon: nil, bezier: nil, tanFound: false}
 	return herm
 }
 
@@ -70,13 +70,12 @@ func (sp *HermiteSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *HermiteSpline2d) Vertex(knotNo int) (vertex bendit.Vertex2d, err error) {
+func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 	if knotNo >= len(sp.vertices) {
-		err = fmt.Errorf("knotNo %v does not exist", knotNo)
-		return
+		return nil
+	} else {
+		return sp.vertices[knotNo]
 	}
-	vertex = sp.vertices[knotNo]
-	return
 }
 
 func (sp *HermiteSpline2d) Add(vertex *HermiteVx2) {
@@ -269,6 +268,10 @@ func (sp *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollecto
 		sp.prepareBezier()
 	}
 	sp.bezier.Approx(maxDist, collector)
+}
+
+func (sp *HermiteSpline2d) Annex() *bendit.Annex {
+	return sp.annex
 }
 
 /*

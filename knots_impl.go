@@ -30,9 +30,13 @@ func (k *UniformKnots) Count() int {
 	return k.cnt
 }
 
+func (k *UniformKnots) KnotExists(knotNo int) bool {
+	return knotNo >= 0 && knotNo < k.cnt
+}
+
 func (k *UniformKnots) Knot(knotNo int) (t float64, err error) {
-	if knotNo < 0 || knotNo >= k.cnt {
-		return 0, errors.New("knot doesn't exist")
+	if !k.KnotExists(knotNo) {
+		return 0, fmt.Errorf("knot with no. %v doesn't exist", knotNo)
 	} else {
 		return float64(knotNo), nil
 	}
@@ -47,9 +51,13 @@ func (k *UniformKnots) SegmentCnt() int {
 	}
 }
 
-func (k *UniformKnots) SegmentLen(segmentNo int) (t float64, err error) {
-	if segmentNo < 0 || segmentNo >= k.cnt-1 {
-		return 0, errors.New("segment doesn't exist")
+func (k *UniformKnots) SegmentExists(segmentNo int) bool {
+	return segmentNo >= 0 && segmentNo < k.cnt-1
+}
+
+func (k *UniformKnots) SegmentLen(segmentNo int) (l float64, err error) {
+	if !k.SegmentExists(segmentNo) {
+		return 0, fmt.Errorf("segment with no. %v doesn't exist", segmentNo)
 	} else {
 		return 1, nil
 	}
@@ -119,9 +127,13 @@ func (k *NonUniformKnots) Count() int {
 	return len(k.tknots)
 }
 
+func (k *NonUniformKnots) KnotExists(knotNo int) bool {
+	return knotNo >= 0 && knotNo < len(k.tknots)
+}
+
 func (k *NonUniformKnots) Knot(knotNo int) (t float64, err error) {
-	if knotNo < 0 || knotNo >= len(k.tknots) {
-		return 0, errors.New("knot doesn't exist")
+	if !k.KnotExists(knotNo) {
+		return 0, fmt.Errorf("knot with no. %v doesn't exist", knotNo)
 	} else {
 		return k.tknots[knotNo], nil
 	}
@@ -136,9 +148,13 @@ func (k *NonUniformKnots) SegmentCnt() int {
 	}
 }
 
-func (k *NonUniformKnots) SegmentLen(segmentNo int) (t float64, err error) {
-	if segmentNo < 0 || segmentNo >= len(k.tknots)-1 {
-		return 0, errors.New("segment doesn't exist")
+func (k *NonUniformKnots) SegmentExists(segmentNo int) bool {
+	return segmentNo >= 0 && segmentNo < len(k.tknots)-1
+}
+
+func (k *NonUniformKnots) SegmentLen(segmentNo int) (l float64, err error) {
+	if !k.SegmentExists(segmentNo) {
+		return 0, fmt.Errorf("segment with no. %v doesn't exist", segmentNo)
 	} else {
 		return k.tknots[segmentNo+1] - k.tknots[segmentNo], nil
 	}

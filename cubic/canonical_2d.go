@@ -1,7 +1,6 @@
 package cubic
 
 import (
-	"fmt"
 	bendit "github.com/walpod/bend-it"
 	"gonum.org/v1/gonum/mat"
 )
@@ -47,6 +46,7 @@ func (cb *Cubic2d) Fn() bendit.Fn2d {
 type CanonicalSpline2d struct {
 	knots  bendit.Knots
 	cubics []Cubic2d
+	annex  *bendit.Annex
 }
 
 // tknots: nil = uniform else non-uniform
@@ -64,7 +64,7 @@ func NewCanonicalSpline2d(tknots []float64, cubics ...Cubic2d) *CanonicalSpline2
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	canon := &CanonicalSpline2d{knots, cubics}
+	canon := &CanonicalSpline2d{knots, cubics, bendit.NewAnnex(knots)}
 	return canon
 }
 
@@ -99,18 +99,16 @@ func (sp *CanonicalSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *CanonicalSpline2d) Vertex(knotNo int) (vertex bendit.Vertex2d, err error) {
+func (sp *CanonicalSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 	if knotNo > len(sp.cubics) {
-		err = fmt.Errorf("knotNo %v does not exist", knotNo)
-		return
+		return nil
 	} else if knotNo == len(sp.cubics) {
 		x, y := sp.cubics[knotNo-1].At(1)
-		vertex = NewHermiteVx2Raw(x, y)
+		return NewHermiteVx2Raw(x, y)
 	} else {
 		x, y := sp.cubics[knotNo].At(0)
-		vertex = NewHermiteVx2Raw(x, y)
+		return NewHermiteVx2Raw(x, y)
 	}
-	return
 }
 
 func (sp *CanonicalSpline2d) At(t float64) (x, y float64) {
@@ -173,4 +171,8 @@ func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 
 func (sp *CanonicalSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
 	sp.Bezier().Approx(maxDist, collector)
+}
+
+func (sp *CanonicalSpline2d) Annex() *bendit.Annex {
+	return sp.annex
 }

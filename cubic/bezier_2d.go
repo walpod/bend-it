@@ -54,6 +54,7 @@ func (vx BezierVx2) Exit() Controller {
 type BezierSpline2d struct {
 	knots    bendit.Knots
 	vertices []*BezierVx2
+	annex    *bendit.Annex
 	canon    *CanonicalSpline2d // map to canonical, cubic spline
 }
 
@@ -68,7 +69,7 @@ func NewBezierSpline2d(tknots []float64, vertices ...*BezierVx2) *BezierSpline2d
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	bez := &BezierSpline2d{knots: knots, vertices: vertices}
+	bez := &BezierSpline2d{knots: knots, vertices: vertices, annex: bendit.NewAnnex(knots)}
 	return bez
 }
 
@@ -99,16 +100,15 @@ func (sp *BezierSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *BezierSpline2d) BezierVertex(knotNo int) (vertex *BezierVx2, err error) {
+func (sp *BezierSpline2d) BezierVertex(knotNo int) *BezierVx2 {
 	if knotNo >= len(sp.vertices) {
-		err = fmt.Errorf("knotNo %v does not exist", knotNo)
-		return
+		return nil
+	} else {
+		return sp.vertices[knotNo]
 	}
-	vertex = sp.vertices[knotNo]
-	return
 }
 
-func (sp *BezierSpline2d) Vertex(knotNo int) (vertex bendit.Vertex2d, err error) {
+func (sp *BezierSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 	return sp.BezierVertex(knotNo)
 }
 
@@ -259,4 +259,8 @@ func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 func ProjectedVectorDist(vx, vy, wx, wy float64) float64 {
 	// distance = area of parallelogram(v, w) / length(w)
 	return math.Abs(wx*vy-wy*vx) / math.Sqrt(wx*wx+wy*wy)
+}
+
+func (sp *BezierSpline2d) Annex() *bendit.Annex {
+	return sp.annex
 }

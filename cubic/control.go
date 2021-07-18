@@ -65,6 +65,7 @@ func (o OriginReflection) ControlY() float64 {
 	return -o.baseControlY
 }*/
 
+// TODO change to pointer to have current values is point or base-control are changing
 type PointReflection struct {
 	pointX, pointY             float64
 	baseControlX, baseControlY float64
