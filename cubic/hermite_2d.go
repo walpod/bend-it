@@ -232,7 +232,7 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 		}
 	} else if n == 1 {
 		return NewBezierSpline2d(sp.knots.External(),
-			NewBezierVx2(sp.vertices[0].x, sp.vertices[0].y, 0, 0, 0, 0))
+			NewBezierVx2(sp.vertices[0].x, sp.vertices[0].y, nil, nil))
 	} else {
 		return NewBezierSpline2d(sp.knots.External())
 	}

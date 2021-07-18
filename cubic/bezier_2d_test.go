@@ -60,25 +60,25 @@ func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64
 // createBezierDiag00to11 creates a bezier representing a straight line from (0,0) to (1,1)
 func createBezierDiag00to11() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewBezierVx2(0, 0, 0, 0, 1./3, 1./3),
-		NewBezierVx2(1, 1, 2./3, 2./3, 0, 0),
+		NewBezierVx2(0, 0, nil, NewControl(1./3, 1./3)),
+		NewBezierVx2(1, 1, NewControl(2./3, 2./3), nil),
 	)
 }
 
 // createBezierDiag00to11 creates a bezier representing an S-formed slope from (0,0) to (1,1)
 func createBezierS00to11() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewBezierVx2(0, 0, 0, 0, 1, 0),
-		NewBezierVx2(1, 1, 0, 1, 0, 0),
+		NewBezierVx2(0, 0, nil, NewControl(1, 0)),
+		NewBezierVx2(1, 1, NewControl(0, 1), nil),
 	)
 }
 
 // createBezierDiag00to11 creates two consecutive beziers representing an S-formed slope from (0,0) to (1,1) or (1,1) to (2,2), resp.
 func createDoubleBezierS00to11to22() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewBezierVx2(0, 0, 0, 0, 1, 0),
-		NewBezierVx2(1, 1, 0, 1, 2, 1),
-		NewBezierVx2(2, 2, 1, 2, 0, 0),
+		NewBezierVx2(0, 0, nil, NewControl(1, 0)),
+		NewBezierVx2(1, 1 /*NewControl(0, 1)*/, NewReflective(), NewControl(2, 1)),
+		NewBezierVx2(2, 2, NewControl(1, 2), nil),
 	)
 }
 
@@ -99,12 +99,12 @@ func TestBezierSpline2d_At(t *testing.T) {
 
 	// single vertex, domain with value 0 only
 	bezier = NewBezierSpline2d(nil,
-		NewBezierVx2(1, 2, 0, 0, 0, 0))
+		NewBezierVx2(1, 2, nil, nil))
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	bezier = NewBezierSpline2d(
 		[]float64{0},
-		NewBezierVx2(1, 2, 0, 0, 0, 0))
+		NewBezierVx2(1, 2, nil, nil))
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	// empty domain

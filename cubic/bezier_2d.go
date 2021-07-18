@@ -8,18 +8,47 @@ import (
 )
 
 type BezierVx2 struct {
-	x, y                   float64
-	entryCtrlx, entryCtrly float64
-	exitCtrlx, exitCtrly   float64
+	x, y  float64
+	entry Controller
+	exit  Controller
 }
 
-func NewBezierVx2(x float64, y float64, entryCtrlx float64, entryCtrly float64, exitCtrlx float64, exitCtrly float64) *BezierVx2 {
+func NewBezierVx2(x float64, y float64, entry Controller, exit Controller) *BezierVx2 {
+	// exchange Controller
+	switch entry.(type) {
+	case *Reflective:
+		if exit == nil || exit.IsForExchange() {
+			panic("reflective entry must have concrete exit (!IsForExchange)")
+		}
+		entry = NewPointReflection(x, y, exit.ControlX(), exit.ControlY())
+	}
+
+	switch exit.(type) {
+	case *Reflective:
+		if entry == nil || entry.IsForExchange() {
+			panic("reflective exit must have concrete entry (!IsForExchange)")
+		}
+		exit = NewPointReflection(x, y, entry.ControlX(), entry.ControlY())
+	}
+
+	return &BezierVx2{x: x, y: y, entry: entry, exit: exit}
+}
+
+/*func NewBezierVx2(x float64, y float64, entryCtrlx float64, entryCtrly float64, exitCtrlx float64, exitCtrly float64) *BezierVx2 {
 	return &BezierVx2{x: x, y: y,
 		entryCtrlx: entryCtrlx, entryCtrly: entryCtrly, exitCtrlx: exitCtrlx, exitCtrly: exitCtrly}
-}
+}*/
 
 func (vx BezierVx2) Coord() (x, y float64) {
 	return vx.x, vx.y
+}
+
+func (vx BezierVx2) Entry() Controller {
+	return vx.entry
+}
+
+func (vx BezierVx2) Exit() Controller {
+	return vx.exit
 }
 
 type BezierSpline2d struct {
@@ -48,17 +77,20 @@ func NewBezierSpline2dByMatrix(tknots []float64, mat mat.Dense) *BezierSpline2d 
 	rows, _ := mat.Dims()
 	segmCnt := rows / 2
 	vertices := make([]*BezierVx2, 0, segmCnt)
-	vertices = append(vertices, NewBezierVx2(mat.At(0, 0), mat.At(1, 0),
-		0, 0,
-		mat.At(0, 1), mat.At(1, 1)))
+	vertices = append(vertices, NewBezierVx2(
+		mat.At(0, 0), mat.At(1, 0),
+		nil, //NewControl(0, 0,),
+		NewControl(mat.At(0, 1), mat.At(1, 1))))
 	for i := 1; i < segmCnt; i++ {
-		vertices = append(vertices, NewBezierVx2(mat.At(i*dim, 0), mat.At(i*dim+1, 0),
-			mat.At(i*dim-2, 2), mat.At(i*dim-1, 2),
-			mat.At(i*dim, 1), mat.At(i*dim+1, 1)))
+		vertices = append(vertices, NewBezierVx2(
+			mat.At(i*dim, 0), mat.At(i*dim+1, 0),
+			NewControl(mat.At(i*dim-2, 2), mat.At(i*dim-1, 2)),
+			NewControl(mat.At(i*dim, 1), mat.At(i*dim+1, 1))))
 	}
-	vertices = append(vertices, NewBezierVx2(mat.At(segmCnt*dim-2, 3), mat.At(segmCnt*dim-1, 3),
-		mat.At(segmCnt*dim-2, 2), mat.At(segmCnt*dim-1, 2),
-		0, 0))
+	vertices = append(vertices, NewBezierVx2(
+		mat.At(segmCnt*dim-2, 3), mat.At(segmCnt*dim-1, 3),
+		NewControl(mat.At(segmCnt*dim-2, 2), mat.At(segmCnt*dim-1, 2)),
+		nil)) //NewControl(0, 0)
 
 	return NewBezierSpline2d(tknots, vertices...)
 }
@@ -67,12 +99,25 @@ func (sp *BezierSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *BezierSpline2d) Vertex(knotNo int) (vertex bendit.Vertex2d, err error) {
+func (sp *BezierSpline2d) BezierVertex(knotNo int) (vertex *BezierVx2, err error) {
 	if knotNo >= len(sp.vertices) {
 		err = fmt.Errorf("knotNo %v does not exist", knotNo)
 		return
 	}
 	vertex = sp.vertices[knotNo]
+	return
+}
+
+func (sp *BezierSpline2d) Vertex(knotNo int) (vertex bendit.Vertex2d, err error) {
+	return sp.BezierVertex(knotNo)
+}
+
+func (sp *BezierSpline2d) Update(knotNo int, x float64, y float64, entry Controller, exit Controller) (err error) {
+	if knotNo >= len(sp.vertices) {
+		err = fmt.Errorf("knotNo %v does not exist", knotNo)
+		return
+	}
+	sp.vertices[knotNo] = NewBezierVx2(x, y, entry, exit)
 	return
 }
 
@@ -111,8 +156,8 @@ func (sp *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
-		avs = append(avs, vstart.x, vstart.exitCtrlx, vend.entryCtrlx, vend.x)
-		avs = append(avs, vstart.y, vstart.exitCtrly, vend.entryCtrly, vend.y)
+		avs = append(avs, vstart.x, vstart.exit.ControlX(), vend.entry.ControlX(), vend.x)
+		avs = append(avs, vstart.y, vstart.exit.ControlY(), vend.entry.ControlY(), vend.y)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
@@ -154,9 +199,9 @@ func (sp *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 		}
 		start := sp.vertices[segmNo]
 		end := sp.vertices[segmNo+1]
-		x01, y01 := linip(start.x, start.exitCtrlx), linip(start.y, start.exitCtrly)
-		x11, y11 := linip(start.exitCtrlx, end.entryCtrlx), linip(start.exitCtrly, end.entryCtrly)
-		x21, y21 := linip(end.entryCtrlx, end.x), linip(end.entryCtrly, end.y)
+		x01, y01 := linip(start.x, start.exit.ControlX()), linip(start.y, start.exit.ControlY())
+		x11, y11 := linip(start.exit.ControlX(), end.entry.ControlX()), linip(start.exit.ControlY(), end.entry.ControlY())
+		x21, y21 := linip(end.entry.ControlX(), end.x), linip(end.entry.ControlY(), end.y)
 		x02, y02 := linip(x01, x11), linip(y01, y11)
 		x12, y12 := linip(x11, x21), linip(y11, y21)
 		return linip(x02, x12), linip(y02, y12)
@@ -204,8 +249,8 @@ func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 		subdivide(
 			tstart, tend,
 			vstart.x, vstart.y,
-			vstart.exitCtrlx, vstart.exitCtrly,
-			vend.entryCtrlx, vend.entryCtrly,
+			vstart.exit.ControlX(), vstart.exit.ControlY(),
+			vend.entry.ControlX(), vend.entry.ControlY(),
 			vend.x, vend.y)
 	}
 }
