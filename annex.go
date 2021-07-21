@@ -12,7 +12,7 @@ func NewAnnex(knots Knots) *Annex {
 	return &Annex{knots: knots}
 }
 
-func (an *Annex) ToVertex(knotNo int) (data interface{}) {
+func (an *Annex) GetFromVertex(knotNo int) (data interface{}) {
 	if !an.knots.KnotExists(knotNo) || knotNo >= len(an.toVertices) {
 		return nil
 	} else {

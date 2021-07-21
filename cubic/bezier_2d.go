@@ -34,6 +34,15 @@ func NewBezierVx2(x float64, y float64, entry Controller, exit Controller) *Bezi
 	return &BezierVx2{x: x, y: y, entry: entry, exit: exit}
 }
 
+func (vx BezierVx2) FlipCalculatedController() {
+	if vx.entry.IsCalculated() {
+		//exit := NewPointReflection(vx.x, vx.y, vx.entry.ControlX(), vx.entry.ControlY())
+		vx.entry, vx.exit = vx.exit, NewPointReflection(vx.x, vx.y, vx.entry.ControlX(), vx.entry.ControlY())
+	} else if vx.exit.IsCalculated() {
+		vx.entry, vx.exit = NewPointReflection(vx.x, vx.y, vx.exit.ControlX(), vx.exit.ControlY()), vx.entry
+	}
+}
+
 /*func NewBezierVx2(x float64, y float64, entryCtrlx float64, entryCtrly float64, exitCtrlx float64, exitCtrly float64) *BezierVx2 {
 	return &BezierVx2{x: x, y: y,
 		entryCtrlx: entryCtrlx, entryCtrly: entryCtrly, exitCtrlx: exitCtrlx, exitCtrly: exitCtrly}
