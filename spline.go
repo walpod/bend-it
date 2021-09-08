@@ -5,7 +5,7 @@ type Knots interface {
 	Tstart() float64
 	Tend() float64
 
-	Count() int
+	Cnt() int
 	KnotExists(knotNo int) bool
 	Knot(knotNo int) (t float64, err error)
 
@@ -28,11 +28,12 @@ type Spline2d interface {
 	Vertex(knotNo int) Vertex2d
 	At(t float64) (x, y float64)
 	Fn() Fn2d
-	Approx(maxDist float64, collector LineCollector2d) // TODO from-to knot
-	Annex() *Annex
+	Approx(maxDist float64, collector LineCollector2d)
+	ApproxSegments(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector2d)
 }
 
 type LineCollector2d interface {
-	// CollectLine from start (pstartx,pstarty) to end point (pendx,pendy) for parameter range (tstart..tend)
-	CollectLine(tstart, tend, pstartx, pstarty, pendx, pendy float64)
+	// CollectLine is called from start (pstartx,pstarty) to end point (pendx,pendy) in consecutive order
+	// for parameter range (tstart..tend)
+	CollectLine(segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64)
 }

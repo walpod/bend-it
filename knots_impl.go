@@ -26,7 +26,7 @@ func (k *UniformKnots) Tend() float64 {
 	return float64(k.cnt - 1)
 }
 
-func (k *UniformKnots) Count() int {
+func (k *UniformKnots) Cnt() int {
 	return k.cnt
 }
 
@@ -123,7 +123,7 @@ func (k *NonUniformKnots) Tend() float64 {
 	}
 }
 
-func (k *NonUniformKnots) Count() int {
+func (k *NonUniformKnots) Cnt() int {
 	return len(k.tknots)
 }
 

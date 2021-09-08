@@ -18,5 +18,9 @@ func (c *Control) Y() float64 {
 
 // NewDependentControl creates a symmetric (reflective) control to given point x,y and base-control
 func NewDependentControl(x, y float64, base *Control) *Control {
-	return NewControl(2*x-base.x, 2*y-base.y)
+	if base == nil {
+		return nil
+	} else {
+		return NewControl(2*x-base.x, 2*y-base.y)
+	}
 }

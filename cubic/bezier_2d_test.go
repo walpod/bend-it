@@ -77,7 +77,7 @@ func createBezierS00to11() *BezierSpline2d {
 func createDoubleBezierS00to11to22() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
 		NewBezierVx2(0, 0, nil, NewControl(1, 0)),
-		NewBezierVx2(1, 1 /*NewControl(0, 1)*/, NewReflective(), NewControl(2, 1)),
+		NewBezierVx2(1, 1 /*NewControl(0, 1)*/, nil, NewControl(2, 1)),
 		NewBezierVx2(2, 2, NewControl(1, 2), nil),
 	)
 }

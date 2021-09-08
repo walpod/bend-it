@@ -50,7 +50,6 @@ func (vx BezierVx2) Dependent() bool {
 type BezierSpline2d struct {
 	knots    bendit.Knots
 	vertices []*BezierVx2
-	annex    *bendit.Annex
 	canon    *CanonicalSpline2d // map to canonical, cubic spline
 }
 
@@ -65,7 +64,7 @@ func NewBezierSpline2d(tknots []float64, vertices ...*BezierVx2) *BezierSpline2d
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	bez := &BezierSpline2d{knots: knots, vertices: vertices, annex: bendit.NewAnnex(knots)}
+	bez := &BezierSpline2d{knots: knots, vertices: vertices}
 	return bez
 }
 
@@ -213,16 +212,20 @@ func (sp *BezierSpline2d) Fn() bendit.Fn2d {
 
 // Approx -imate bezier-spline with line-segments using subdivision
 func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
+	sp.ApproxSegments(0, sp.Knots().SegmentCnt()-1, maxDist, collector)
+}
+
+func (sp *BezierSpline2d) ApproxSegments(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
 	isFlat := func(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool {
 		lx, ly := x3-x0, y3-y0
 		return ProjectedVectorDist(x1-x0, y1-y0, lx, ly) <= maxDist &&
 			ProjectedVectorDist(x2-x0, y2-y0, lx, ly) <= maxDist
 	}
 
-	var subdivide func(ts, te, x0, y0, x1, y1, x2, y2, x3, y3 float64)
-	subdivide = func(ts, te, x0, y0, x1, y1, x2, y2, x3, y3 float64) {
+	var subdivide func(segmNo int, ts, te, x0, y0, x1, y1, x2, y2, x3, y3 float64)
+	subdivide = func(segmNo int, ts, te, x0, y0, x1, y1, x2, y2, x3, y3 float64) {
 		if isFlat(x0, y0, x1, y1, x2, y2, x3, y3) {
-			collector.CollectLine(ts, te, x0, y0, x3, y3)
+			collector.CollectLine(segmNo, ts, te, x0, y0, x3, y3)
 		} else {
 			m := 0.5
 			tm := ts*m + te*m
@@ -232,18 +235,18 @@ func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 			x02, y02 := m*x01+m*x11, m*y01+m*y11
 			x12, y12 := m*x11+m*x21, m*y11+m*y21
 			x03, y03 := m*x02+m*x12, m*y02+m*y12
-			subdivide(ts, tm, x0, y0, x01, y01, x02, y02, x03, y03)
-			subdivide(tm, te, x03, y03, x12, y12, x21, y21, x3, y3)
+			subdivide(segmNo, ts, tm, x0, y0, x01, y01, x02, y02, x03, y03)
+			subdivide(segmNo, tm, te, x03, y03, x12, y12, x21, y21, x3, y3)
 		}
 	}
 
 	// subdivide each segment
-	for i := 0; i < sp.knots.SegmentCnt(); i++ {
-		tstart, _ := sp.knots.Knot(i)
-		tend, _ := sp.knots.Knot(i + 1)
-		vstart, vend := sp.vertices[i], sp.vertices[i+1]
+	for segmentNo := fromSegmentNo; segmentNo <= toSegmentNo; segmentNo++ {
+		tstart, _ := sp.knots.Knot(segmentNo)
+		tend, _ := sp.knots.Knot(segmentNo + 1)
+		vstart, vend := sp.vertices[segmentNo], sp.vertices[segmentNo+1]
 		subdivide(
-			tstart, tend,
+			segmentNo, tstart, tend,
 			vstart.x, vstart.y,
 			vstart.exit.X(), vstart.exit.Y(),
 			vend.entry.X(), vend.entry.Y(),
@@ -255,8 +258,4 @@ func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector
 func ProjectedVectorDist(vx, vy, wx, wy float64) float64 {
 	// distance = area of parallelogram(v, w) / length(w)
 	return math.Abs(wx*vy-wy*vx) / math.Sqrt(wx*wx+wy*wy)
-}
-
-func (sp *BezierSpline2d) Annex() *bendit.Annex {
-	return sp.annex
 }

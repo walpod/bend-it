@@ -40,7 +40,6 @@ type HermiteSpline2d struct {
 	knots     bendit.Knots
 	vertices  []*HermiteVx2
 	tanFinder HermiteTanFinder2d
-	annex     *bendit.Annex
 	// internal cache of prepare
 	canon    *CanonicalSpline2d
 	bezier   *BezierSpline2d
@@ -62,7 +61,7 @@ func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d,
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder, annex: bendit.NewAnnex(knots), canon: nil, bezier: nil, tanFound: false}
+	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder, canon: nil, bezier: nil, tanFound: false}
 	return herm
 }
 
@@ -270,8 +269,8 @@ func (sp *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollecto
 	sp.bezier.Approx(maxDist, collector)
 }
 
-func (sp *HermiteSpline2d) Annex() *bendit.Annex {
-	return sp.annex
+func (sp *HermiteSpline2d) ApproxSegments(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+	sp.Bezier().ApproxSegments(fromSegmentNo, toSegmentNo, maxDist, collector)
 }
 
 /*

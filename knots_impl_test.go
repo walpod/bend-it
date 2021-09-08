@@ -13,7 +13,7 @@ func TestUniformKnots(t *testing.T) {
 	assert.True(t, knots.IsUniform(), "knots must be uniform")
 	assert.Empty(t, knots.External(), "external representation must be nil")
 
-	assert.Equal(t, knotsCnt, knots.Count(), "must have %v knots", knotsCnt)
+	assert.Equal(t, knotsCnt, knots.Cnt(), "must have %v knots", knotsCnt)
 	assert.Equal(t, 0., knots.Tstart(), "T must start at 0")
 	assert.Equal(t, float64(knotsCnt-1), knots.Tend(), "T must end at %v", float64(knotsCnt-1))
 	t1, _ := knots.Knot(1)
@@ -40,7 +40,7 @@ func TestNonUniformKnots(t *testing.T) {
 	assert.False(t, knots.IsUniform(), "knots may not be uniform")
 	assert.Equal(t, knots.External(), ks, "external representation must be %v", ks)
 
-	assert.Equal(t, len(ks), knots.Count(), "must have %v knots", len(ks))
+	assert.Equal(t, len(ks), knots.Cnt(), "must have %v knots", len(ks))
 	assert.Equal(t, tstart, knots.Tstart(), "T must start at 0")
 	assert.Equal(t, tend, knots.Tend(), "T must end at %v", tend)
 	t1, _ := knots.Knot(1)

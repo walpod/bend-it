@@ -46,7 +46,6 @@ func (cb *Cubic2d) Fn() bendit.Fn2d {
 type CanonicalSpline2d struct {
 	knots  bendit.Knots
 	cubics []Cubic2d
-	annex  *bendit.Annex
 }
 
 // tknots: nil = uniform else non-uniform
@@ -64,7 +63,7 @@ func NewCanonicalSpline2d(tknots []float64, cubics ...Cubic2d) *CanonicalSpline2
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	canon := &CanonicalSpline2d{knots, cubics, bendit.NewAnnex(knots)}
+	canon := &CanonicalSpline2d{knots, cubics}
 	return canon
 }
 
@@ -173,6 +172,6 @@ func (sp *CanonicalSpline2d) Approx(maxDist float64, collector bendit.LineCollec
 	sp.Bezier().Approx(maxDist, collector)
 }
 
-func (sp *CanonicalSpline2d) Annex() *bendit.Annex {
-	return sp.annex
+func (sp *CanonicalSpline2d) ApproxSegments(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+	sp.Bezier().ApproxSegments(fromSegmentNo, toSegmentNo, maxDist, collector)
 }
