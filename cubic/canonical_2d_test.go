@@ -66,7 +66,7 @@ func TestCanonicalSpline2d_Bezier(t *testing.T) {
 func TestCanonicalSpline2d_Approx(t *testing.T) {
 	canon := createCanonParabola00to11()
 	lc := bendit.NewLineToSliceCollector2d()
-	canon.Approx(0.01, lc)
+	bendit.ApproxAll(canon, 0.01, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, canon)
 }

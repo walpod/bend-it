@@ -134,7 +134,7 @@ func TestBezierSpline2d_Canonical(t *testing.T) {
 func TestBezierSpline2d_Approx(t *testing.T) {
 	bezier := createBezierDiag00to11()
 	lc := bendit.NewLineToSliceCollector2d()
-	bezier.Approx(0.1, lc)
+	bendit.ApproxAll(bezier, 0.1, lc)
 	assert.Len(t, lc.Lines, 1, "approximated with one line")
 	assert.InDeltaf(t, 0., lc.Lines[0].Pstartx, delta, "start point x=0")
 	assert.InDeltaf(t, 0., lc.Lines[0].Pstarty, delta, "start point y=0")
@@ -144,7 +144,7 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezier = createBezierS00to11()
 	lc = bendit.NewLineToSliceCollector2d()
-	bezier.Approx(0.02, lc)
+	bendit.ApproxAll(bezier, 0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezier)
 }
