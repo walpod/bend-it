@@ -168,10 +168,6 @@ func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	return NewBezierSpline2dByMatrix(sp.knots.External(), coefs)
 }
 
-func (sp *CanonicalSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
-	sp.Bezier().Approx(maxDist, collector)
-}
-
-func (sp *CanonicalSpline2d) ApproxSegments(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
-	sp.Bezier().ApproxSegments(fromSegmentNo, toSegmentNo, maxDist, collector)
+func (sp *CanonicalSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+	sp.Bezier().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
 }

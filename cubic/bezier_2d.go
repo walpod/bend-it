@@ -211,11 +211,7 @@ func (sp *BezierSpline2d) Fn() bendit.Fn2d {
 }
 
 // Approx -imate bezier-spline with line-segments using subdivision
-func (sp *BezierSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
-	sp.ApproxSegments(0, sp.Knots().SegmentCnt()-1, maxDist, collector)
-}
-
-func (sp *BezierSpline2d) ApproxSegments(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+func (sp *BezierSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
 	isFlat := func(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool {
 		lx, ly := x3-x0, y3-y0
 		return ProjectedVectorDist(x1-x0, y1-y0, lx, ly) <= maxDist &&

@@ -262,15 +262,11 @@ func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 	return NewBezierSpline2dByMatrix(sp.knots.External(), coefs)
 }
 
-func (sp *HermiteSpline2d) Approx(maxDist float64, collector bendit.LineCollector2d) {
+func (sp *HermiteSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
 	if sp.bezier == nil {
 		sp.prepareBezier()
 	}
-	sp.bezier.Approx(maxDist, collector)
-}
-
-func (sp *HermiteSpline2d) ApproxSegments(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
-	sp.Bezier().ApproxSegments(fromSegmentNo, toSegmentNo, maxDist, collector)
+	sp.Bezier().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
 }
 
 /*

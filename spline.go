@@ -28,12 +28,15 @@ type Spline2d interface {
 	Vertex(knotNo int) Vertex2d
 	At(t float64) (x, y float64)
 	Fn() Fn2d
-	Approx(maxDist float64, collector LineCollector2d)
-	ApproxSegments(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector2d)
+	Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector2d)
 }
 
 type LineCollector2d interface {
 	// CollectLine is called from start (pstartx,pstarty) to end point (pendx,pendy) in consecutive order
 	// for parameter range (tstart..tend)
 	CollectLine(segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64)
+}
+
+func ApproxAll(spline Spline2d, maxDist float64, collector LineCollector2d) {
+	spline.Approx(0, spline.Knots().SegmentCnt()-1, maxDist, collector)
 }
