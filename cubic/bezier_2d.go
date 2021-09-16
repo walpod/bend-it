@@ -55,6 +55,30 @@ func (vx BezierVx2) Dependent() bool {
 	return vx.dependent
 }
 
+func (vx BezierVx2) Move(dx, dy float64) *BezierVx2 {
+	var exit *Control
+	if !vx.dependent {
+		exit = vx.exit.Move(dx, dy)
+	}
+	return NewBezierVx2(vx.x+dx, vx.y+dy, vx.entry.Move(dx, dy), exit)
+}
+
+func (vx BezierVx2) WithEntry(entry *Control) *BezierVx2 {
+	var exit *Control
+	if !vx.dependent {
+		exit = vx.exit
+	}
+	return NewBezierVx2(vx.x, vx.y, entry, exit)
+}
+
+func (vx BezierVx2) WithExit(exit *Control) *BezierVx2 {
+	var entry *Control
+	if !vx.dependent {
+		entry = vx.entry
+	}
+	return NewBezierVx2(vx.x, vx.y, entry, exit)
+}
+
 type BezierSpline2d struct {
 	knots    bendit.Knots
 	vertices []*BezierVx2
@@ -115,12 +139,12 @@ func (sp *BezierSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 	return sp.BezierVertex(knotNo)
 }
 
-func (sp *BezierSpline2d) Update(knotNo int, x float64, y float64, entry *Control, exit *Control) (err error) {
+func (sp *BezierSpline2d) SetVertex(knotNo int, vertex *BezierVx2) (err error) {
 	if knotNo >= len(sp.vertices) {
 		err = fmt.Errorf("knotNo %v does not exist", knotNo)
 		return
 	}
-	sp.vertices[knotNo] = NewBezierVx2(x, y, entry, exit)
+	sp.vertices[knotNo] = vertex
 	return
 }
 

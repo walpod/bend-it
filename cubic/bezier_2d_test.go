@@ -57,6 +57,25 @@ func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64
 	assert.InDeltaf(t, ydc, y, delta, "spline.At(%v).y = %v != spline.AtDeCasteljau(%v).y = %v", atT, y, atT, ydc)
 }
 
+func AssertControlsAreEqual(t *testing.T, expected *Control, actual *Control, isEntry bool) {
+	var side string
+	if isEntry {
+		side = "entry"
+	} else {
+		side = "exit"
+	}
+	assert.InDeltaf(t, expected.x, actual.x, delta, "expected %v-control.x = %v != actual.x = %v", side, expected.x, actual.x)
+	assert.InDeltaf(t, expected.y, actual.y, delta, "expected %v-control.y = %v != actual.y = %v", side, expected.y, actual.y)
+}
+
+func AssertBezierVxAreEqual(t *testing.T, expected *BezierVx2, expectedDependent bool, actual *BezierVx2) {
+	assert.InDeltaf(t, expected.x, actual.x, delta, "expected bezier.x = %v != actual bezier.x = %v", expected.x, actual.x)
+	assert.InDeltaf(t, expected.y, actual.y, delta, "expected bezier.y = %v != actual bezier.y = %v", expected.y, actual.y)
+	AssertControlsAreEqual(t, expected.entry, actual.entry, true)
+	AssertControlsAreEqual(t, expected.exit, actual.exit, false)
+	assert.Equal(t, expectedDependent, actual.dependent, "expected dependent = %v != actual dependent = %v", expectedDependent, actual.dependent)
+}
+
 // createBezierDiag00to11 creates a bezier representing a straight line from (0,0) to (1,1)
 func createBezierDiag00to11() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
@@ -147,6 +166,40 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 	bendit.ApproxAll(bezier, 0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezier)
+}
+
+func TestBezierVx2Dependent(t *testing.T) {
+	bvx := NewBezierVx2(0, 0, NewControl(1, 2), nil)
+	AssertControlsAreEqual(t, NewControl(-bvx.Entry().x, -bvx.Entry().y), bvx.exit, false)
+	bvx = NewBezierVx2(0, 0, nil, NewControl(3, -5))
+	AssertControlsAreEqual(t, bvx.entry, NewControl(-bvx.Exit().x, -bvx.Exit().y), true)
+}
+
+func TestBezierVx2_Move(t *testing.T) {
+	bvx := NewBezierVx2(0, 0, NewControl(0, 1), nil).
+		Move(2, 0)
+	AssertBezierVxAreEqual(t, NewBezierVx2(2, 0, NewControl(2, 1), NewControl(2, -1)), true, bvx)
+	bvx = NewBezierVx2(0, 0, NewControl(0, 2), NewControl(3, 0)).
+		Move(1, 1)
+	AssertBezierVxAreEqual(t, NewBezierVx2(1, 1, NewControl(1, 3), NewControl(4, 1)), false, bvx)
+}
+
+func TestBezierVx2_WithEntry(t *testing.T) {
+	bvx := NewBezierVx2(0, 0, nil, NewControl(0, 1)).
+		WithEntry(NewControl(2, 2))
+	AssertBezierVxAreEqual(t, NewBezierVx2(0, 0, NewControl(2, 2), NewControl(-2, -2)), true, bvx)
+	bvx = NewBezierVx2(0, 0, NewControl(0, 1), NewControl(0, 1)).
+		WithEntry(NewControl(2, 2))
+	AssertBezierVxAreEqual(t, NewBezierVx2(0, 0, NewControl(2, 2), NewControl(0, 1)), false, bvx)
+}
+
+func TestBezierVx2_WithExit(t *testing.T) {
+	bvx := NewBezierVx2(0, 0, NewControl(0, 1), nil).
+		WithExit(NewControl(-2, -2))
+	AssertBezierVxAreEqual(t, NewBezierVx2(0, 0, NewControl(2, 2), NewControl(-2, -2)), true, bvx)
+	bvx = NewBezierVx2(0, 0, NewControl(0, 1), NewControl(0, 1)).
+		WithExit(NewControl(2, 2))
+	AssertBezierVxAreEqual(t, NewBezierVx2(0, 0, NewControl(0, 1), NewControl(2, 2)), false, bvx)
 }
 
 func TestProjectedVectorDist(t *testing.T) {

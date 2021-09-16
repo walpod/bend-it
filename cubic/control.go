@@ -16,6 +16,10 @@ func (c *Control) Y() float64 {
 	return c.y
 }
 
+func (c *Control) Move(dx float64, dy float64) *Control {
+	return NewControl(c.x+dx, c.y+dy)
+}
+
 // NewDependentControl creates a symmetric (reflective) control to given point x,y and base-control
 func NewDependentControl(x, y float64, base *Control) *Control {
 	if base == nil {
