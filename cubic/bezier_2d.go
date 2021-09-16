@@ -43,6 +43,14 @@ func (vx BezierVx2) Exit() *Control {
 	return vx.exit
 }
 
+func (vx BezierVx2) Control(isEntry bool) *Control {
+	if isEntry {
+		return vx.entry
+	} else {
+		return vx.exit
+	}
+}
+
 func (vx BezierVx2) Dependent() bool {
 	return vx.dependent
 }
