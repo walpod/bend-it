@@ -30,25 +30,6 @@ func TestUniformKnots(t *testing.T) {
 	segmentNo, u, _ = knots.MapToSegment(3)
 	assert.Equal(t, 2, segmentNo, "must be mapped to segment-no 2")
 	assert.Equal(t, 1., u, "segment-local u must be %v", 1)
-
-	fromSegmentNo, toSegmentNo, err := knots.AdjacentSegments(2, true, true)
-	assert.Equal(t, 1, fromSegmentNo, "fromSegmentNo is 1")
-	assert.Equal(t, 2, toSegmentNo, "toSegmentNo is 2")
-	fromSegmentNo, toSegmentNo, err = knots.AdjacentSegments(2, true, false)
-	assert.Equal(t, 1, fromSegmentNo, "fromSegmentNo is 1")
-	assert.Equal(t, 1, toSegmentNo, "toSegmentNo is 1 (segment after is ignored)")
-	_, _, err = knots.AdjacentSegments(0, true, false)
-	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
-	_, _, err = knots.AdjacentSegments(knots.KnotCnt()-1, false, true)
-	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
-	_, _, err = knots.AdjacentSegments(2, false, false)
-	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
-	emptyKnots := NewUniformKnots(0)
-	_, _, err = emptyKnots.AdjacentSegments(0, true, true)
-	assert.NotEqual(t, nil, err, "KnotNo doesn't exist, error must be not-nil")
-	singleKnots := NewUniformKnots(1)
-	_, _, err = singleKnots.AdjacentSegments(0, true, true)
-	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
 }
 
 func TestNonUniformKnots(t *testing.T) {
@@ -76,23 +57,28 @@ func TestNonUniformKnots(t *testing.T) {
 	segmentNo, u, _ = knots.MapToSegment(3)
 	assert.Equal(t, 2, segmentNo, "must be mapped to segment-no 2")
 	assert.InDeltaf(t, 1., u, delta, "segment-local u must be %v", 1.)
+}
 
-	fromSegmentNo, toSegmentNo, err := knots.AdjacentSegments(2, true, true)
+// TODO move to other test file
+func TestAdjacentSegments(t *testing.T) {
+	knots := NewUniformKnots(4)
+	fromSegmentNo, toSegmentNo, err := AdjacentSegments(knots, 2, true, true)
 	assert.Equal(t, 1, fromSegmentNo, "fromSegmentNo is 1")
 	assert.Equal(t, 2, toSegmentNo, "toSegmentNo is 2")
-	fromSegmentNo, toSegmentNo, err = knots.AdjacentSegments(2, true, false)
+	fromSegmentNo, toSegmentNo, err = AdjacentSegments(knots, 2, true, false)
 	assert.Equal(t, 1, fromSegmentNo, "fromSegmentNo is 1")
 	assert.Equal(t, 1, toSegmentNo, "toSegmentNo is 1 (segment after is ignored)")
-	_, _, err = knots.AdjacentSegments(0, true, false)
+	_, _, err = AdjacentSegments(knots, 0, true, false)
 	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
-	_, _, err = knots.AdjacentSegments(knots.KnotCnt()-1, false, true)
+	_, _, err = AdjacentSegments(knots, knots.KnotCnt()-1, false, true)
 	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
-	_, _, err = knots.AdjacentSegments(2, false, false)
+	_, _, err = AdjacentSegments(knots, 2, false, false)
 	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
 	emptyKnots := NewUniformKnots(0)
-	_, _, err = emptyKnots.AdjacentSegments(0, true, true)
+	_, _, err = AdjacentSegments(emptyKnots, 0, true, true)
 	assert.NotEqual(t, nil, err, "KnotNo doesn't exist, error must be not-nil")
 	singleKnots := NewUniformKnots(1)
-	_, _, err = singleKnots.AdjacentSegments(0, true, true)
+	_, _, err = AdjacentSegments(singleKnots, 0, true, true)
 	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
+
 }
