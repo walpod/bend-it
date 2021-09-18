@@ -5,7 +5,7 @@ type Knots interface {
 	Tstart() float64
 	Tend() float64
 
-	Cnt() int
+	KnotCnt() int
 	KnotExists(knotNo int) bool
 	Knot(knotNo int) (t float64, err error)
 
@@ -13,6 +13,8 @@ type Knots interface {
 	SegmentExists(segmentNo int) bool
 	SegmentLen(segmentNo int) (l float64, err error)
 	MapToSegment(t float64) (segmentNo int, u float64, err error)
+
+	AdjacentSegments(knotNo int, inclBefore bool, inclAfter bool) (fromSegmentNo int, toSegmentNo int, err error)
 
 	External() []float64 // external representation: uniform = nil, non-uniform = slice (non nil)
 }
