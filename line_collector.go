@@ -1,5 +1,11 @@
 package bendit
 
+type LineCollector2d interface {
+	// CollectLine is called from start (pstartx,pstarty) to end point (pendx,pendy) in consecutive order
+	// for parameter range (tstart..tend)
+	CollectLine(segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64)
+}
+
 // DirectCollector2d supports the simple case of using a single collect func
 type DirectCollector2d struct {
 	line func(segmentNo int, tstart, tend, pstartx, pstarty, pendx, pendy float64)
