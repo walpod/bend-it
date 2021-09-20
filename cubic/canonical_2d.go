@@ -110,6 +110,18 @@ func (sp *CanonicalSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 	}
 }
 
+func (sp *CanonicalSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
+	panic("implement me") // TODO
+}
+
+func (sp *CanonicalSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
+	panic("implement me") // TODO
+}
+
+func (sp *CanonicalSpline2d) DeleteVertex(knotNo int) (err error) {
+	panic("implement me") // TODO
+}
+
 func (sp *CanonicalSpline2d) At(t float64) (x, y float64) {
 	if len(sp.cubics) == 0 {
 		return 0, 0

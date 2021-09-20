@@ -13,7 +13,7 @@ func TestUniformKnots(t *testing.T) {
 	assert.Empty(t, knots.External(), "external representation must be nil")
 
 	err := knots.AddKnot(10)
-	assert.NotEqual(t, nil, err, "not existent knot no., error must be not-nil")
+	assert.NotNil(t, err, "not existent knot no., error must be not-nil")
 	err = knots.AddKnot(3)
 	assert.Equal(t, nil, err, "must be success")
 	err = knots.DeleteKnot(1)
@@ -49,7 +49,7 @@ func TestNonUniformKnots(t *testing.T) {
 	assert.Equal(t, knots.External(), ks, "external representation must be %v", ks)
 
 	err := knots.AddKnot(10)
-	assert.NotEqual(t, nil, err, "not existent knot no., error must be not-nil")
+	assert.NotNil(t, err, "not existent knot no., error must be not-nil")
 	err = knots.AddKnot(2)
 	assert.Equal(t, nil, err, "must be success")
 	err = knots.DeleteKnot(2)
@@ -93,17 +93,17 @@ func TestAdjacentSegments(t *testing.T) {
 	assert.Equal(t, 1, fromSegmentNo, "fromSegmentNo is 1")
 	assert.Equal(t, 1, toSegmentNo, "toSegmentNo is 1 (segment after is ignored)")
 	_, _, err = AdjacentSegments(knots, 0, true, false)
-	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
+	assert.NotNil(t, err, "AdjacentSegments don't exist, error must be not-nil")
 	_, _, err = AdjacentSegments(knots, knots.KnotCnt()-1, false, true)
-	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
+	assert.NotNil(t, err, "AdjacentSegments don't exist, error must be not-nil")
 	_, _, err = AdjacentSegments(knots, 2, false, false)
-	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
+	assert.NotNil(t, err, "AdjacentSegments don't exist, error must be not-nil")
 
 	emptyKnots := NewUniformKnots(0)
 	_, _, err = AdjacentSegments(emptyKnots, 0, true, true)
-	assert.NotEqual(t, nil, err, "KnotNo doesn't exist, error must be not-nil")
+	assert.NotNil(t, err, "KnotNo doesn't exist, error must be not-nil")
 
 	singleKnots := NewUniformKnots(1)
 	_, _, err = AdjacentSegments(singleKnots, 0, true, true)
-	assert.NotEqual(t, nil, err, "AdjacentSegments don't exist, error must be not-nil")
+	assert.NotNil(t, err, "AdjacentSegments don't exist, error must be not-nil")
 }

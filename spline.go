@@ -10,10 +10,9 @@ type Spline2d interface {
 	Knots() Knots
 
 	Vertex(knotNo int) Vertex2d
-	// TODO
-	//AddVertex(knotNo int, vertex Vertex2d) (err error)
-	//UpdateVertex(knotNo int, vertex Vertex2d) (err error)
-	//DeleteVertex(knotNo int, vertex Vertex2d) (err error)
+	AddVertex(knotNo int, vertex Vertex2d) (err error)
+	UpdateVertex(knotNo int, vertex Vertex2d) (err error)
+	DeleteVertex(knotNo int) (err error)
 
 	At(t float64) (x, y float64)
 	Fn() Fn2d

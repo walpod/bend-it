@@ -140,21 +140,40 @@ func (sp *BezierSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 }
 
 func (sp *BezierSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
-	sp.knots.AddKnot(knotNo)
-	panic("implement me")
+	err = sp.knots.AddKnot(knotNo)
+	if err != nil {
+		return err
+	}
+	bvx := vertex.(*BezierVx2)
+	if knotNo == len(sp.vertices) {
+		sp.vertices = append(sp.vertices, bvx)
+	} else {
+		sp.vertices = append(sp.vertices, nil)
+		copy(sp.vertices[knotNo+1:], sp.vertices[knotNo:])
+		sp.vertices[knotNo] = bvx
+	}
+	return nil
 }
 
 func (sp *BezierSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
-	if knotNo >= len(sp.vertices) { //sp.knots.KnotExists()
-		err = fmt.Errorf("knotNo %v does not exist", knotNo)
-		return
+	if !sp.knots.KnotExists(knotNo) {
+		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
 	sp.vertices[knotNo] = vertex.(*BezierVx2)
-	return
+	return nil
 }
 
-func (sp *BezierSpline2d) DeleteVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
-	panic("implement me")
+func (sp *BezierSpline2d) DeleteVertex(knotNo int) (err error) {
+	err = sp.knots.DeleteKnot(knotNo)
+	if err != nil {
+		return err
+	}
+	if knotNo == len(sp.vertices)-1 {
+		sp.vertices = sp.vertices[:knotNo]
+	} else {
+		sp.vertices = append(sp.vertices[:knotNo], sp.vertices[knotNo+1:]...)
+	}
+	return nil
 }
 
 func (sp *BezierSpline2d) Prepare() {

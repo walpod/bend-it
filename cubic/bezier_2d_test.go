@@ -168,6 +168,29 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezier)
 }
 
+func TestBezierSpline2d_AddVertex(t *testing.T) {
+	bezier := createBezierDiag00to11()
+	err := bezier.AddVertex(3, nil)
+	assert.NotNil(t, err, "knot-no. too large")
+	err = bezier.AddVertex(2, NewBezierVx2(2, 2, NewControl(1.5, 1.5), nil))
+	assert.Equal(t, bezier.knots.KnotCnt(), 3, "knot-cnt %v wrong", bezier.knots.KnotCnt())
+	err = bezier.AddVertex(0, NewBezierVx2(-1, -1, NewControl(-2, -2), nil))
+	assert.Equal(t, bezier.knots.KnotCnt(), 4, "knot-cnt %v wrong", bezier.knots.KnotCnt())
+	assert.Equal(t, bezier.Vertex(1), createBezierDiag00to11().Vertex(0), "vertices don't match")
+	assert.Equal(t, bezier.Vertex(2), createBezierDiag00to11().Vertex(1), "vertices don't match")
+}
+
+func TestBezierSpline2d_DeleteVertex(t *testing.T) {
+	bezier := createBezierDiag00to11()
+	err := bezier.DeleteVertex(2)
+	assert.NotNil(t, err, "knot-no. doesn't exist")
+	err = bezier.DeleteVertex(1)
+	assert.Equal(t, bezier.knots.KnotCnt(), 1, "knot-cnt %v wrong", bezier.knots.KnotCnt())
+	assert.Equal(t, bezier.Vertex(0), createBezierDiag00to11().Vertex(0), "vertices don't match")
+	err = bezier.DeleteVertex(0)
+	assert.Equal(t, bezier.knots.KnotCnt(), 0, "knot-cnt %v wrong", bezier.knots.KnotCnt())
+}
+
 func TestBezierVx2Dependent(t *testing.T) {
 	bvx := NewBezierVx2(0, 0, NewControl(1, 2), nil)
 	AssertControlsAreEqual(t, NewControl(-bvx.Entry().x, -bvx.Entry().y), bvx.exit, false)

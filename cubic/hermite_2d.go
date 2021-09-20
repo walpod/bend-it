@@ -77,6 +77,18 @@ func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 	}
 }
 
+func (sp *HermiteSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
+	panic("implement me") // TODO
+}
+
+func (sp *HermiteSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
+	panic("implement me") // TODO
+}
+
+func (sp *HermiteSpline2d) DeleteVertex(knotNo int) (err error) {
+	panic("implement me") // TODO
+}
+
 func (sp *HermiteSpline2d) Add(vertex *HermiteVx2) {
 	if sp.knots.IsUniform() {
 		sp.knots.(*bendit.UniformKnots).Add(1)
