@@ -20,8 +20,10 @@ func (ct CardinalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 	setUniformCardinalTan := func(v, vstart, vend *HermiteVx2) {
 		tanx := b * (vend.x - vstart.x)
 		tany := b * (vend.y - vstart.y)
-		v.entryTanx, v.exitTanx = tanx, tanx
-		v.entryTany, v.exitTany = tany, tany
+		//v.entryTan.x, v.exitTan.x = tanx, tanx
+		//v.entryTan.y, v.exitTan.y = tany, tany
+		v.entryTan = NewControl(tanx, tany)
+		v.exitTan = v.entryTan // NewControl(tanx, tany)
 	}
 
 	setUniformCardinalTan(vertices[0], vertices[0], vertices[1])
@@ -35,10 +37,16 @@ func (ct CardinalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 		for i := 0; i < n-1; i++ {
 			// modify length of uniform tangents according to segment-length
 			segmentLen, _ := knots.SegmentLen(i)
-			vertices[i].exitTanx /= segmentLen // TODO segmentLen == 0
-			vertices[i].exitTany /= segmentLen
-			vertices[i+1].entryTanx /= segmentLen
-			vertices[i+1].entryTany /= segmentLen
+			/*vertices[i].exitTan.x /= segmentLen
+			vertices[i].exitTan.y /= segmentLen
+			vertices[i+1].entryTan.x /= segmentLen
+			vertices[i+1].entryTan.y /= segmentLen*/
+			if segmentLen != 0 {
+				scf := 1 / segmentLen
+				vertices[i].exitTan = vertices[i].exitTan.Scale(scf)
+				vertices[i+1].entryTan = vertices[i+1].entryTan.Scale(scf)
+			}
+			// TODO segmentLen == 0
 		}
 	}
 }

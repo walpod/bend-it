@@ -19,64 +19,63 @@ func NewBezierVx2(x float64, y float64, entry *Control, exit *Control) *BezierVx
 	dependent := false
 
 	// handle dependent controls
-	if entry == nil {
-		entry = NewDependentControl(x, y, exit)
+	if entry == nil && exit != nil {
+		entry = NewMirroredControl(x, y, exit)
 		dependent = true
-	}
-	if exit == nil {
-		exit = NewDependentControl(x, y, entry)
+	} else if entry != nil && exit == nil {
+		exit = NewMirroredControl(x, y, entry)
 		dependent = true
 	}
 
 	return &BezierVx2{x: x, y: y, entry: entry, exit: exit, dependent: dependent}
 }
 
-func (vx BezierVx2) Coord() (x, y float64) {
-	return vx.x, vx.y
+func (vt BezierVx2) Coord() (x, y float64) {
+	return vt.x, vt.y
 }
 
-func (vx BezierVx2) Entry() *Control {
-	return vx.entry
+func (vt BezierVx2) Entry() *Control {
+	return vt.entry
 }
 
-func (vx BezierVx2) Exit() *Control {
-	return vx.exit
+func (vt BezierVx2) Exit() *Control {
+	return vt.exit
 }
 
-func (vx BezierVx2) Control(isEntry bool) *Control {
+func (vt BezierVx2) Control(isEntry bool) *Control {
 	if isEntry {
-		return vx.entry
+		return vt.entry
 	} else {
-		return vx.exit
+		return vt.exit
 	}
 }
 
-func (vx BezierVx2) Dependent() bool {
-	return vx.dependent
+func (vt BezierVx2) Dependent() bool {
+	return vt.dependent
 }
 
-func (vx BezierVx2) Move(dx, dy float64) *BezierVx2 {
+func (vt BezierVx2) Translate(dx, dy float64) bendit.Vertex2d {
 	var exit *Control
-	if !vx.dependent {
-		exit = vx.exit.Move(dx, dy)
+	if !vt.dependent {
+		exit = vt.exit.Translate(dx, dy)
 	}
-	return NewBezierVx2(vx.x+dx, vx.y+dy, vx.entry.Move(dx, dy), exit)
+	return NewBezierVx2(vt.x+dx, vt.y+dy, vt.entry.Translate(dx, dy), exit)
 }
 
-func (vx BezierVx2) WithEntry(entry *Control) *BezierVx2 {
+func (vt BezierVx2) WithEntry(entry *Control) *BezierVx2 {
 	var exit *Control
-	if !vx.dependent {
-		exit = vx.exit
+	if !vt.dependent {
+		exit = vt.exit
 	}
-	return NewBezierVx2(vx.x, vx.y, entry, exit)
+	return NewBezierVx2(vt.x, vt.y, entry, exit)
 }
 
-func (vx BezierVx2) WithExit(exit *Control) *BezierVx2 {
+func (vt BezierVx2) WithExit(exit *Control) *BezierVx2 {
 	var entry *Control
-	if !vx.dependent {
-		entry = vx.entry
+	if !vt.dependent {
+		entry = vt.entry
 	}
-	return NewBezierVx2(vx.x, vx.y, entry, exit)
+	return NewBezierVx2(vt.x, vt.y, entry, exit)
 }
 
 type BezierSpline2d struct {
@@ -144,13 +143,13 @@ func (sp *BezierSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err err
 	if err != nil {
 		return err
 	}
-	bvx := vertex.(*BezierVx2)
+	bvt := vertex.(*BezierVx2)
 	if knotNo == len(sp.vertices) {
-		sp.vertices = append(sp.vertices, bvx)
+		sp.vertices = append(sp.vertices, bvt)
 	} else {
 		sp.vertices = append(sp.vertices, nil)
 		copy(sp.vertices[knotNo+1:], sp.vertices[knotNo:])
-		sp.vertices[knotNo] = bvx
+		sp.vertices[knotNo] = bvt
 	}
 	return nil
 }
@@ -197,7 +196,7 @@ func (sp *BezierSpline2d) Canonical() *CanonicalSpline2d {
 			return sp.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVxCanonicalSpline2d(sp.vertices[0].x, sp.vertices[0].y)
+		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].x, sp.vertices[0].y)
 	} else {
 		return NewCanonicalSpline2d(sp.knots.External())
 	}

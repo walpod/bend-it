@@ -139,14 +139,6 @@ func (k *UniformKnots) External() []float64 {
 	return nil
 }
 
-func (k *UniformKnots) Add(segmentLen float64) error {
-	if segmentLen != 1 {
-		return errors.New("cannot add length != 1 to uniform knots")
-	}
-	k.cnt += 1
-	return nil
-}
-
 type NonUniformKnots struct {
 	tknots []float64
 }
@@ -277,11 +269,6 @@ func (k *NonUniformKnots) External() []float64 {
 	xtknots := make([]float64, len(k.tknots))
 	copy(xtknots, k.tknots)
 	return xtknots
-}
-
-// TODO drop
-func (k *NonUniformKnots) Add(segmentLen float64) {
-	k.tknots = append(k.tknots, k.Tend()+segmentLen)
 }
 
 func AdjacentSegments(knots Knots, knotNo int, inclBefore bool, inclAfter bool) (fromSegmentNo int, toSegmentNo int, err error) {

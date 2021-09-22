@@ -9,15 +9,15 @@ import (
 
 func createHermDiag00to11() *HermiteSpline2d {
 	return NewHermiteSpline2d(nil,
-		NewHermiteVx2(0, 0, 0, 0, 1, 1),
-		NewHermiteVx2(1, 1, 1, 1, 0, 0),
+		NewHermiteVx2(0, 0, NewControl(0, 0), NewControl(1, 1)),
+		NewHermiteVx2(1, 1, NewControl(1, 1), NewControl(0, 0)),
 	)
 }
 
 func createNonUniHermDiag00to11() *HermiteSpline2d {
 	return NewHermiteSpline2d([]float64{0, math.Sqrt2},
-		NewHermiteVx2(0, 0, 0, 0, 1, 1),
-		NewHermiteVx2(1, 1, 1, 1, 0, 0),
+		NewHermiteVx2(0, 0, NewControl(0, 0), NewControl(1, 1)),
+		NewHermiteVx2(1, 1, NewControl(1, 1), NewControl(0, 0)),
 	)
 }
 
@@ -33,8 +33,8 @@ func createHermParabola00to11(uniform bool) *HermiteSpline2d {
 		tknots = []float64{0, 1} // is in fact uniform but specified as non-uniform
 	}
 	return NewHermiteSpline2d(tknots,
-		NewHermiteVx2(0, 0, 0, 0, 1, 0),
-		NewHermiteVx2(1, 1, 1, 2, 0, 0),
+		NewHermiteVx2(0, 0, NewControl(0, 0), NewControl(1, 0)),
+		NewHermiteVx2(1, 1, NewControl(1, 2), NewControl(0, 0)),
 	)
 }
 
@@ -46,9 +46,9 @@ func createDoubleHermParabola00to11to22(uniform bool) *HermiteSpline2d {
 		tknots = []float64{0, 1, 2} // is in fact uniform but specified as non-uniform
 	}
 	return NewHermiteSpline2d(tknots,
-		NewHermiteVx2(0, 0, 0, 0, 1, 0),
-		NewHermiteVx2(1, 1, 1, 2, 1, 0),
-		NewHermiteVx2(2, 2, 1, 2, 0, 0),
+		NewHermiteVx2(0, 0, NewControl(0, 0), NewControl(1, 0)),
+		NewHermiteVx2(1, 1, NewControl(1, 2), NewControl(1, 0)),
+		NewHermiteVx2(2, 2, NewControl(1, 2), NewControl(0, 0)),
 	)
 }
 
@@ -89,7 +89,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 
 	// domain with ony one value: 0
 	herm = NewHermiteSpline2d(nil,
-		NewHermiteVx2(1, 2, 0, 0, 0, 0))
+		NewHermiteVx2(1, 2, NewControl(0, 0), NewControl(0, 0)))
 	AssertSplineAt(t, herm, 0, 1, 2)
 
 	// empty domain
@@ -103,18 +103,6 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	herm = createDoubleHermParabola00to11to22(true)
 	nuherm = createDoubleHermParabola00to11to22(false)
 	AssertSplinesEqual(t, herm, nuherm, 100)
-}
-
-func TestHermiteSpline2d_Add(t *testing.T) {
-	herm := NewHermiteSpline2d(nil)
-	assert.Equal(t, 0, herm.Knots().KnotCnt(), "wrong number of knots")
-	assert.Equal(t, 0, herm.Knots().SegmentCnt(), "wrong number of segments")
-	herm.Add(NewHermiteVx2Raw(0.5, 0.5))
-	assert.Equal(t, 1, herm.Knots().KnotCnt(), "wrong number of knots")
-	assert.Equal(t, 0, herm.Knots().SegmentCnt(), "wrong number of segments")
-	herm.Add(NewHermiteVx2Raw(1, 1))
-	assert.Equal(t, 2, herm.Knots().KnotCnt(), "wrong number of knots")
-	assert.Equal(t, 1, herm.Knots().SegmentCnt(), "wrong number of segments")
 }
 
 func TestHermiteSpline2d_Canonical(t *testing.T) {
@@ -136,4 +124,12 @@ func TestHermiteSpline2d_Approx(t *testing.T) {
 	assert.InDeltaf(t, 2., lc.Lines[len(lc.Lines)-1].Pendy, delta, "end point y=0")
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, herm)
+}
+
+func TestHermiteSpline2d_AddVertex(t *testing.T) {
+	// TODO
+}
+
+func TestHermiteSpline2d_DeleteVertex(t *testing.T) {
+	// TODO
 }

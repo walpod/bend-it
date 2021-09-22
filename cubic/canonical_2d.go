@@ -67,7 +67,7 @@ func NewCanonicalSpline2d(tknots []float64, cubics ...Cubic2d) *CanonicalSpline2
 	return canon
 }
 
-func NewSingleVxCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
+func NewSingleVertexCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
 	// domain with value 0 only, knots '0,0'
 	return NewCanonicalSpline2d([]float64{0, 0}, NewCubic2d(
 		NewCubicPoly(x, 0, 0, 0),
@@ -96,30 +96,6 @@ func NewCanonicalSpline2dByMatrix(tknots []float64, mat mat.Dense) *CanonicalSpl
 
 func (sp *CanonicalSpline2d) Knots() bendit.Knots {
 	return sp.knots
-}
-
-func (sp *CanonicalSpline2d) Vertex(knotNo int) bendit.Vertex2d {
-	if knotNo > len(sp.cubics) {
-		return nil
-	} else if knotNo == len(sp.cubics) {
-		x, y := sp.cubics[knotNo-1].At(1)
-		return NewHermiteVx2Raw(x, y)
-	} else {
-		x, y := sp.cubics[knotNo].At(0)
-		return NewHermiteVx2Raw(x, y)
-	}
-}
-
-func (sp *CanonicalSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
-	panic("implement me") // TODO
-}
-
-func (sp *CanonicalSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
-	panic("implement me") // TODO
-}
-
-func (sp *CanonicalSpline2d) DeleteVertex(knotNo int) (err error) {
-	panic("implement me") // TODO
 }
 
 func (sp *CanonicalSpline2d) At(t float64) (x, y float64) {

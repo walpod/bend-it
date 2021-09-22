@@ -198,12 +198,10 @@ func TestBezierVx2Dependent(t *testing.T) {
 	AssertControlsAreEqual(t, bvx.entry, NewControl(-bvx.Exit().x, -bvx.Exit().y), true)
 }
 
-func TestBezierVx2_Move(t *testing.T) {
-	bvx := NewBezierVx2(0, 0, NewControl(0, 1), nil).
-		Move(2, 0)
+func TestBezierVx2_Translate(t *testing.T) {
+	bvx := NewBezierVx2(0, 0, NewControl(0, 1), nil).Translate(2, 0).(*BezierVx2)
 	AssertBezierVxAreEqual(t, NewBezierVx2(2, 0, NewControl(2, 1), NewControl(2, -1)), true, bvx)
-	bvx = NewBezierVx2(0, 0, NewControl(0, 2), NewControl(3, 0)).
-		Move(1, 1)
+	bvx = NewBezierVx2(0, 0, NewControl(0, 2), NewControl(3, 0)).Translate(1, 1).(*BezierVx2)
 	AssertBezierVxAreEqual(t, NewBezierVx2(1, 1, NewControl(1, 3), NewControl(4, 1)), false, bvx)
 }
 

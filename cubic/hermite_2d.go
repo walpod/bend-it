@@ -1,34 +1,88 @@
 package cubic
 
 import (
+	"fmt"
 	"github.com/walpod/bend-it"
 	"gonum.org/v1/gonum/mat"
 )
 
 type HermiteVx2 struct {
-	x, y                 float64
-	entryTanx, entryTany float64
-	exitTanx, exitTany   float64
+	x, y      float64
+	entryTan  *Control
+	exitTan   *Control
+	dependent bool // are the two tangents dependent on each other?
 }
 
-func NewHermiteVx2(x float64, y float64, entryTanx float64, entryTany float64, exitTanx float64, exitTany float64) *HermiteVx2 {
-	return &HermiteVx2{x, y, entryTanx, entryTany, exitTanx, exitTany}
+func NewHermiteVx2(x float64, y float64, entryTan *Control, exitTan *Control) *HermiteVx2 {
+	dependent := false
+
+	// handle dependent tangents
+	if entryTan == nil && exitTan != nil {
+		entryTan = NewControl(exitTan.x, exitTan.y)
+		dependent = true
+	} else if entryTan != nil && exitTan == nil {
+		exitTan = NewControl(entryTan.x, entryTan.y)
+		dependent = true
+	}
+
+	return &HermiteVx2{x, y, entryTan, exitTan, dependent}
 }
 
 func NewHermiteVx2Raw(x float64, y float64) *HermiteVx2 {
-	return NewHermiteVx2(x, y, 0, 0, 0, 0)
+	return NewHermiteVx2(x, y, nil, nil)
 }
 
-func (vx HermiteVx2) Coord() (x, y float64) {
-	return vx.x, vx.y
+func (vt HermiteVx2) Coord() (x, y float64) {
+	return vt.x, vt.y
 }
 
-func (vx HermiteVx2) EntryTan() (lx, ly float64) {
-	return vx.entryTanx, vx.entryTany
+func (vt HermiteVx2) EntryTan() *Control {
+	return vt.entryTan
 }
 
-func (vx HermiteVx2) ExitTan() (mx, my float64) {
-	return vx.exitTanx, vx.exitTany
+func (vt HermiteVx2) ExitTan() *Control {
+	return vt.exitTan
+}
+
+func (vt HermiteVx2) Tan(isEntry bool) *Control {
+	if isEntry {
+		return vt.entryTan
+	} else {
+		return vt.exitTan
+	}
+}
+
+// absolute control point (as opposed to relative tangent)
+func (vt HermiteVx2) Control(isEntry bool) *Control {
+	if isEntry {
+		return NewControl(vt.x-vt.entryTan.x, vt.y-vt.entryTan.y)
+	} else {
+		return NewControl(vt.x+vt.exitTan.x, vt.y+vt.exitTan.y)
+	}
+}
+
+func (vt HermiteVx2) Dependent() bool {
+	return vt.dependent
+}
+
+func (vt HermiteVx2) Translate(dx, dy float64) bendit.Vertex2d {
+	return NewHermiteVx2(vt.x+dx, vt.y+dy, vt.entryTan, vt.exitTan)
+}
+
+func (vt HermiteVx2) WithEntryTan(entryTan *Control) *HermiteVx2 {
+	var exitTan *Control
+	if !vt.dependent {
+		exitTan = vt.exitTan
+	}
+	return NewHermiteVx2(vt.x, vt.y, entryTan, exitTan)
+}
+
+func (vt HermiteVx2) WithExitTan(exitTan *Control) *HermiteVx2 {
+	var entryTan *Control
+	if !vt.dependent {
+		entryTan = vt.entryTan
+	}
+	return NewHermiteVx2(vt.x, vt.y, entryTan, exitTan)
 }
 
 // HermiteTanFinder2d finds tangents based on given vertices and knots
@@ -78,18 +132,43 @@ func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 }
 
 func (sp *HermiteSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
-	panic("implement me") // TODO
+	err = sp.knots.AddKnot(knotNo)
+	if err != nil {
+		return err
+	}
+	hvt := vertex.(*HermiteVx2)
+	if knotNo == len(sp.vertices) {
+		sp.vertices = append(sp.vertices, hvt)
+	} else {
+		sp.vertices = append(sp.vertices, nil)
+		copy(sp.vertices[knotNo+1:], sp.vertices[knotNo:])
+		sp.vertices[knotNo] = hvt
+	}
+	return nil
 }
 
 func (sp *HermiteSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
-	panic("implement me") // TODO
+	if !sp.knots.KnotExists(knotNo) {
+		return fmt.Errorf("knotNo %v does not exist", knotNo)
+	}
+	sp.vertices[knotNo] = vertex.(*HermiteVx2)
+	return nil
 }
 
 func (sp *HermiteSpline2d) DeleteVertex(knotNo int) (err error) {
-	panic("implement me") // TODO
+	err = sp.knots.DeleteKnot(knotNo)
+	if err != nil {
+		return err
+	}
+	if knotNo == len(sp.vertices)-1 {
+		sp.vertices = sp.vertices[:knotNo]
+	} else {
+		sp.vertices = append(sp.vertices[:knotNo], sp.vertices[knotNo+1:]...)
+	}
+	return nil
 }
 
-func (sp *HermiteSpline2d) Add(vertex *HermiteVx2) {
+/*func (sp *HermiteSpline2d) Add(vertex *HermiteVx2) {
 	if sp.knots.IsUniform() {
 		sp.knots.(*bendit.UniformKnots).Add(1)
 	} else {
@@ -109,7 +188,7 @@ func (sp *HermiteSpline2d) AddL(segmentLen float64, vertex *HermiteVx2) {
 		sp.knots.(*bendit.NonUniformKnots).Add(segmentLen)
 	}
 	sp.vertices = append(sp.vertices, vertex)
-}
+}*/
 
 // Prepare execution of hermite spline by mapping to canonical and bezier representation
 func (sp *HermiteSpline2d) Prepare() {
@@ -147,7 +226,7 @@ func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 			return sp.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVxCanonicalSpline2d(sp.vertices[0].x, sp.vertices[0].y)
+		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].x, sp.vertices[0].y)
 	} else {
 		return NewCanonicalSpline2d(sp.knots.External())
 	}
@@ -161,8 +240,8 @@ func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
-		avs = append(avs, vstart.x, vend.x, vstart.exitTanx, vend.entryTanx)
-		avs = append(avs, vstart.y, vend.y, vstart.exitTany, vend.entryTany)
+		avs = append(avs, vstart.x, vend.x, vstart.exitTan.x, vend.entryTan.x)
+		avs = append(avs, vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
@@ -187,8 +266,8 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
 		a := mat.NewDense(dim, 4, []float64{
-			vstart.x, vend.x, vstart.exitTanx, vend.entryTanx,
-			vstart.y, vend.y, vstart.exitTany, vend.entryTany,
+			vstart.x, vend.x, vstart.exitTan.x, vend.entryTan.x,
+			vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y,
 		})
 
 		sgl, _ := sp.knots.SegmentLen(i)
@@ -256,8 +335,8 @@ func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
-		avs = append(avs, vstart.x, vend.x, vstart.exitTanx, vend.entryTanx)
-		avs = append(avs, vstart.y, vend.y, vstart.exitTany, vend.entryTany)
+		avs = append(avs, vstart.x, vend.x, vstart.exitTan.x, vend.entryTan.x)
+		avs = append(avs, vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 

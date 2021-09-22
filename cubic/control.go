@@ -1,5 +1,6 @@
 package cubic
 
+// TODO rename to or use Vec
 type Control struct {
 	x, y float64
 }
@@ -16,12 +17,16 @@ func (c *Control) Y() float64 {
 	return c.y
 }
 
-func (c *Control) Move(dx float64, dy float64) *Control {
+func (c *Control) Translate(dx float64, dy float64) *Control {
 	return NewControl(c.x+dx, c.y+dy)
 }
 
-// NewDependentControl creates a symmetric (reflective) control to given point x,y and base-control
-func NewDependentControl(x, y float64, base *Control) *Control {
+func (c *Control) Scale(s float64) *Control {
+	return NewControl(c.x*s, c.y*s)
+}
+
+// NewMirroredControl creates a symmetric, mirrored control of base-control to given point x,y
+func NewMirroredControl(x, y float64, base *Control) *Control {
 	if base == nil {
 		return nil
 	} else {

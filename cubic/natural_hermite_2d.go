@@ -114,10 +114,12 @@ func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 
 	// write intermediate result to vertices
 	for i := 0; i < n; i++ {
-		vertices[i].entryTanx = tansx[i]
-		vertices[i].exitTanx = tansx[i]
-		vertices[i].entryTany = tansy[i]
-		vertices[i].exitTany = tansy[i]
+		/*vertices[i].entryTan.x = tansx[i]
+		vertices[i].exitTan.x = tansx[i]
+		vertices[i].entryTan.y = tansy[i]
+		vertices[i].exitTan.y = tansy[i]*/
+		vertices[i].entryTan = NewControl(tansx[i], tansy[i])
+		vertices[i].exitTan = NewControl(tansx[i], tansy[i])
 	}
 }
 
