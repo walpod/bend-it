@@ -103,6 +103,7 @@ func createDoubleBezierS00to11to22() *BezierSpline2d {
 
 func TestBezierSpline2d_At(t *testing.T) {
 	bezier := createBezierDiag00to11()
+	bezier.Prepare()
 	AssertSplineAt(t, bezier, 0, 0, 0)
 	AssertSplineAt(t, bezier, 0.25, 0.25, 0.25)
 	AssertSplineAt(t, bezier, .5, .5, .5)
@@ -110,6 +111,7 @@ func TestBezierSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, bezier, 1, 1, 1)
 
 	bezier = createDoubleBezierS00to11to22()
+	bezier.Prepare()
 	AssertSplineAt(t, bezier, 0, 0, 0)
 	AssertSplineAt(t, bezier, 0.5, 0.5, 0.5)
 	AssertSplineAt(t, bezier, 1, 1, 1)
@@ -119,11 +121,13 @@ func TestBezierSpline2d_At(t *testing.T) {
 	// single vertex, domain with value 0 only
 	bezier = NewBezierSpline2d(nil,
 		NewBezierVx2(1, 2, nil, nil))
+	bezier.Prepare()
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	bezier = NewBezierSpline2d(
 		[]float64{0},
 		NewBezierVx2(1, 2, nil, nil))
+	bezier.Prepare()
 	AssertSplineAt(t, bezier, 0, 1, 2)
 
 	// empty domain
@@ -133,6 +137,7 @@ func TestBezierSpline2d_At(t *testing.T) {
 
 func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
 	bezier := createBezierS00to11()
+	bezier.Prepare()
 	AssertBezierAtDeCasteljau(t, bezier, 0)
 	AssertBezierAtDeCasteljau(t, bezier, 0.1)
 	AssertBezierAtDeCasteljau(t, bezier, 0.25)
@@ -144,9 +149,11 @@ func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
 
 func TestBezierSpline2d_Canonical(t *testing.T) {
 	bezier := createBezierS00to11()
+	bezier.Prepare()
 	AssertSplinesEqual(t, bezier, bezier.Canonical(), 100)
 
 	bezier = createDoubleBezierS00to11to22()
+	bezier.Prepare()
 	AssertSplinesEqual(t, bezier, bezier.Canonical(), 100)
 }
 
@@ -162,6 +169,7 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezier = createBezierS00to11()
+	bezier.Prepare()
 	lc = bendit.NewLineToSliceCollector2d()
 	bendit.ApproxAll(bezier, 0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")

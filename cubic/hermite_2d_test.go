@@ -54,6 +54,7 @@ func createDoubleHermParabola00to11to22(uniform bool) *HermiteSpline2d {
 
 func TestHermiteSpline2d_At(t *testing.T) {
 	herm := createHermDiag00to11()
+	herm.Prepare()
 	AssertSplineAt(t, herm, 0, 0, 0)
 	AssertSplineAt(t, herm, 0.25, 0.25, 0.25)
 	AssertSplineAt(t, herm, .5, .5, .5)
@@ -61,6 +62,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 1, 1, 1)
 
 	herm = createNonUniHermDiag00to11()
+	herm.Prepare()
 	ts, te := herm.knots.Tstart(), herm.knots.Tend()
 	AssertSplineAt(t, herm, ts, 0, 0)
 	AssertSplineAt(t, herm, te/2, .5, .5)
@@ -70,6 +72,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	}
 
 	herm = createHermParabola00to11(true)
+	herm.Prepare()
 	AssertSplineAt(t, herm, 0, 0, 0)
 	AssertSplineAt(t, herm, 0.25, 0.25, 0.25*0.25)
 	AssertSplineAt(t, herm, 0.5, 0.5, 0.25)
@@ -77,6 +80,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 1, 1, 1)
 
 	herm = createDoubleHermParabola00to11to22(true)
+	herm.Prepare()
 	AssertSplineAt(t, herm, 0, 0, 0)
 	AssertSplineAt(t, herm, 0.25, 0.25, 0.25*0.25)
 	AssertSplineAt(t, herm, 0.5, 0.5, 0.25)
@@ -90,6 +94,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	// domain with ony one value: 0
 	herm = NewHermiteSpline2d(nil,
 		NewHermiteVx2(1, 2, NewControl(0, 0), NewControl(0, 0)))
+	herm.Prepare()
 	AssertSplineAt(t, herm, 0, 1, 2)
 
 	// empty domain
@@ -97,24 +102,31 @@ func TestHermiteSpline2d_At(t *testing.T) {
 
 	// uniform and regular non-uniform must match
 	herm = createHermParabola00to11(true)
+	herm.Prepare()
 	nuherm := createHermParabola00to11(false)
+	nuherm.Prepare()
 	AssertSplinesEqual(t, herm, nuherm, 100)
 
 	herm = createDoubleHermParabola00to11to22(true)
+	herm.Prepare()
 	nuherm = createDoubleHermParabola00to11to22(false)
+	nuherm.Prepare()
 	AssertSplinesEqual(t, herm, nuherm, 100)
 }
 
 func TestHermiteSpline2d_Canonical(t *testing.T) {
 	herm := createDoubleHermParabola00to11to22(true)
+	herm.Prepare()
 	AssertSplinesEqual(t, herm, herm.Canonical(), 100)
 
 	herm = createDoubleHermParabola00to11to22(false)
+	herm.Prepare()
 	AssertSplinesEqual(t, herm, herm.Canonical(), 100)
 }
 
 func TestHermiteSpline2d_Approx(t *testing.T) {
 	herm := createDoubleHermParabola00to11to22(true)
+	herm.Prepare()
 	lc := bendit.NewLineToSliceCollector2d()
 	bendit.ApproxAll(herm, 0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")

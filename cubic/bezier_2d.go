@@ -234,10 +234,8 @@ func (sp *BezierSpline2d) nonUniCanonical() *CanonicalSpline2d {
 }
 
 // At evaluates point on bezier spline for given parameter t
+// Prepare must be called before
 func (sp *BezierSpline2d) At(t float64) (x, y float64) {
-	if sp.canon == nil {
-		sp.prepareCanon()
-	}
 	return sp.canon.At(t)
 }
 
@@ -263,9 +261,7 @@ func (sp *BezierSpline2d) AtDeCasteljau(t float64) (x, y float64) {
 }
 
 func (sp *BezierSpline2d) Fn() bendit.Fn2d {
-	if sp.canon == nil {
-		sp.prepareCanon()
-	}
+	sp.prepareCanon()
 	return sp.canon.Fn()
 }
 

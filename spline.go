@@ -29,3 +29,12 @@ type VertSpline2d interface {
 func ApproxAll(spline Spline2d, maxDist float64, collector LineCollector2d) {
 	spline.Approx(0, spline.Knots().SegmentCnt()-1, maxDist, collector)
 }
+
+func Vertices(spline VertSpline2d) []Vertex2d {
+	cnt := spline.Knots().KnotCnt()
+	vertices := make([]Vertex2d, cnt)
+	for i := 0; i < cnt; i++ {
+		vertices[i] = spline.Vertex(i)
+	}
+	return vertices
+}

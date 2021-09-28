@@ -193,7 +193,7 @@ func (sp *HermiteSpline2d) AddL(segmentLen float64, vertex *HermiteVx2) {
 // Prepare execution of hermite spline by mapping to canonical and bezier representation
 func (sp *HermiteSpline2d) Prepare() {
 	sp.prepareCanon()
-	sp.prepareBezier()
+	// TODO sp.prepareBezier()
 }
 
 func (sp *HermiteSpline2d) ResetPrepare() {
@@ -289,17 +289,14 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 	return NewCanonicalSpline2d(sp.knots.External(), cubics...)
 }
 
+// At evaluates point on hermite spline for given parameter t
+// Prepare must be called before
 func (sp *HermiteSpline2d) At(t float64) (x, y float64) {
-	if sp.canon == nil {
-		sp.prepareCanon()
-	}
 	return sp.canon.At(t)
 }
 
 func (sp *HermiteSpline2d) Fn() bendit.Fn2d {
-	if sp.canon == nil {
-		sp.prepareCanon()
-	}
+	sp.prepareCanon()
 	return sp.canon.Fn()
 }
 
@@ -354,34 +351,6 @@ func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 }
 
 func (sp *HermiteSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
-	if sp.bezier == nil {
-		sp.prepareBezier()
-	}
+	// TODO Prepare should be called before (as precondition) or leave it as it is?
 	sp.Bezier().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
 }
-
-/*
-   // TODO currently deactivated
-   // entry and exit tangents for given vertex
-   type VertexTan2d interface {
-   	EntryTan() (lx, ly float64)
-   	ExitTan() (mx, my float64)
-   }
-
-   type SingleTan2d struct {
-   	Mx, My float64
-   }
-
-   func NewSingleTan2d(mx float64, my float64) *SingleTan2d {
-   	return &SingleTan2d{Mx: mx, My: my}
-   }
-
-   func (st *SingleTan2d) EntryTan() (lx, ly float64) {
-   	// entry = exit tangent
-   	return st.Mx, st.My
-   }
-
-   func (st *SingleTan2d) ExitTan() (mx, my float64) {
-   	return st.Mx, st.My
-   }
-*/

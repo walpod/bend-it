@@ -25,7 +25,7 @@ func (cb *CubicPoly) Fn() func(float64) float64 {
 }
 
 type Cubic2d struct {
-	// TODO maybe use instead 2x4 matrix and matrix multiplication
+	// TODO maybe use 2x4 matrix and matrix multiplication instead
 	cubx, cuby CubicPoly
 }
 
@@ -157,5 +157,6 @@ func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 }
 
 func (sp *CanonicalSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+	// TODO Prepare bezier?
 	sp.Bezier().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
 }

@@ -21,6 +21,7 @@ func createNaturalVase() *NaturalHermiteSpline2d {
 
 func TestNaturalHermiteSpline_At(t *testing.T) {
 	nat := createNaturalDiag00to11()
+	nat.Prepare()
 	AssertSplineAt(t, nat, 0, 0, 0)
 	AssertSplineAt(t, nat, 0.25, 0.25, 0.25)
 	AssertSplineAt(t, nat, 0.5, 0.5, 0.5)
@@ -28,6 +29,7 @@ func TestNaturalHermiteSpline_At(t *testing.T) {
 	AssertSplineAt(t, nat, 1, 1, 1)
 
 	nat = createNaturalVase()
+	nat.Prepare()
 	AssertSplineAt(t, nat, 0, -1, 1)
 	AssertSplineAt(t, nat, 1, 0, 0)
 	AssertSplineAt(t, nat, 2, 1, 1)

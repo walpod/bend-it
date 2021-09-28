@@ -24,22 +24,26 @@ func TestCardinalHermiteSpline_At(t *testing.T) {
 	card := createCardinalDiag00to11()
 	for i := 0; i < 100; i++ {
 		card.SetTension(rand.Float64()*4 - 2)
+		card.Prepare()
 		AssertSplineAt(t, card, 0, 0, 0)
 		AssertSplineAt(t, card, 0.5, 0.5, 0.5)
 		AssertSplineAt(t, card, 1, 1, 1)
 	}
 	card.SetTension(-1)
+	card.Prepare()
 	AssertSplineAt(t, card, 0.25, 0.25, 0.25)
 	AssertSplineAt(t, card, 0.75, 0.75, 0.75)
 
 	card = createCardinalVase()
 	for i := 0; i < 100; i++ {
 		card.SetTension(rand.Float64()*4 - 2)
+		card.Prepare()
 		AssertSplineAt(t, card, 0, -1, 1)
 		AssertSplineAt(t, card, 1, 0, 0)
 		AssertSplineAt(t, card, 2, 1, 1)
 	}
 	card.SetTension(1) // high tension: stretched to line segments
+	card.Prepare()
 	isOnLineSegment := func(x, y float64) bool {
 		return math.Abs(x)-math.Abs(y) < delta
 	}
