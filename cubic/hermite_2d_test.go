@@ -127,9 +127,24 @@ func TestHermiteSpline2d_Approx(t *testing.T) {
 }
 
 func TestHermiteSpline2d_AddVertex(t *testing.T) {
-	// TODO
+	hermite := createHermDiag00to11()
+	err := hermite.AddVertex(3, nil)
+	assert.NotNil(t, err, "knot-no. too large")
+	err = hermite.AddVertex(2, NewHermiteVx2(2, 2, NewControl(1.5, 1.5), nil))
+	assert.Equal(t, hermite.knots.KnotCnt(), 3, "knot-cnt %v wrong", hermite.knots.KnotCnt())
+	err = hermite.AddVertex(0, NewHermiteVx2(-1, -1, NewControl(-2, -2), nil))
+	assert.Equal(t, hermite.knots.KnotCnt(), 4, "knot-cnt %v wrong", hermite.knots.KnotCnt())
+	assert.Equal(t, hermite.Vertex(1), createHermDiag00to11().Vertex(0), "vertices don't match")
+	assert.Equal(t, hermite.Vertex(2), createHermDiag00to11().Vertex(1), "vertices don't match")
 }
 
 func TestHermiteSpline2d_DeleteVertex(t *testing.T) {
-	// TODO
+	hermite := createHermDiag00to11()
+	err := hermite.DeleteVertex(2)
+	assert.NotNil(t, err, "knot-no. doesn't exist")
+	err = hermite.DeleteVertex(1)
+	assert.Equal(t, hermite.knots.KnotCnt(), 1, "knot-cnt %v wrong", hermite.knots.KnotCnt())
+	assert.Equal(t, hermite.Vertex(0), createHermDiag00to11().Vertex(0), "vertices don't match")
+	err = hermite.DeleteVertex(0)
+	assert.Equal(t, hermite.knots.KnotCnt(), 0, "knot-cnt %v wrong", hermite.knots.KnotCnt())
 }
