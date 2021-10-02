@@ -27,8 +27,8 @@ func (ct CardinalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 		v.entryTan, v.exitTan = tan, tan // TODO or clone ?
 		/*tanx := b * (vend.x - vstart.x)
 		tany := b * (vend.y - vstart.y)
-		v.entryTan = NewControl(tanx, tany)
-		v.exitTan = v.entryTan // NewControl(tanx, tany)*/
+		loc.entryTan = NewControl(tanx, tany)
+		loc.exitTan = loc.entryTan // NewControl(tanx, tany)*/
 	}
 
 	setUniformCardinalTan(vertices[0], vertices[0], vertices[1])

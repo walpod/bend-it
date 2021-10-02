@@ -32,7 +32,7 @@ func NewHermiteVx2Raw(v bendit.Vec) *HermiteVx2 {
 	return NewHermiteVx2(v, nil, nil)
 }
 
-func (vt HermiteVx2) Coord() bendit.Vec {
+func (vt HermiteVx2) Loc() bendit.Vec {
 	return vt.v
 }
 
@@ -338,7 +338,7 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 	} else if n == 1 {
 		// TODO or instead nil ? zv := bendit.NewZeroVec(sp.Dim())
 		return NewBezierSpline2d(sp.knots.External(),
-			NewBezierVx2(sp.vertices[0].v, nil, nil))
+			NewControlVertex(sp.vertices[0].v, nil, nil))
 	} else {
 		return NewBezierSpline2d(sp.knots.External())
 	}

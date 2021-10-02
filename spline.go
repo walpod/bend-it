@@ -12,7 +12,7 @@ type Spline2d interface {
 }
 
 type Vertex2d interface {
-	Coord() Vec
+	Loc() Vec
 	Translate(d Vec) Vertex2d
 }
 

@@ -6,15 +6,15 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type BezierVx2 struct {
-	v         bendit.Vec
+type ControlVertex struct {
+	loc       bendit.Vec
 	entry     bendit.Vec
 	exit      bendit.Vec
 	dependent bool // are the two controls dependent on each other?
 }
 
 // one of entry or exit control can be nil, is handled as dependent control (on other side of the vertex)
-func NewBezierVx2(v, entry, exit bendit.Vec) *BezierVx2 {
+func NewControlVertex(v, entry, exit bendit.Vec) *ControlVertex {
 	dependent := false
 
 	// handle dependent controls
@@ -26,22 +26,22 @@ func NewBezierVx2(v, entry, exit bendit.Vec) *BezierVx2 {
 		dependent = true
 	}
 
-	return &BezierVx2{v: v, entry: entry, exit: exit, dependent: dependent}
+	return &ControlVertex{loc: v, entry: entry, exit: exit, dependent: dependent}
 }
 
-func (vt BezierVx2) Coord() bendit.Vec {
-	return vt.v
+func (vt ControlVertex) Loc() bendit.Vec {
+	return vt.loc
 }
 
-func (vt BezierVx2) Entry() bendit.Vec {
+func (vt ControlVertex) Entry() bendit.Vec {
 	return vt.entry
 }
 
-func (vt BezierVx2) Exit() bendit.Vec {
+func (vt ControlVertex) Exit() bendit.Vec {
 	return vt.exit
 }
 
-func (vt BezierVx2) Control(isEntry bool) bendit.Vec {
+func (vt ControlVertex) Control(isEntry bool) bendit.Vec {
 	if isEntry {
 		return vt.entry
 	} else {
@@ -49,41 +49,41 @@ func (vt BezierVx2) Control(isEntry bool) bendit.Vec {
 	}
 }
 
-func (vt BezierVx2) Dependent() bool {
+func (vt ControlVertex) Dependent() bool {
 	return vt.dependent
 }
 
-func (vt BezierVx2) Translate(d bendit.Vec) bendit.Vertex2d {
+func (vt ControlVertex) Translate(d bendit.Vec) bendit.Vertex2d {
 	var exit bendit.Vec
 	if !vt.dependent {
 		exit = vt.exit.Add(d)
 	}
-	return NewBezierVx2(vt.v.Add(d), vt.entry.Add(d), exit)
+	return NewControlVertex(vt.loc.Add(d), vt.entry.Add(d), exit)
 }
 
-func (vt BezierVx2) WithEntry(entry bendit.Vec) *BezierVx2 {
+func (vt ControlVertex) WithEntry(entry bendit.Vec) *ControlVertex {
 	exit := vt.exit
 	if vt.dependent {
 		exit = nil
 	}
-	return NewBezierVx2(vt.v, entry, exit)
+	return NewControlVertex(vt.loc, entry, exit)
 }
 
-func (vt BezierVx2) WithExit(exit bendit.Vec) *BezierVx2 {
+func (vt ControlVertex) WithExit(exit bendit.Vec) *ControlVertex {
 	entry := vt.entry
 	if vt.dependent {
 		entry = nil
 	}
-	return NewBezierVx2(vt.v, entry, exit)
+	return NewControlVertex(vt.loc, entry, exit)
 }
 
 type BezierSpline2d struct {
 	knots    bendit.Knots
-	vertices []*BezierVx2
+	vertices []*ControlVertex
 	canon    *CanonicalSpline2d // map to canonical, cubic spline
 }
 
-func NewBezierSpline2d(tknots []float64, vertices ...*BezierVx2) *BezierSpline2d {
+func NewBezierSpline2d(tknots []float64, vertices ...*ControlVertex) *BezierSpline2d {
 	var knots bendit.Knots
 	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(vertices))
@@ -101,7 +101,7 @@ func NewBezierSpline2d(tknots []float64, vertices ...*BezierVx2) *BezierSpline2d
 func NewBezierSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *BezierSpline2d {
 	rows, _ := mat.Dims()
 	segmCnt := rows / dim
-	vertices := make([]*BezierVx2, 0, segmCnt)
+	vertices := make([]*ControlVertex, 0, segmCnt)
 	var v, entry, exit bendit.Vec
 
 	// start vertex
@@ -112,7 +112,7 @@ func NewBezierSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *Bezier
 		v[d] = mat.At(row, 0)
 		exit[d] = mat.At(row, 1)
 	}
-	vertices = append(vertices, NewBezierVx2(v, bendit.NewZeroVec(dim), exit))
+	vertices = append(vertices, NewControlVertex(v, bendit.NewZeroVec(dim), exit))
 
 	// intermediate vertices
 	v = bendit.NewZeroVec(dim)
@@ -124,7 +124,7 @@ func NewBezierSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *Bezier
 			entry[d] = mat.At(row-dim, 2)
 			exit[d] = mat.At(row, 1)
 		}
-		vertices = append(vertices, NewBezierVx2(v, entry, exit))
+		vertices = append(vertices, NewControlVertex(v, entry, exit))
 	}
 
 	// end vertex
@@ -135,19 +135,19 @@ func NewBezierSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *Bezier
 		v[d] = mat.At(row, 3)
 		entry[d] = mat.At(row, 2)
 	}
-	vertices = append(vertices, NewBezierVx2(v, entry, bendit.NewZeroVec(dim)))
+	vertices = append(vertices, NewControlVertex(v, entry, bendit.NewZeroVec(dim)))
 	/*
-		vertices = append(vertices, NewBezierVx2(
+		vertices = append(vertices, NewControlVertex(
 			mat.At(0, 0), mat.At(1, 0),
 			nil, //NewControl(0, 0,),
 			NewControl(mat.At(0, 1), mat.At(1, 1))))
 		for i := 1; i < segmCnt; i++ {
-			vertices = append(vertices, NewBezierVx2(
+			vertices = append(vertices, NewControlVertex(
 				mat.At(i*dim, 0), mat.At(i*dim+1, 0),
 				NewControl(mat.At(i*dim-2, 2), mat.At(i*dim-1, 2)),
 				NewControl(mat.At(i*dim, 1), mat.At(i*dim+1, 1))))
 		}
-		vertices = append(vertices, NewBezierVx2(
+		vertices = append(vertices, NewControlVertex(
 			mat.At(segmCnt*dim-2, 3), mat.At(segmCnt*dim-1, 3),
 			NewControl(mat.At(segmCnt*dim-2, 2), mat.At(segmCnt*dim-1, 2)),
 			nil)) //NewControl(0, 0)*/
@@ -162,11 +162,11 @@ func (sp *BezierSpline2d) Dim() int {
 	if len(sp.vertices) == 0 {
 		return 0
 	} else {
-		return sp.vertices[0].v.Dim()
+		return sp.vertices[0].loc.Dim()
 	}
 }
 
-func (sp *BezierSpline2d) BezierVertex(knotNo int) *BezierVx2 {
+func (sp *BezierSpline2d) BezierVertex(knotNo int) *ControlVertex {
 	if knotNo >= len(sp.vertices) {
 		return nil
 	} else {
@@ -183,7 +183,7 @@ func (sp *BezierSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err err
 	if err != nil {
 		return err
 	}
-	bvt := vertex.(*BezierVx2)
+	bvt := vertex.(*ControlVertex)
 	if knotNo == len(sp.vertices) {
 		sp.vertices = append(sp.vertices, bvt)
 	} else {
@@ -198,7 +198,7 @@ func (sp *BezierSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err 
 	if !sp.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
-	sp.vertices[knotNo] = vertex.(*BezierVx2)
+	sp.vertices[knotNo] = vertex.(*ControlVertex)
 	return nil
 }
 
@@ -236,7 +236,7 @@ func (sp *BezierSpline2d) Canonical() *CanonicalSpline2d {
 			return sp.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].v)
+		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].loc)
 	} else {
 		return NewCanonicalSpline2d(sp.knots.External())
 	}
@@ -251,7 +251,7 @@ func (sp *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
 		for d := 0; d < dim; d++ {
-			avs = append(avs, vstart.v[d], vstart.exit[d], vend.entry[d], vend.v[d])
+			avs = append(avs, vstart.loc[d], vstart.exit[d], vend.entry[d], vend.loc[d])
 		}
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
@@ -295,9 +295,9 @@ func (sp *BezierSpline2d) AtDeCasteljau(t float64) bendit.Vec {
 		end := sp.vertices[segmNo+1]
 		p := bendit.NewZeroVec(dim)
 		for d := 0; d < dim; d++ {
-			b01 := linip(start.v[d], start.exit[d])
+			b01 := linip(start.loc[d], start.exit[d])
 			b11 := linip(start.exit[d], end.entry[d])
-			b21 := linip(end.entry[d], end.v[d])
+			b21 := linip(end.entry[d], end.loc[d])
 			b02 := linip(b01, b11)
 			b12 := linip(b11, b21)
 			p[d] = linip(b02, b12)
@@ -387,12 +387,6 @@ func (sp *BezierSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64
 		tstart, _ := sp.knots.Knot(segmentNo)
 		tend, _ := sp.knots.Knot(segmentNo + 1)
 		vstart, vend := sp.vertices[segmentNo], sp.vertices[segmentNo+1]
-		subdivide(segmentNo, tstart, tend, vstart.v, vstart.exit, vend.entry, vend.v)
+		subdivide(segmentNo, tstart, tend, vstart.loc, vstart.exit, vend.entry, vend.loc)
 	}
 }
-
-// calculate distance of vector v to projected vector v on w
-/*func ProjectedVectorDist(vx, vy, wx, wy float64) float64 {
-	// distance = area of parallelogram(v, w) / length(w)
-	return math.Abs(wx*vy-wy*vx) / math.Sqrt(wx*wx+wy*wy)
-}*/
