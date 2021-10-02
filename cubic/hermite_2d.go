@@ -7,44 +7,44 @@ import (
 )
 
 type HermiteVx2 struct {
-	x, y      float64
-	entryTan  *Control
-	exitTan   *Control
+	v         bendit.Vec
+	entryTan  bendit.Vec
+	exitTan   bendit.Vec
 	dependent bool // are the two tangents dependent on each other?
 }
 
-func NewHermiteVx2(x float64, y float64, entryTan *Control, exitTan *Control) *HermiteVx2 {
+func NewHermiteVx2(v, entryTan, exitTan bendit.Vec) *HermiteVx2 {
 	dependent := false
 
 	// handle dependent tangents
 	if entryTan == nil && exitTan != nil {
-		entryTan = NewControl(exitTan.x, exitTan.y)
+		entryTan = exitTan // TODO clone
 		dependent = true
 	} else if entryTan != nil && exitTan == nil {
-		exitTan = NewControl(entryTan.x, entryTan.y)
+		exitTan = entryTan // TODO clone
 		dependent = true
 	}
 
-	return &HermiteVx2{x, y, entryTan, exitTan, dependent}
+	return &HermiteVx2{v, entryTan, exitTan, dependent}
 }
 
-func NewHermiteVx2Raw(x float64, y float64) *HermiteVx2 {
-	return NewHermiteVx2(x, y, nil, nil)
+func NewHermiteVx2Raw(v bendit.Vec) *HermiteVx2 {
+	return NewHermiteVx2(v, nil, nil)
 }
 
-func (vt HermiteVx2) Coord() (x, y float64) {
-	return vt.x, vt.y
+func (vt HermiteVx2) Coord() bendit.Vec {
+	return vt.v
 }
 
-func (vt HermiteVx2) EntryTan() *Control {
+func (vt HermiteVx2) EntryTan() bendit.Vec {
 	return vt.entryTan
 }
 
-func (vt HermiteVx2) ExitTan() *Control {
+func (vt HermiteVx2) ExitTan() bendit.Vec {
 	return vt.exitTan
 }
 
-func (vt HermiteVx2) Tan(isEntry bool) *Control {
+func (vt HermiteVx2) Tan(isEntry bool) bendit.Vec {
 	if isEntry {
 		return vt.entryTan
 	} else {
@@ -53,11 +53,11 @@ func (vt HermiteVx2) Tan(isEntry bool) *Control {
 }
 
 // absolute control point (as opposed to relative tangent)
-func (vt HermiteVx2) Control(isEntry bool) *Control {
+func (vt HermiteVx2) Control(isEntry bool) bendit.Vec {
 	if isEntry {
-		return NewControl(vt.x-vt.entryTan.x, vt.y-vt.entryTan.y)
+		return vt.v.Sub(vt.entryTan)
 	} else {
-		return NewControl(vt.x+vt.exitTan.x, vt.y+vt.exitTan.y)
+		return vt.v.Add(vt.exitTan)
 	}
 }
 
@@ -65,24 +65,24 @@ func (vt HermiteVx2) Dependent() bool {
 	return vt.dependent
 }
 
-func (vt HermiteVx2) Translate(dx, dy float64) bendit.Vertex2d {
-	return NewHermiteVx2(vt.x+dx, vt.y+dy, vt.entryTan, vt.exitTan)
+func (vt HermiteVx2) Translate(d bendit.Vec) bendit.Vertex2d {
+	return NewHermiteVx2(vt.v.Add(d), vt.entryTan, vt.exitTan)
 }
 
-func (vt HermiteVx2) WithEntryTan(entryTan *Control) *HermiteVx2 {
-	var exitTan *Control
-	if !vt.dependent {
-		exitTan = vt.exitTan
+func (vt HermiteVx2) WithEntryTan(entryTan bendit.Vec) *HermiteVx2 {
+	exitTan := vt.exitTan
+	if vt.dependent {
+		exitTan = nil
 	}
-	return NewHermiteVx2(vt.x, vt.y, entryTan, exitTan)
+	return NewHermiteVx2(vt.v, entryTan, exitTan) // TODO clone ??
 }
 
-func (vt HermiteVx2) WithExitTan(exitTan *Control) *HermiteVx2 {
-	var entryTan *Control
-	if !vt.dependent {
-		entryTan = vt.entryTan
+func (vt HermiteVx2) WithExitTan(exitTan bendit.Vec) *HermiteVx2 {
+	entryTan := vt.entryTan
+	if vt.dependent {
+		entryTan = nil
 	}
-	return NewHermiteVx2(vt.x, vt.y, entryTan, exitTan)
+	return NewHermiteVx2(vt.v, entryTan, exitTan)
 }
 
 // HermiteTanFinder2d finds tangents based on given vertices and knots
@@ -121,6 +121,14 @@ func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d,
 
 func (sp *HermiteSpline2d) Knots() bendit.Knots {
 	return sp.knots
+}
+
+func (sp *HermiteSpline2d) Dim() int {
+	if len(sp.vertices) == 0 {
+		return 0
+	} else {
+		return sp.vertices[0].v.Dim()
+	}
 }
 
 func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex2d {
@@ -226,22 +234,23 @@ func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 			return sp.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].x, sp.vertices[0].y)
+		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].v)
 	} else {
 		return NewCanonicalSpline2d(sp.knots.External())
 	}
 }
 
 func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
-	const dim = 2
 	// precondition: segmCnt >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
+	dim := sp.Dim()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
-		avs = append(avs, vstart.x, vend.x, vstart.exitTan.x, vend.entryTan.x)
-		avs = append(avs, vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y)
+		for d := 0; d < dim; d++ {
+			avs = append(avs, vstart.v[d], vend.v[d], vstart.exitTan[d], vend.entryTan[d])
+		}
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
@@ -255,20 +264,25 @@ func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewCanonicalSpline2dByMatrix(sp.knots.External(), coefs)
+	return NewCanonicalSpline2dByMatrix(sp.knots.External(), dim, coefs)
 }
 
 func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
-	const dim = 2
 	segmCnt := sp.knots.SegmentCnt()
 	cubics := make([]Cubic2d, segmCnt)
+	dim := sp.Dim()
 
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
-		a := mat.NewDense(dim, 4, []float64{
+		avs := make([]float64, 0, dim*4)
+		for d := 0; d < dim; d++ {
+			avs = append(avs, vstart.v[d], vend.v[d], vstart.exitTan[d], vend.entryTan[d])
+		}
+		a := mat.NewDense(dim, 4, avs)
+		/*a := mat.NewDense(dim, 4, []float64{
 			vstart.x, vend.x, vstart.exitTan.x, vend.entryTan.x,
 			vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y,
-		})
+		})*/
 
 		sgl, _ := sp.knots.SegmentLen(i)
 		b := mat.NewDense(4, 4, []float64{
@@ -281,9 +295,14 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 		var coefs mat.Dense
 		coefs.Mul(a, b)
 
-		cubics[i] = NewCubic2d(
-			NewCubicPoly(coefs.At(0, 0), coefs.At(0, 1), coefs.At(0, 2), coefs.At(0, 3)),
-			NewCubicPoly(coefs.At(1, 0), coefs.At(1, 1), coefs.At(1, 2), coefs.At(1, 3)))
+		cubs := make([]CubicPoly, dim)
+		for d := 0; d < dim; d++ {
+			cubs[d] = NewCubicPoly(coefs.At(d, 0), coefs.At(d, 1), coefs.At(d, 2), coefs.At(d, 3))
+		}
+		cubics[i] = NewCubic2d(cubs...)
+		/*cubics[i] = NewCubic2d(
+		NewCubicPoly(coefs.At(0, 0), coefs.At(0, 1), coefs.At(0, 2), coefs.At(0, 3)),
+		NewCubicPoly(coefs.At(1, 0), coefs.At(1, 1), coefs.At(1, 2), coefs.At(1, 3)))*/
 	}
 
 	return NewCanonicalSpline2d(sp.knots.External(), cubics...)
@@ -291,7 +310,7 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 
 // At evaluates point on hermite spline for given parameter t
 // Prepare must be called before
-func (sp *HermiteSpline2d) At(t float64) (x, y float64) {
+func (sp *HermiteSpline2d) At(t float64) bendit.Vec {
 	return sp.canon.At(t)
 }
 
@@ -317,23 +336,27 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 			panic("not yet implemented")
 		}
 	} else if n == 1 {
+		// TODO or instead nil ? zv := bendit.NewZeroVec(sp.Dim())
 		return NewBezierSpline2d(sp.knots.External(),
-			NewBezierVx2(sp.vertices[0].x, sp.vertices[0].y, nil, nil))
+			NewBezierVx2(sp.vertices[0].v, nil, nil))
 	} else {
 		return NewBezierSpline2d(sp.knots.External())
 	}
 }
 
 func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
-	const dim = 2
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
+	dim := sp.Dim()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
-		avs = append(avs, vstart.x, vend.x, vstart.exitTan.x, vend.entryTan.x)
-		avs = append(avs, vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y)
+		for d := 0; d < dim; d++ {
+			avs = append(avs, vstart.v[d], vend.v[d], vstart.exitTan[d], vend.entryTan[d])
+		}
+		//avs = append(avs, vstart.x, vend.x, vstart.exitTan.x, vend.entryTan.x)
+		//avs = append(avs, vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
@@ -347,7 +370,7 @@ func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewBezierSpline2dByMatrix(sp.knots.External(), coefs)
+	return NewBezierSpline2dByMatrix(sp.knots.External(), dim, coefs)
 }
 
 func (sp *HermiteSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {

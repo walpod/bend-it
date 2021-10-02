@@ -26,19 +26,28 @@ func (cb *CubicPoly) Fn() func(float64) float64 {
 
 type Cubic2d struct {
 	// TODO maybe use 2x4 matrix and matrix multiplication instead
-	cubx, cuby CubicPoly
+	cubs []CubicPoly
 }
 
-func NewCubic2d(cubx CubicPoly, cuby CubicPoly) Cubic2d {
-	return Cubic2d{cubx: cubx, cuby: cuby}
+func NewCubic2d(cubs ...CubicPoly) Cubic2d {
+	return Cubic2d{cubs: cubs}
 }
 
-func (cb *Cubic2d) At(u float64) (x, y float64) {
-	return cb.cubx.At(u), cb.cuby.At(u)
+func (cb Cubic2d) Dim() int {
+	return len(cb.cubs)
+}
+
+func (cb *Cubic2d) At(u float64) bendit.Vec {
+	dim := len(cb.cubs)
+	p := make(bendit.Vec, dim)
+	for d := 0; d < dim; d++ {
+		p[d] = cb.cubs[d].At(u)
+	}
+	return p
 }
 
 func (cb *Cubic2d) Fn() bendit.Fn2d {
-	return func(u float64) (x, y float64) {
+	return func(u float64) bendit.Vec {
 		return cb.At(u)
 	}
 }
@@ -67,29 +76,33 @@ func NewCanonicalSpline2d(tknots []float64, cubics ...Cubic2d) *CanonicalSpline2
 	return canon
 }
 
-func NewSingleVertexCanonicalSpline2d(x, y float64) *CanonicalSpline2d {
+func NewSingleVertexCanonicalSpline2d(v bendit.Vec) *CanonicalSpline2d {
 	// domain with value 0 only, knots '0,0'
-	return NewCanonicalSpline2d([]float64{0, 0}, NewCubic2d(
-		NewCubicPoly(x, 0, 0, 0),
-		NewCubicPoly(y, 0, 0, 0)))
+	dim := len(v)
+	cubs := make([]CubicPoly, dim)
+	for d := 0; d < dim; d++ {
+		cubs[d] = NewCubicPoly(v[d], 0, 0, 0)
+	}
+	return NewCanonicalSpline2d([]float64{0, 0}, NewCubic2d(cubs...))
 }
 
 // matrix: (segmCnt*2) x 4
-func NewCanonicalSpline2dByMatrix(tknots []float64, mat mat.Dense) *CanonicalSpline2d {
+func NewCanonicalSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *CanonicalSpline2d {
 	r, _ := mat.Dims()
-	segmCnt := r / 2
+	segmCnt := r / dim
 	if tknots != nil && len(tknots) != segmCnt+1 {
-		panic("non-uniform knots must have length matrix-rows/2 + 1")
+		panic("non-uniform knots must have length matrix-rows/dim + 1")
 	}
 
 	cubics := make([]Cubic2d, segmCnt)
 	rowno := 0
 	for i := 0; i < segmCnt; i++ {
-		cubx := NewCubicPoly(mat.At(rowno, 0), mat.At(rowno, 1), mat.At(rowno, 2), mat.At(rowno, 3))
-		rowno++
-		cuby := NewCubicPoly(mat.At(rowno, 0), mat.At(rowno, 1), mat.At(rowno, 2), mat.At(rowno, 3))
-		rowno++
-		cubics[i] = NewCubic2d(cubx, cuby)
+		cubs := make([]CubicPoly, dim)
+		for j := 0; j < dim; j++ {
+			cubs[j] = NewCubicPoly(mat.At(rowno, 0), mat.At(rowno, 1), mat.At(rowno, 2), mat.At(rowno, 3))
+			rowno++
+		}
+		cubics[i] = NewCubic2d(cubs...)
 	}
 	return NewCanonicalSpline2d(tknots, cubics...)
 }
@@ -98,21 +111,21 @@ func (sp *CanonicalSpline2d) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *CanonicalSpline2d) At(t float64) (x, y float64) {
+func (sp *CanonicalSpline2d) At(t float64) bendit.Vec {
 	if len(sp.cubics) == 0 {
-		return 0, 0
+		return nil //return make(bendit.Vector, sp.dim) ... point (0,0,...0)
 	}
 
 	segmNo, u, err := sp.knots.MapToSegment(t)
 	if err != nil {
-		return 0, 0
+		return nil
 	} else {
 		return sp.cubics[segmNo].At(u)
 	}
 }
 
 func (sp *CanonicalSpline2d) Fn() bendit.Fn2d {
-	return func(t float64) (x, y float64) {
+	return func(t float64) bendit.Vec {
 		return sp.At(t)
 	}
 }
@@ -130,16 +143,16 @@ func (sp *CanonicalSpline2d) Bezier() *BezierSpline2d {
 }
 
 func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
-	const dim = 2
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
+	dim := sp.cubics[0].Dim()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
-		cubx := sp.cubics[i].cubx
-		avs = append(avs, cubx.a, cubx.b, cubx.c, cubx.d)
-		cuby := sp.cubics[i].cuby
-		avs = append(avs, cuby.a, cuby.b, cuby.c, cuby.d)
+		for j := 0; j < dim; j++ {
+			cub := sp.cubics[i].cubs[j]
+			avs = append(avs, cub.a, cub.b, cub.c, cub.d)
+		}
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 
@@ -153,7 +166,7 @@ func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewBezierSpline2dByMatrix(sp.knots.External(), coefs)
+	return NewBezierSpline2dByMatrix(sp.knots.External(), dim, coefs)
 }
 
 func (sp *CanonicalSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {

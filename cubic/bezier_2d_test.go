@@ -1,9 +1,9 @@
 package cubic
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	bendit "github.com/walpod/bend-it"
-	"math"
 	"math/rand"
 	"testing"
 )
@@ -11,19 +11,24 @@ import (
 // START some general bend-it spline Asserts
 const delta = 0.0000000001
 
-func AssertSplineAt(t *testing.T, spline bendit.Spline2d, atT float64, expx, expy float64) {
-	x, y := spline.At(atT)
-	assert.InDeltaf(t, expx, x, delta, "spline.At(%v).x = %v != expected %v", atT, x, expx)
-	assert.InDeltaf(t, expy, y, delta, "spline.At(%v).y = %v != expected %v", atT, y, expy)
+func AssertVecInDelta(t *testing.T, expected bendit.Vec, actual bendit.Vec, msg string) {
+	assert.Equal(t, expected.Dim(), actual.Dim(), "dimension of expected = %v != dimension of actual %v", expected.Dim(), actual.Dim())
+	for d := 0; d < expected.Dim(); d++ {
+		assert.InDeltaf(t, expected[d], actual[d], delta, msg+", at dim = %v", d)
+	}
+}
+
+func AssertSplineAt(t *testing.T, spline bendit.Spline2d, atT float64, expected bendit.Vec) {
+	actual := spline.At(atT)
+	AssertVecInDelta(t, expected, actual, fmt.Sprintf("spline0.At(%v) = %v != spline1.At(%v) = %v", atT, expected, atT, actual))
 }
 
 func AssertSplinesEqualInRange(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Spline2d, tstart, tend float64, sampleCnt int) {
 	for i := 0; i < sampleCnt; i++ {
 		atT := rand.Float64()*(tend-tstart) + tstart
-		x0, y0 := spline0.At(atT)
-		x1, y1 := spline1.At(atT)
-		assert.InDeltaf(t, x0, x1, delta, "spline0.At(%v).x = %v != spline1.At(%v).x = %v", atT, x0, atT, x1)
-		assert.InDeltaf(t, y0, y1, delta, "spline0.At(%v).y = %v != spline1.At(%v).y = %v", atT, y0, atT, y1)
+		v0 := spline0.At(atT)
+		v1 := spline1.At(atT)
+		AssertVecInDelta(t, v0, v1, fmt.Sprintf("spline0.At(%v).x = %v != spline1.At(%v).x = %v", atT, v0, atT, v1))
 	}
 }
 
@@ -34,30 +39,30 @@ func AssertSplinesEqual(t *testing.T, spline0 bendit.Spline2d, spline1 bendit.Sp
 
 func AssertApproxStartPointsMatchSpline(t *testing.T, lines []bendit.LineParams, spline bendit.Spline2d) {
 	for _, lin := range lines {
-		x, y := spline.At(lin.Tstart)
-		assert.InDeltaf(t, x, lin.Pstartx, delta, "spline.At(%v).x = %v != start-point.x = %v of approximated line", lin.Tstart, x, lin.Pstartx)
-		assert.InDeltaf(t, y, lin.Pstarty, delta, "spline.At(%v).y = %v != start-point.y = %v of approximated line", lin.Tstart, y, lin.Pstarty)
+		v := spline.At(lin.Tstart)
+		AssertVecInDelta(t, v, lin.Pstart, fmt.Sprintf("spline.At(%v) = %v != start-point = %v of approximated line", lin.Tstart, v, lin.Pstart))
+		//assert.InDeltaf(t, x, lin.Pstartx, delta, "spline.At(%v).x = %v != start-point.x = %v of approximated line", lin.Tstart, x, lin.Pstartx)
 	}
 }
 
-func AssertRandSplinePointProperty(t *testing.T, spline bendit.Spline2d, hasProp func(x, y float64) bool, msg string) {
+func AssertRandSplinePointProperty(t *testing.T, spline bendit.Spline2d, hasProp func(v bendit.Vec) bool, msg string) {
 	ts, te := spline.Knots().Tstart(), spline.Knots().Tend()
 	atT := ts + rand.Float64()*(te-ts)
-	x, y := spline.At(atT)
-	assert.True(t, hasProp(x, y), msg)
+	v := spline.At(atT)
+	assert.True(t, hasProp(v), msg)
 }
 
 // END some general bend-it spline Asserts
 
-func AssertBezierAtDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64) {
-	x, y := bezier.At(atT)
-	xdc, ydc := bezier.AtDeCasteljau(atT)
+func AssertBezierAtInDeltaDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT float64) {
+	v := bezier.At(atT)
+	vdc := bezier.AtDeCasteljau(atT)
 	//fmt.Printf("bezier.AtDeCasteljau(%v) = (%v, %v) \n", atT, xdc, ydc)
-	assert.InDeltaf(t, xdc, x, delta, "spline.At(%v).x = %v != spline.AtDeCasteljau(%v).x = %v", atT, x, atT, xdc)
-	assert.InDeltaf(t, ydc, y, delta, "spline.At(%v).y = %v != spline.AtDeCasteljau(%v).y = %v", atT, y, atT, ydc)
+	AssertVecInDelta(t, vdc, v, fmt.Sprintf("spline.At(%v) = %v != spline.AtDeCasteljau(%v) = %v", atT, v, atT, vdc))
+	//assert.InDeltaf(t, xdc, x, delta, "spline.At(%v).x = %v != spline.AtDeCasteljau(%v).x = %v", atT, x, atT, xdc)
 }
 
-func AssertControlsAreEqual(t *testing.T, expected *Control, actual *Control, isEntry bool) {
+/*func AssertControlsAreEqual(t *testing.T, expected *Control, actual *Control, isEntry bool) {
 	var side string
 	if isEntry {
 		side = "entry"
@@ -66,69 +71,68 @@ func AssertControlsAreEqual(t *testing.T, expected *Control, actual *Control, is
 	}
 	assert.InDeltaf(t, expected.x, actual.x, delta, "expected %v-control.x = %v != actual.x = %v", side, expected.x, actual.x)
 	assert.InDeltaf(t, expected.y, actual.y, delta, "expected %v-control.y = %v != actual.y = %v", side, expected.y, actual.y)
-}
+}*/
 
 func AssertBezierVxAreEqual(t *testing.T, expected *BezierVx2, expectedDependent bool, actual *BezierVx2) {
-	assert.InDeltaf(t, expected.x, actual.x, delta, "expected bezier.x = %v != actual bezier.x = %v", expected.x, actual.x)
-	assert.InDeltaf(t, expected.y, actual.y, delta, "expected bezier.y = %v != actual bezier.y = %v", expected.y, actual.y)
-	AssertControlsAreEqual(t, expected.entry, actual.entry, true)
-	AssertControlsAreEqual(t, expected.exit, actual.exit, false)
+	AssertVecInDelta(t, expected.v, actual.v, fmt.Sprintf("expected bezier = %v != actual bezier = %v", expected.v, actual.v))
+	AssertVecInDelta(t, expected.entry, actual.entry, fmt.Sprintf("expected entry-control = %v != actual = %v", expected.entry, actual.entry))
+	AssertVecInDelta(t, expected.exit, actual.exit, fmt.Sprintf("expected exit-control = %v != actual = %v", expected.entry, actual.entry))
 	assert.Equal(t, expectedDependent, actual.dependent, "expected dependent = %v != actual dependent = %v", expectedDependent, actual.dependent)
 }
 
 // createBezierDiag00to11 creates a bezier representing a straight line from (0,0) to (1,1)
 func createBezierDiag00to11() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewBezierVx2(0, 0, nil, NewControl(1./3, 1./3)),
-		NewBezierVx2(1, 1, NewControl(2./3, 2./3), nil),
+		NewBezierVx2(bendit.NewVec(0, 0), nil, bendit.NewVec(1./3, 1./3)),
+		NewBezierVx2(bendit.NewVec(1, 1), bendit.NewVec(2./3, 2./3), nil),
 	)
 }
 
 // createBezierDiag00to11 creates a bezier representing an S-formed slope from (0,0) to (1,1)
 func createBezierS00to11() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewBezierVx2(0, 0, nil, NewControl(1, 0)),
-		NewBezierVx2(1, 1, NewControl(0, 1), nil),
+		NewBezierVx2(bendit.NewVec(0, 0), nil, bendit.NewVec(1, 0)),
+		NewBezierVx2(bendit.NewVec(1, 1), bendit.NewVec(0, 1), nil),
 	)
 }
 
 // createBezierDiag00to11 creates two consecutive beziers representing an S-formed slope from (0,0) to (1,1) or (1,1) to (2,2), resp.
 func createDoubleBezierS00to11to22() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewBezierVx2(0, 0, nil, NewControl(1, 0)),
-		NewBezierVx2(1, 1 /*NewControl(0, 1)*/, nil, NewControl(2, 1)),
-		NewBezierVx2(2, 2, NewControl(1, 2), nil),
+		NewBezierVx2(bendit.NewVec(0, 0), nil, bendit.NewVec(1, 0)),
+		NewBezierVx2(bendit.NewVec(1, 1) /*bendit.NewVec(0, 1)*/, nil, bendit.NewVec(2, 1)),
+		NewBezierVx2(bendit.NewVec(2, 2), bendit.NewVec(1, 2), nil),
 	)
 }
 
 func TestBezierSpline2d_At(t *testing.T) {
 	bezier := createBezierDiag00to11()
 	bezier.Prepare()
-	AssertSplineAt(t, bezier, 0, 0, 0)
-	AssertSplineAt(t, bezier, 0.25, 0.25, 0.25)
-	AssertSplineAt(t, bezier, .5, .5, .5)
-	AssertSplineAt(t, bezier, 0.75, 0.75, 0.75)
-	AssertSplineAt(t, bezier, 1, 1, 1)
+	AssertSplineAt(t, bezier, 0, bendit.NewVec(0, 0))
+	AssertSplineAt(t, bezier, 0.25, bendit.NewVec(0.25, 0.25))
+	AssertSplineAt(t, bezier, .5, bendit.NewVec(.5, .5))
+	AssertSplineAt(t, bezier, 0.75, bendit.NewVec(0.75, 0.75))
+	AssertSplineAt(t, bezier, 1, bendit.NewVec(1, 1))
 
 	bezier = createDoubleBezierS00to11to22()
 	bezier.Prepare()
-	AssertSplineAt(t, bezier, 0, 0, 0)
-	AssertSplineAt(t, bezier, 0.5, 0.5, 0.5)
-	AssertSplineAt(t, bezier, 1, 1, 1)
-	AssertSplineAt(t, bezier, 1.5, 1.5, 1.5)
-	AssertSplineAt(t, bezier, 2, 2, 2)
+	AssertSplineAt(t, bezier, 0, bendit.NewVec(0, 0))
+	AssertSplineAt(t, bezier, 0.5, bendit.NewVec(0.5, 0.5))
+	AssertSplineAt(t, bezier, 1, bendit.NewVec(1, 1))
+	AssertSplineAt(t, bezier, 1.5, bendit.NewVec(1.5, 1.5))
+	AssertSplineAt(t, bezier, 2, bendit.NewVec(2, 2))
 
 	// single vertex, domain with value 0 only
 	bezier = NewBezierSpline2d(nil,
-		NewBezierVx2(1, 2, nil, nil))
+		NewBezierVx2(bendit.NewVec(1, 2), nil, nil))
 	bezier.Prepare()
-	AssertSplineAt(t, bezier, 0, 1, 2)
+	AssertSplineAt(t, bezier, 0, bendit.NewVec(1, 2))
 
 	bezier = NewBezierSpline2d(
 		[]float64{0},
-		NewBezierVx2(1, 2, nil, nil))
+		NewBezierVx2(bendit.NewVec(1, 2), nil, nil))
 	bezier.Prepare()
-	AssertSplineAt(t, bezier, 0, 1, 2)
+	AssertSplineAt(t, bezier, 0, bendit.NewVec(1, 2))
 
 	// empty domain
 	bezier = NewBezierSpline2d(nil)
@@ -138,13 +142,13 @@ func TestBezierSpline2d_At(t *testing.T) {
 func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
 	bezier := createBezierS00to11()
 	bezier.Prepare()
-	AssertBezierAtDeCasteljau(t, bezier, 0)
-	AssertBezierAtDeCasteljau(t, bezier, 0.1)
-	AssertBezierAtDeCasteljau(t, bezier, 0.25)
-	AssertBezierAtDeCasteljau(t, bezier, 0.5)
-	AssertBezierAtDeCasteljau(t, bezier, 0.75)
-	AssertBezierAtDeCasteljau(t, bezier, 0.9)
-	AssertBezierAtDeCasteljau(t, bezier, 1)
+	AssertBezierAtInDeltaDeCasteljau(t, bezier, 0)
+	AssertBezierAtInDeltaDeCasteljau(t, bezier, 0.1)
+	AssertBezierAtInDeltaDeCasteljau(t, bezier, 0.25)
+	AssertBezierAtInDeltaDeCasteljau(t, bezier, 0.5)
+	AssertBezierAtInDeltaDeCasteljau(t, bezier, 0.75)
+	AssertBezierAtInDeltaDeCasteljau(t, bezier, 0.9)
+	AssertBezierAtInDeltaDeCasteljau(t, bezier, 1)
 }
 
 func TestBezierSpline2d_Canonical(t *testing.T) {
@@ -162,10 +166,12 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 	lc := bendit.NewLineToSliceCollector2d()
 	bendit.ApproxAll(bezier, 0.1, lc)
 	assert.Len(t, lc.Lines, 1, "approximated with one line")
-	assert.InDeltaf(t, 0., lc.Lines[0].Pstartx, delta, "start point x=0")
+	AssertVecInDelta(t, bendit.NewVec(0, 0), lc.Lines[0].Pstart, "start point = [0,0]")
+	AssertVecInDelta(t, bendit.NewVec(1, 1), lc.Lines[0].Pend, "end point = [1,1]")
+	/*assert.InDeltaf(t, 0., lc.Lines[0].Pstartx, delta, "start point x=0")
 	assert.InDeltaf(t, 0., lc.Lines[0].Pstarty, delta, "start point y=0")
 	assert.InDeltaf(t, 1., lc.Lines[0].Pendx, delta, "end point x=0")
-	assert.InDeltaf(t, 1., lc.Lines[0].Pendy, delta, "end point y=0")
+	assert.InDeltaf(t, 1., lc.Lines[0].Pendy, delta, "end point y=0")*/
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezier = createBezierS00to11()
@@ -180,9 +186,9 @@ func TestBezierSpline2d_AddVertex(t *testing.T) {
 	bezier := createBezierDiag00to11()
 	err := bezier.AddVertex(3, nil)
 	assert.NotNil(t, err, "knot-no. too large")
-	err = bezier.AddVertex(2, NewBezierVx2(2, 2, NewControl(1.5, 1.5), nil))
+	err = bezier.AddVertex(2, NewBezierVx2(bendit.NewVec(2, 2), bendit.NewVec(1.5, 1.5), nil))
 	assert.Equal(t, bezier.knots.KnotCnt(), 3, "knot-cnt %v wrong", bezier.knots.KnotCnt())
-	err = bezier.AddVertex(0, NewBezierVx2(-1, -1, NewControl(-2, -2), nil))
+	err = bezier.AddVertex(0, NewBezierVx2(bendit.NewVec(-1, -1), bendit.NewVec(-2, -2), nil))
 	assert.Equal(t, bezier.knots.KnotCnt(), 4, "knot-cnt %v wrong", bezier.knots.KnotCnt())
 	assert.Equal(t, bezier.Vertex(1), createBezierDiag00to11().Vertex(0), "vertices don't match")
 	assert.Equal(t, bezier.Vertex(2), createBezierDiag00to11().Vertex(1), "vertices don't match")
@@ -200,47 +206,33 @@ func TestBezierSpline2d_DeleteVertex(t *testing.T) {
 }
 
 func TestBezierVx2Dependent(t *testing.T) {
-	bvx := NewBezierVx2(0, 0, NewControl(1, 2), nil)
-	AssertControlsAreEqual(t, NewControl(-bvx.Entry().x, -bvx.Entry().y), bvx.exit, false)
-	bvx = NewBezierVx2(0, 0, nil, NewControl(3, -5))
-	AssertControlsAreEqual(t, bvx.entry, NewControl(-bvx.Exit().x, -bvx.Exit().y), true)
+	bvx := NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(1, 2), nil)
+	AssertVecInDelta(t, bvx.entry.Negate(), bvx.exit, "dependent control must be reflected by origin [0,0]")
+	bvx = NewBezierVx2(bendit.NewVec(0, 0), nil, bendit.NewVec(3, -5))
+	AssertVecInDelta(t, bvx.entry, bvx.exit.Negate(), "dependent control must be reflected by origin [0,0]")
 }
 
 func TestBezierVx2_Translate(t *testing.T) {
-	bvx := NewBezierVx2(0, 0, NewControl(0, 1), nil).Translate(2, 0).(*BezierVx2)
-	AssertBezierVxAreEqual(t, NewBezierVx2(2, 0, NewControl(2, 1), NewControl(2, -1)), true, bvx)
-	bvx = NewBezierVx2(0, 0, NewControl(0, 2), NewControl(3, 0)).Translate(1, 1).(*BezierVx2)
-	AssertBezierVxAreEqual(t, NewBezierVx2(1, 1, NewControl(1, 3), NewControl(4, 1)), false, bvx)
+	bvx := NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 1), nil).Translate(bendit.NewVec(2, 0)).(*BezierVx2)
+	AssertBezierVxAreEqual(t, NewBezierVx2(bendit.NewVec(2, 0), bendit.NewVec(2, 1), bendit.NewVec(2, -1)), true, bvx)
+	bvx = NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 2), bendit.NewVec(3, 0)).Translate(bendit.NewVec(1, 1)).(*BezierVx2)
+	AssertBezierVxAreEqual(t, NewBezierVx2(bendit.NewVec(1, 1), bendit.NewVec(1, 3), bendit.NewVec(4, 1)), false, bvx)
 }
 
 func TestBezierVx2_WithEntry(t *testing.T) {
-	bvx := NewBezierVx2(0, 0, nil, NewControl(0, 1)).
-		WithEntry(NewControl(2, 2))
-	AssertBezierVxAreEqual(t, NewBezierVx2(0, 0, NewControl(2, 2), NewControl(-2, -2)), true, bvx)
-	bvx = NewBezierVx2(0, 0, NewControl(0, 1), NewControl(0, 1)).
-		WithEntry(NewControl(2, 2))
-	AssertBezierVxAreEqual(t, NewBezierVx2(0, 0, NewControl(2, 2), NewControl(0, 1)), false, bvx)
+	bvx := NewBezierVx2(bendit.NewVec(0, 0), nil, bendit.NewVec(0, 1)).
+		WithEntry(bendit.NewVec(2, 2))
+	AssertBezierVxAreEqual(t, NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(2, 2), bendit.NewVec(-2, -2)), true, bvx)
+	bvx = NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 1), bendit.NewVec(0, 1)).
+		WithEntry(bendit.NewVec(2, 2))
+	AssertBezierVxAreEqual(t, NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(2, 2), bendit.NewVec(0, 1)), false, bvx)
 }
 
 func TestBezierVx2_WithExit(t *testing.T) {
-	bvx := NewBezierVx2(0, 0, NewControl(0, 1), nil).
-		WithExit(NewControl(-2, -2))
-	AssertBezierVxAreEqual(t, NewBezierVx2(0, 0, NewControl(2, 2), NewControl(-2, -2)), true, bvx)
-	bvx = NewBezierVx2(0, 0, NewControl(0, 1), NewControl(0, 1)).
-		WithExit(NewControl(2, 2))
-	AssertBezierVxAreEqual(t, NewBezierVx2(0, 0, NewControl(0, 1), NewControl(2, 2)), false, bvx)
-}
-
-func TestProjectedVectorDist(t *testing.T) {
-	assert.InDeltaf(t, 1., ProjectedVectorDist(0, 1, 1, 0), delta, "unit square")
-	assert.InDeltaf(t, 1., ProjectedVectorDist(1./math.Sqrt2, 1./math.Sqrt2, 1./math.Sqrt2, -1./math.Sqrt2), delta, "unit square, rotated")
-	assert.InDeltaf(t, 2., ProjectedVectorDist(0, 2, 2, 0), delta, "square - side length 2")
-
-	assert.InDeltaf(t, 1., ProjectedVectorDist(0, 1, 2, 0), delta, "rectangle")
-	assert.InDeltaf(t, 1., ProjectedVectorDist(1./math.Sqrt2, 1./math.Sqrt2, math.Sqrt2, -math.Sqrt2), delta, "rectangle, rotated")
-	assert.InDeltaf(t, 1., ProjectedVectorDist(1./math.Sqrt2, 1./math.Sqrt2, 10, -10), delta, "rectangle, rotated, enlarged")
-
-	assert.InDeltaf(t, 1., ProjectedVectorDist(1, 1, 1, 0), delta, "45 degree")
-	assert.InDeltaf(t, 1., ProjectedVectorDist(1, 1, -10, 0), delta, "45 degree, other direction")
-	assert.InDeltaf(t, 1., ProjectedVectorDist(math.Sqrt2, 0, -3, 3), delta, "45 degree")
+	bvx := NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 1), nil).
+		WithExit(bendit.NewVec(-2, -2))
+	AssertBezierVxAreEqual(t, NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(2, 2), bendit.NewVec(-2, -2)), true, bvx)
+	bvx = NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 1), bendit.NewVec(0, 1)).
+		WithExit(bendit.NewVec(2, 2))
+	AssertBezierVxAreEqual(t, NewBezierVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 1), bendit.NewVec(2, 2)), false, bvx)
 }

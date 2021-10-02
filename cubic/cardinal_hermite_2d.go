@@ -13,17 +13,22 @@ func (ct CardinalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 		return
 	}
 
+	dim := vertices[0].v.Dim() // precondition: len(vertices) >= 1
+
 	// transform tension to 'scale' factor of distance vector
 	b := (1 - ct.tension) / 2
 
 	// calculate tangents for uniform case: entry and exit tangents are equal
 	setUniformCardinalTan := func(v, vstart, vend *HermiteVx2) {
-		tanx := b * (vend.x - vstart.x)
+		tan := bendit.NewZeroVec(v.v.Dim())
+		for d := 0; d < dim; d++ {
+			tan[d] = b * (vend.v[d] - vstart.v[d])
+		}
+		v.entryTan, v.exitTan = tan, tan // TODO or clone ?
+		/*tanx := b * (vend.x - vstart.x)
 		tany := b * (vend.y - vstart.y)
-		//v.entryTan.x, v.exitTan.x = tanx, tanx
-		//v.entryTan.y, v.exitTan.y = tany, tany
 		v.entryTan = NewControl(tanx, tany)
-		v.exitTan = v.entryTan // NewControl(tanx, tany)
+		v.exitTan = v.entryTan // NewControl(tanx, tany)*/
 	}
 
 	setUniformCardinalTan(vertices[0], vertices[0], vertices[1])

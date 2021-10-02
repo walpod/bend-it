@@ -1,19 +1,19 @@
 package bendit
 
-type Fn2d func(t float64) (x, y float64)
+type Fn2d func(t float64) Vec
 
 type Spline2d interface {
 	Knots() Knots
 
-	At(t float64) (x, y float64)
+	At(t float64) Vec
 	Fn() Fn2d
 
 	Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector2d)
 }
 
 type Vertex2d interface {
-	Coord() (x, y float64)
-	Translate(dx, dy float64) Vertex2d
+	Coord() Vec
+	Translate(d Vec) Vertex2d
 }
 
 // VertSpline2d can be constructed by adding vertices

@@ -14,6 +14,8 @@ func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 		return
 	}
 
+	dim := vertices[0].v.Dim() // precondition: len(vertices) >= 1
+
 	// solve n linear equations of one dimension for given points and return tangents
 	var solve func(p []float64) []float64
 
@@ -100,7 +102,31 @@ func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 		}
 	}
 
-	// prepare intermediate slices of vertices
+	// prepare empty tangents for all segments
+	for i := 0; i < n; i++ {
+		vertices[i].entryTan = bendit.NewZeroVec(dim)
+		vertices[i].exitTan = vertices[i].entryTan // TODO or clone ?
+	}
+
+	// solve per dimension
+	for d := 0; d < dim; d++ {
+		// prepare intermediate slices of vertices
+		vertsd := make([]float64, n) // TODO rename
+		for i := 0; i < n; i++ {
+			vertsd[i] = vertices[i].v[d]
+		}
+
+		// solve linear equations to find tangents
+		tansd := solve(vertsd)
+
+		// write intermediate result to vertices
+		for i := 0; i < n; i++ {
+			vertices[i].entryTan[d] = tansd[i]
+			vertices[i].exitTan[d] = tansd[i]
+		}
+	}
+
+	/*// prepare intermediate slices of vertices
 	vcsx := make([]float64, n)
 	vcsy := make([]float64, n)
 	for i := 0; i < n; i++ {
@@ -114,13 +140,9 @@ func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 
 	// write intermediate result to vertices
 	for i := 0; i < n; i++ {
-		/*vertices[i].entryTan.x = tansx[i]
-		vertices[i].exitTan.x = tansx[i]
-		vertices[i].entryTan.y = tansy[i]
-		vertices[i].exitTan.y = tansy[i]*/
 		vertices[i].entryTan = NewControl(tansx[i], tansy[i])
 		vertices[i].exitTan = NewControl(tansx[i], tansy[i])
-	}
+	}*/
 }
 
 type NaturalHermiteSpline2d struct {
