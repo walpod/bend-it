@@ -9,15 +9,15 @@ import (
 
 func createHermDiag00to11() *HermiteSpline2d {
 	return NewHermiteSpline2d(nil,
-		NewHermiteVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 1)),
-		NewHermiteVx2(bendit.NewVec(1, 1), bendit.NewVec(1, 1), bendit.NewVec(0, 0)),
+		NewHermiteVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 1)),
+		NewHermiteVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 1), bendit.NewVec(0, 0)),
 	)
 }
 
 func createNonUniHermDiag00to11() *HermiteSpline2d {
 	return NewHermiteSpline2d([]float64{0, math.Sqrt2},
-		NewHermiteVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 1)),
-		NewHermiteVx2(bendit.NewVec(1, 1), bendit.NewVec(1, 1), bendit.NewVec(0, 0)),
+		NewHermiteVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 1)),
+		NewHermiteVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 1), bendit.NewVec(0, 0)),
 	)
 }
 
@@ -33,8 +33,8 @@ func createHermParabola00to11(uniform bool) *HermiteSpline2d {
 		tknots = []float64{0, 1} // is in fact uniform but specified as non-uniform
 	}
 	return NewHermiteSpline2d(tknots,
-		NewHermiteVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 0)),
-		NewHermiteVx2(bendit.NewVec(1, 1), bendit.NewVec(1, 2), bendit.NewVec(0, 0)),
+		NewHermiteVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 0)),
+		NewHermiteVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 2), bendit.NewVec(0, 0)),
 	)
 }
 
@@ -46,9 +46,9 @@ func createDoubleHermParabola00to11to22(uniform bool) *HermiteSpline2d {
 		tknots = []float64{0, 1, 2} // is in fact uniform but specified as non-uniform
 	}
 	return NewHermiteSpline2d(tknots,
-		NewHermiteVx2(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 0)),
-		NewHermiteVx2(bendit.NewVec(1, 1), bendit.NewVec(1, 2), bendit.NewVec(1, 0)),
-		NewHermiteVx2(bendit.NewVec(2, 2), bendit.NewVec(1, 2), bendit.NewVec(0, 0)),
+		NewHermiteVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 0)),
+		NewHermiteVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 2), bendit.NewVec(1, 0)),
+		NewHermiteVertex(bendit.NewVec(2, 2), bendit.NewVec(1, 2), bendit.NewVec(0, 0)),
 	)
 }
 
@@ -93,7 +93,7 @@ func TestHermiteSpline2d_At(t *testing.T) {
 
 	// domain with ony one value: 0
 	herm = NewHermiteSpline2d(nil,
-		NewHermiteVx2(bendit.NewVec(1, 2), bendit.NewVec(0, 0), bendit.NewVec(0, 0)))
+		NewHermiteVertex(bendit.NewVec(1, 2), bendit.NewVec(0, 0), bendit.NewVec(0, 0)))
 	herm.Prepare()
 	AssertSplineAt(t, herm, 0, bendit.NewVec(1, 2))
 
@@ -144,9 +144,9 @@ func TestHermiteSpline2d_AddVertex(t *testing.T) {
 	hermite := createHermDiag00to11()
 	err := hermite.AddVertex(3, nil)
 	assert.NotNil(t, err, "knot-no. too large")
-	err = hermite.AddVertex(2, NewHermiteVx2(bendit.NewVec(2, 2), bendit.NewVec(1.5, 1.5), nil))
+	err = hermite.AddVertex(2, NewHermiteVertex(bendit.NewVec(2, 2), bendit.NewVec(1.5, 1.5), nil))
 	assert.Equal(t, hermite.knots.KnotCnt(), 3, "knot-cnt %v wrong", hermite.knots.KnotCnt())
-	err = hermite.AddVertex(0, NewHermiteVx2(bendit.NewVec(-1, -1), bendit.NewVec(-2, -2), nil))
+	err = hermite.AddVertex(0, NewHermiteVertex(bendit.NewVec(-1, -1), bendit.NewVec(-2, -2), nil))
 	assert.Equal(t, hermite.knots.KnotCnt(), 4, "knot-cnt %v wrong", hermite.knots.KnotCnt())
 	assert.Equal(t, hermite.Vertex(1), createHermDiag00to11().Vertex(0), "vertices don't match")
 	assert.Equal(t, hermite.Vertex(2), createHermDiag00to11().Vertex(1), "vertices don't match")

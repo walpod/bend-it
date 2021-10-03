@@ -9,15 +9,15 @@ import (
 
 func createNaturalDiag00to11() *NaturalHermiteSpline2d {
 	return NewNaturalHermiteSpline2d(nil,
-		NewHermiteVx2Raw(bendit.NewVec(0, 0)),
-		NewHermiteVx2Raw(bendit.NewVec(1, 1)))
+		NewRawHermiteVertex(bendit.NewVec(0, 0)),
+		NewRawHermiteVertex(bendit.NewVec(1, 1)))
 }
 
 func createNaturalVase() *NaturalHermiteSpline2d {
 	return NewNaturalHermiteSpline2d(nil,
-		NewHermiteVx2Raw(bendit.NewVec(-1, 1)),
-		NewHermiteVx2Raw(bendit.NewVec(0, 0)),
-		NewHermiteVx2Raw(bendit.NewVec(1, 1)))
+		NewRawHermiteVertex(bendit.NewVec(-1, 1)),
+		NewRawHermiteVertex(bendit.NewVec(0, 0)),
+		NewRawHermiteVertex(bendit.NewVec(1, 1)))
 }
 
 func TestNaturalHermiteSpline_At(t *testing.T) {

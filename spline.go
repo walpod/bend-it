@@ -13,7 +13,7 @@ type Spline2d interface {
 
 type Vertex2d interface {
 	Loc() Vec
-	Translate(d Vec) Vertex2d
+	Translate(dv Vec) Vertex2d
 }
 
 // VertSpline2d can be constructed by adding vertices

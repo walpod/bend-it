@@ -6,7 +6,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type HermiteVx2 struct {
+/*type HermiteVx2 struct {
 	v         bendit.Vec
 	entryTan  bendit.Vec
 	exitTan   bendit.Vec
@@ -83,16 +83,16 @@ func (vt HermiteVx2) WithExitTan(exitTan bendit.Vec) *HermiteVx2 {
 		entryTan = nil
 	}
 	return NewHermiteVx2(vt.v, entryTan, exitTan)
-}
+}*/
 
 // HermiteTanFinder2d finds tangents based on given vertices and knots
 type HermiteTanFinder2d interface {
-	Find(knots bendit.Knots, vertices []*HermiteVx2)
+	Find(knots bendit.Knots, vertices []*HermiteVertex)
 }
 
 type HermiteSpline2d struct {
 	knots     bendit.Knots
-	vertices  []*HermiteVx2
+	vertices  []*HermiteVertex
 	tanFinder HermiteTanFinder2d
 	// internal cache of prepare
 	canon    *CanonicalSpline2d
@@ -100,11 +100,11 @@ type HermiteSpline2d struct {
 	tanFound bool
 }
 
-func NewHermiteSpline2d(tknots []float64, vertices ...*HermiteVx2) *HermiteSpline2d {
+func NewHermiteSpline2d(tknots []float64, vertices ...*HermiteVertex) *HermiteSpline2d {
 	return NewHermiteSplineTanFinder2d(tknots, nil, vertices...)
 }
 
-func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d, vertices ...*HermiteVx2) *HermiteSpline2d {
+func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d, vertices ...*HermiteVertex) *HermiteSpline2d {
 	var knots bendit.Knots
 	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(vertices))
@@ -127,7 +127,7 @@ func (sp *HermiteSpline2d) Dim() int {
 	if len(sp.vertices) == 0 {
 		return 0
 	} else {
-		return sp.vertices[0].v.Dim()
+		return sp.vertices[0].loc.Dim()
 	}
 }
 
@@ -144,7 +144,7 @@ func (sp *HermiteSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err er
 	if err != nil {
 		return err
 	}
-	hvt := vertex.(*HermiteVx2)
+	hvt := vertex.(*HermiteVertex)
 	if knotNo == len(sp.vertices) {
 		sp.vertices = append(sp.vertices, hvt)
 	} else {
@@ -159,7 +159,7 @@ func (sp *HermiteSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err
 	if !sp.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
-	sp.vertices[knotNo] = vertex.(*HermiteVx2)
+	sp.vertices[knotNo] = vertex.(*HermiteVertex)
 	return nil
 }
 
@@ -175,28 +175,6 @@ func (sp *HermiteSpline2d) DeleteVertex(knotNo int) (err error) {
 	}
 	return nil
 }
-
-/*func (sp *HermiteSpline2d) Add(vertex *HermiteVx2) {
-	if sp.knots.IsUniform() {
-		sp.knots.(*bendit.UniformKnots).Add(1)
-	} else {
-		sp.knots.(*bendit.NonUniformKnots).Add(1)
-	}
-	sp.vertices = append(sp.vertices, vertex)
-	sp.ResetPrepare()
-}
-
-func (sp *HermiteSpline2d) AddL(segmentLen float64, vertex *HermiteVx2) {
-	if sp.knots.IsUniform() {
-		err := sp.knots.(*bendit.UniformKnots).Add(1)
-		if err != nil {
-			panic(err.Error())
-		}
-	} else {
-		sp.knots.(*bendit.NonUniformKnots).Add(segmentLen)
-	}
-	sp.vertices = append(sp.vertices, vertex)
-}*/
 
 // Prepare execution of hermite spline by mapping to canonical and bezier representation
 func (sp *HermiteSpline2d) Prepare() {
@@ -234,7 +212,7 @@ func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 			return sp.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].v)
+		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].loc)
 	} else {
 		return NewCanonicalSpline2d(sp.knots.External())
 	}
@@ -249,7 +227,7 @@ func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
 		for d := 0; d < dim; d++ {
-			avs = append(avs, vstart.v[d], vend.v[d], vstart.exitTan[d], vend.entryTan[d])
+			avs = append(avs, vstart.loc[d], vend.loc[d], vstart.exit[d], vend.entry[d])
 		}
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
@@ -276,7 +254,7 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
 		avs := make([]float64, 0, dim*4)
 		for d := 0; d < dim; d++ {
-			avs = append(avs, vstart.v[d], vend.v[d], vstart.exitTan[d], vend.entryTan[d])
+			avs = append(avs, vstart.loc[d], vend.loc[d], vstart.exit[d], vend.entry[d])
 		}
 		a := mat.NewDense(dim, 4, avs)
 		/*a := mat.NewDense(dim, 4, []float64{
@@ -338,7 +316,7 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 	} else if n == 1 {
 		// TODO or instead nil ? zv := bendit.NewZeroVec(sp.Dim())
 		return NewBezierSpline2d(sp.knots.External(),
-			NewControlVertex(sp.vertices[0].v, nil, nil))
+			NewBezierVertex(sp.vertices[0].loc, nil, nil))
 	} else {
 		return NewBezierSpline2d(sp.knots.External())
 	}
@@ -353,10 +331,8 @@ func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
 		for d := 0; d < dim; d++ {
-			avs = append(avs, vstart.v[d], vend.v[d], vstart.exitTan[d], vend.entryTan[d])
+			avs = append(avs, vstart.loc[d], vend.loc[d], vstart.exit[d], vend.entry[d])
 		}
-		//avs = append(avs, vstart.x, vend.x, vstart.exitTan.x, vend.entryTan.x)
-		//avs = append(avs, vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y)
 	}
 	a := mat.NewDense(dim*segmCnt, 4, avs)
 

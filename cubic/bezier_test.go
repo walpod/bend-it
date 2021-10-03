@@ -62,46 +62,35 @@ func AssertBezierAtInDeltaDeCasteljau(t *testing.T, bezier *BezierSpline2d, atT 
 	//assert.InDeltaf(t, xdc, x, delta, "spline.At(%loc).x = %loc != spline.AtDeCasteljau(%loc).x = %loc", atT, x, atT, xdc)
 }
 
-/*func AssertControlsAreEqual(t *testing.T, expected *Control, actual *Control, isEntry bool) {
-	var side string
-	if isEntry {
-		side = "entry"
-	} else {
-		side = "exit"
-	}
-	assert.InDeltaf(t, expected.x, actual.x, delta, "expected %v-control.x = %v != actual.x = %v", side, expected.x, actual.x)
-	assert.InDeltaf(t, expected.y, actual.y, delta, "expected %v-control.y = %v != actual.y = %v", side, expected.y, actual.y)
-}*/
-
-func AssertControlVerticesAreEqual(t *testing.T, expected *ControlVertex, expectedDependent bool, actual *ControlVertex) {
-	AssertVecInDelta(t, expected.loc, actual.loc, fmt.Sprintf("expected bezier = %v != actual bezier = %v", expected.loc, actual.loc))
-	AssertVecInDelta(t, expected.entry, actual.entry, fmt.Sprintf("expected entry-control = %v != actual = %v", expected.entry, actual.entry))
-	AssertVecInDelta(t, expected.exit, actual.exit, fmt.Sprintf("expected exit-control = %v != actual = %v", expected.entry, actual.entry))
-	assert.Equal(t, expectedDependent, actual.dependent, "expected dependent = %v != actual dependent = %v", expectedDependent, actual.dependent)
+func AssertControlVerticesAreEqual(t *testing.T, expected ControlVertex, expectedDependent bool, actual ControlVertex) {
+	AssertVecInDelta(t, expected.Loc(), actual.Loc(), fmt.Sprintf("expected bezier = %v != actual bezier = %v", expected.Loc(), actual.Loc()))
+	AssertVecInDelta(t, expected.Entry(), actual.Entry(), fmt.Sprintf("expected entry-control = %v != actual = %v", expected.Entry(), actual.Entry()))
+	AssertVecInDelta(t, expected.Exit(), actual.Exit(), fmt.Sprintf("expected exit-control = %v != actual = %v", expected.Entry(), actual.Entry()))
+	assert.Equal(t, expectedDependent, actual.Dependent(), "expected dependent = %v != actual dependent = %v", expectedDependent, actual.Dependent())
 }
 
 // createBezierDiag00to11 creates a bezier representing a straight line from (0,0) to (1,1)
 func createBezierDiag00to11() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewControlVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1./3, 1./3)),
-		NewControlVertex(bendit.NewVec(1, 1), bendit.NewVec(2./3, 2./3), nil),
+		NewBezierVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1./3, 1./3)),
+		NewBezierVertex(bendit.NewVec(1, 1), bendit.NewVec(2./3, 2./3), nil),
 	)
 }
 
 // createBezierDiag00to11 creates a bezier representing an S-formed slope from (0,0) to (1,1)
 func createBezierS00to11() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewControlVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1, 0)),
-		NewControlVertex(bendit.NewVec(1, 1), bendit.NewVec(0, 1), nil),
+		NewBezierVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1, 0)),
+		NewBezierVertex(bendit.NewVec(1, 1), bendit.NewVec(0, 1), nil),
 	)
 }
 
 // createBezierDiag00to11 creates two consecutive beziers representing an S-formed slope from (0,0) to (1,1) or (1,1) to (2,2), resp.
 func createDoubleBezierS00to11to22() *BezierSpline2d {
 	return NewBezierSpline2d(nil,
-		NewControlVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1, 0)),
-		NewControlVertex(bendit.NewVec(1, 1) /*bendit.NewVec(0, 1)*/, nil, bendit.NewVec(2, 1)),
-		NewControlVertex(bendit.NewVec(2, 2), bendit.NewVec(1, 2), nil),
+		NewBezierVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1, 0)),
+		NewBezierVertex(bendit.NewVec(1, 1) /*bendit.NewVec(0, 1)*/, nil, bendit.NewVec(2, 1)),
+		NewBezierVertex(bendit.NewVec(2, 2), bendit.NewVec(1, 2), nil),
 	)
 }
 
@@ -124,13 +113,13 @@ func TestBezierSpline2d_At(t *testing.T) {
 
 	// single vertex, domain with value 0 only
 	bezier = NewBezierSpline2d(nil,
-		NewControlVertex(bendit.NewVec(1, 2), nil, nil))
+		NewBezierVertex(bendit.NewVec(1, 2), nil, nil))
 	bezier.Prepare()
 	AssertSplineAt(t, bezier, 0, bendit.NewVec(1, 2))
 
 	bezier = NewBezierSpline2d(
 		[]float64{0},
-		NewControlVertex(bendit.NewVec(1, 2), nil, nil))
+		NewBezierVertex(bendit.NewVec(1, 2), nil, nil))
 	bezier.Prepare()
 	AssertSplineAt(t, bezier, 0, bendit.NewVec(1, 2))
 
@@ -186,9 +175,9 @@ func TestBezierSpline2d_AddVertex(t *testing.T) {
 	bezier := createBezierDiag00to11()
 	err := bezier.AddVertex(3, nil)
 	assert.NotNil(t, err, "knot-no. too large")
-	err = bezier.AddVertex(2, NewControlVertex(bendit.NewVec(2, 2), bendit.NewVec(1.5, 1.5), nil))
+	err = bezier.AddVertex(2, NewBezierVertex(bendit.NewVec(2, 2), bendit.NewVec(1.5, 1.5), nil))
 	assert.Equal(t, bezier.knots.KnotCnt(), 3, "knot-cnt %v wrong", bezier.knots.KnotCnt())
-	err = bezier.AddVertex(0, NewControlVertex(bendit.NewVec(-1, -1), bendit.NewVec(-2, -2), nil))
+	err = bezier.AddVertex(0, NewBezierVertex(bendit.NewVec(-1, -1), bendit.NewVec(-2, -2), nil))
 	assert.Equal(t, bezier.knots.KnotCnt(), 4, "knot-cnt %v wrong", bezier.knots.KnotCnt())
 	assert.Equal(t, bezier.Vertex(1), createBezierDiag00to11().Vertex(0), "vertices don't match")
 	assert.Equal(t, bezier.Vertex(2), createBezierDiag00to11().Vertex(1), "vertices don't match")
@@ -203,36 +192,4 @@ func TestBezierSpline2d_DeleteVertex(t *testing.T) {
 	assert.Equal(t, bezier.Vertex(0), createBezierDiag00to11().Vertex(0), "vertices don't match")
 	err = bezier.DeleteVertex(0)
 	assert.Equal(t, bezier.knots.KnotCnt(), 0, "knot-cnt %v wrong", bezier.knots.KnotCnt())
-}
-
-func TestBezierVx2Dependent(t *testing.T) {
-	bvx := NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(1, 2), nil)
-	AssertVecInDelta(t, bvx.entry.Negate(), bvx.exit, "dependent control must be reflected by origin [0,0]")
-	bvx = NewControlVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(3, -5))
-	AssertVecInDelta(t, bvx.entry, bvx.exit.Negate(), "dependent control must be reflected by origin [0,0]")
-}
-
-func TestBezierVx2_Translate(t *testing.T) {
-	bvx := NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 1), nil).Translate(bendit.NewVec(2, 0)).(*ControlVertex)
-	AssertControlVerticesAreEqual(t, NewControlVertex(bendit.NewVec(2, 0), bendit.NewVec(2, 1), bendit.NewVec(2, -1)), true, bvx)
-	bvx = NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 2), bendit.NewVec(3, 0)).Translate(bendit.NewVec(1, 1)).(*ControlVertex)
-	AssertControlVerticesAreEqual(t, NewControlVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 3), bendit.NewVec(4, 1)), false, bvx)
-}
-
-func TestBezierVx2_WithEntry(t *testing.T) {
-	bvx := NewControlVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(0, 1)).
-		WithEntry(bendit.NewVec(2, 2))
-	AssertControlVerticesAreEqual(t, NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(2, 2), bendit.NewVec(-2, -2)), true, bvx)
-	bvx = NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 1), bendit.NewVec(0, 1)).
-		WithEntry(bendit.NewVec(2, 2))
-	AssertControlVerticesAreEqual(t, NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(2, 2), bendit.NewVec(0, 1)), false, bvx)
-}
-
-func TestBezierVx2_WithExit(t *testing.T) {
-	bvx := NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 1), nil).
-		WithExit(bendit.NewVec(-2, -2))
-	AssertControlVerticesAreEqual(t, NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(2, 2), bendit.NewVec(-2, -2)), true, bvx)
-	bvx = NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 1), bendit.NewVec(0, 1)).
-		WithExit(bendit.NewVec(2, 2))
-	AssertControlVerticesAreEqual(t, NewControlVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 1), bendit.NewVec(2, 2)), false, bvx)
 }

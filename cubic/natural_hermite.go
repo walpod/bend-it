@@ -8,13 +8,13 @@ type NaturalTanf2d struct{}
 // Find hermite tangents for natural spline
 // mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
-func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
+func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVertex) {
 	n := len(vertices)
 	if n < 2 {
 		return
 	}
 
-	dim := vertices[0].v.Dim() // precondition: len(vertices) >= 1
+	dim := vertices[0].loc.Dim() // precondition: len(vertices) >= 1
 
 	// solve n linear equations of one dimension for given points and return tangents
 	var solve func(p []float64) []float64
@@ -104,8 +104,8 @@ func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 
 	// prepare empty tangents for all segments
 	for i := 0; i < n; i++ {
-		vertices[i].entryTan = bendit.NewZeroVec(dim)
-		vertices[i].exitTan = vertices[i].entryTan // TODO or clone ?
+		vertices[i].entry = bendit.NewZeroVec(dim)
+		vertices[i].exit = vertices[i].entry // TODO or clone ?
 	}
 
 	// solve per dimension
@@ -113,7 +113,7 @@ func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 		// prepare intermediate slices of vertices
 		vertsd := make([]float64, n) // TODO rename
 		for i := 0; i < n; i++ {
-			vertsd[i] = vertices[i].v[d]
+			vertsd[i] = vertices[i].loc[d]
 		}
 
 		// solve linear equations to find tangents
@@ -121,8 +121,8 @@ func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVx2) {
 
 		// write intermediate result to vertices
 		for i := 0; i < n; i++ {
-			vertices[i].entryTan[d] = tansd[i]
-			vertices[i].exitTan[d] = tansd[i]
+			vertices[i].entry[d] = tansd[i]
+			vertices[i].exit[d] = tansd[i]
 		}
 	}
 
@@ -149,7 +149,7 @@ type NaturalHermiteSpline2d struct {
 	HermiteSpline2d
 }
 
-func NewNaturalHermiteSpline2d(tknots []float64, vertices ...*HermiteVx2) *NaturalHermiteSpline2d {
+func NewNaturalHermiteSpline2d(tknots []float64, vertices ...*HermiteVertex) *NaturalHermiteSpline2d {
 	sp := &NaturalHermiteSpline2d{
 		HermiteSpline2d: *NewHermiteSplineTanFinder2d(tknots, NaturalTanf2d{}, vertices...)}
 	return sp
