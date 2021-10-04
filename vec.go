@@ -70,6 +70,7 @@ func (v Vec) ProjectedVecDist(w Vec) float64 {
 	} else if len(v) == 3 {
 		area = Vec{v[1]*w[2] - v[2]*w[1], v[2]*w[0] - v[0]*w[2], v[0]*w[1] - v[1]*w[0]}.Len()
 	} else {
+		// TODO implement it
 		panic("ProjectedVecDist not yet implemented for dim >= 4")
 	}
 	return area / w.Len()

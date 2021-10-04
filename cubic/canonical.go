@@ -18,26 +18,26 @@ func (cb *CubicPoly) At(u float64) float64 {
 	return cb.a + u*(cb.b+u*(cb.c+cb.d*u))
 }
 
-func (cb *CubicPoly) Fn() func(float64) float64 {
+/*func (cb *CubicPoly) Fn() func(float64) float64 {
 	return func(u float64) float64 {
 		return cb.At(u)
 	}
-}
+}*/
 
-type Cubic2d struct {
+type CubicPolies struct {
 	// TODO maybe use 2x4 matrix and matrix multiplication instead
 	cubs []CubicPoly
 }
 
-func NewCubic2d(cubs ...CubicPoly) Cubic2d {
-	return Cubic2d{cubs: cubs}
+func NewCubicPolyNd(cubs ...CubicPoly) CubicPolies {
+	return CubicPolies{cubs: cubs}
 }
 
-func (cb Cubic2d) Dim() int {
+func (cb CubicPolies) Dim() int {
 	return len(cb.cubs)
 }
 
-func (cb *Cubic2d) At(u float64) bendit.Vec {
+func (cb *CubicPolies) At(u float64) bendit.Vec {
 	dim := len(cb.cubs)
 	p := make(bendit.Vec, dim)
 	for d := 0; d < dim; d++ {
@@ -46,13 +46,13 @@ func (cb *Cubic2d) At(u float64) bendit.Vec {
 	return p
 }
 
-type CanonicalSpline2d struct {
+type CanonicalSpline struct {
 	knots  bendit.Knots
-	cubics []Cubic2d
+	cubics []CubicPolies
 }
 
 // tknots: nil = uniform else non-uniform
-func NewCanonicalSpline2d(tknots []float64, cubics ...Cubic2d) *CanonicalSpline2d {
+func NewCanonicalSpline(tknots []float64, cubics ...CubicPolies) *CanonicalSpline {
 	var knots bendit.Knots
 	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(cubics) + 1)
@@ -66,29 +66,29 @@ func NewCanonicalSpline2d(tknots []float64, cubics ...Cubic2d) *CanonicalSpline2
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	canon := &CanonicalSpline2d{knots, cubics}
+	canon := &CanonicalSpline{knots, cubics}
 	return canon
 }
 
-func NewSingleVertexCanonicalSpline2d(v bendit.Vec) *CanonicalSpline2d {
+func NewSingleVertexCanonicalSpline(v bendit.Vec) *CanonicalSpline {
 	// domain with value 0 only, knots '0,0'
 	dim := len(v)
 	cubs := make([]CubicPoly, dim)
 	for d := 0; d < dim; d++ {
 		cubs[d] = NewCubicPoly(v[d], 0, 0, 0)
 	}
-	return NewCanonicalSpline2d([]float64{0, 0}, NewCubic2d(cubs...))
+	return NewCanonicalSpline([]float64{0, 0}, NewCubicPolyNd(cubs...))
 }
 
 // matrix: (segmCnt*2) x 4
-func NewCanonicalSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *CanonicalSpline2d {
+func NewCanonicalSplineByMatrix(tknots []float64, dim int, mat mat.Dense) *CanonicalSpline {
 	r, _ := mat.Dims()
 	segmCnt := r / dim
 	if tknots != nil && len(tknots) != segmCnt+1 {
 		panic("non-uniform knots must have length matrix-rows/dim + 1")
 	}
 
-	cubics := make([]Cubic2d, segmCnt)
+	cubics := make([]CubicPolies, segmCnt)
 	rowno := 0
 	for i := 0; i < segmCnt; i++ {
 		cubs := make([]CubicPoly, dim)
@@ -96,29 +96,30 @@ func NewCanonicalSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *Can
 			cubs[j] = NewCubicPoly(mat.At(rowno, 0), mat.At(rowno, 1), mat.At(rowno, 2), mat.At(rowno, 3))
 			rowno++
 		}
-		cubics[i] = NewCubic2d(cubs...)
+		cubics[i] = NewCubicPolyNd(cubs...)
 	}
-	return NewCanonicalSpline2d(tknots, cubics...)
+	return NewCanonicalSpline(tknots, cubics...)
 }
 
-func (sp *CanonicalSpline2d) Knots() bendit.Knots {
+func (sp *CanonicalSpline) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *CanonicalSpline2d) At(t float64) bendit.Vec {
+func (sp *CanonicalSpline) At(t float64) bendit.Vec {
 	if len(sp.cubics) == 0 {
 		return nil //return make(bendit.Vector, sp.dim) ... point (0,0,...0)
 	}
 
-	segmNo, u, err := sp.knots.MapToSegment(t)
+	segmentNo, u, err := sp.knots.MapToSegment(t)
 	if err != nil {
 		return nil
 	} else {
-		return sp.cubics[segmNo].At(u)
+		return sp.cubics[segmentNo].At(u)
 	}
 }
 
-func (sp *CanonicalSpline2d) Bezier() *BezierSpline2d {
+/* TODO Bezier can be skipped
+func (sp *CanonicalSpline) Bezier() *VertBezierBuilder {
 	if len(sp.cubics) >= 1 {
 		if sp.knots.IsUniform() {
 			return sp.uniBezier()
@@ -126,11 +127,11 @@ func (sp *CanonicalSpline2d) Bezier() *BezierSpline2d {
 			panic("not yet implemented")
 		}
 	} else {
-		return NewBezierSpline2d(nil)
+		return NewVertBezierBuilder(nil)
 	}
 }
 
-func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
+func (sp *CanonicalSpline) uniBezier() *VertBezierBuilder {
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
 	dim := sp.cubics[0].Dim()
@@ -154,10 +155,6 @@ func (sp *CanonicalSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewBezierSpline2dByMatrix(sp.knots.External(), dim, coefs)
+	return NewVertBezierBuilderdByMatrix(sp.knots.External(), dim, coefs)
 }
-
-func (sp *CanonicalSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
-	// TODO Prepare bezier?
-	sp.Bezier().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
-}
+*/

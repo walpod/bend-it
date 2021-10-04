@@ -6,13 +6,13 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type BezierSpline2d struct {
+type VertBezierBuilder struct {
 	knots    bendit.Knots
 	vertices []*BezierVertex
-	canon    *CanonicalSpline2d // map to canonical, cubic spline
+	//canon    *CanonicalSpline // map to canonical, cubic spline
 }
 
-func NewBezierSpline2d(tknots []float64, vertices ...*BezierVertex) *BezierSpline2d {
+func NewVertBezierBuilder(tknots []float64, vertices ...*BezierVertex) *VertBezierBuilder {
 	var knots bendit.Knots
 	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(vertices))
@@ -23,11 +23,11 @@ func NewBezierSpline2d(tknots []float64, vertices ...*BezierVertex) *BezierSplin
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	bez := &BezierSpline2d{knots: knots, vertices: vertices}
+	bez := &VertBezierBuilder{knots: knots, vertices: vertices}
 	return bez
 }
 
-func NewBezierSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *BezierSpline2d {
+func NewVertBezierBuilderdByMatrix(tknots []float64, dim int, mat mat.Dense) *VertBezierBuilder {
 	rows, _ := mat.Dims()
 	segmCnt := rows / dim
 	vertices := make([]*BezierVertex, 0, segmCnt)
@@ -66,14 +66,14 @@ func NewBezierSpline2dByMatrix(tknots []float64, dim int, mat mat.Dense) *Bezier
 	}
 	vertices = append(vertices, NewBezierVertex(v, entry, bendit.NewZeroVec(dim)))
 
-	return NewBezierSpline2d(tknots, vertices...)
+	return NewVertBezierBuilder(tknots, vertices...)
 }
 
-func (sp *BezierSpline2d) Knots() bendit.Knots {
+func (sp *VertBezierBuilder) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *BezierSpline2d) Dim() int {
+func (sp *VertBezierBuilder) Dim() int {
 	if len(sp.vertices) == 0 {
 		return 0
 	} else {
@@ -81,7 +81,7 @@ func (sp *BezierSpline2d) Dim() int {
 	}
 }
 
-func (sp *BezierSpline2d) BezierVertex(knotNo int) *BezierVertex {
+func (sp *VertBezierBuilder) BezierVertex(knotNo int) *BezierVertex {
 	if knotNo >= len(sp.vertices) {
 		return nil
 	} else {
@@ -89,11 +89,11 @@ func (sp *BezierSpline2d) BezierVertex(knotNo int) *BezierVertex {
 	}
 }
 
-func (sp *BezierSpline2d) Vertex(knotNo int) bendit.Vertex {
+func (sp *VertBezierBuilder) Vertex(knotNo int) bendit.Vertex {
 	return sp.BezierVertex(knotNo)
 }
 
-func (sp *BezierSpline2d) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sp *VertBezierBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
 	err = sp.knots.AddKnot(knotNo)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (sp *BezierSpline2d) AddVertex(knotNo int, vertex bendit.Vertex) (err error
 	return nil
 }
 
-func (sp *BezierSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sp *VertBezierBuilder) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
 	if !sp.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
@@ -117,7 +117,7 @@ func (sp *BezierSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex) (err er
 	return nil
 }
 
-func (sp *BezierSpline2d) DeleteVertex(knotNo int) (err error) {
+func (sp *VertBezierBuilder) DeleteVertex(knotNo int) (err error) {
 	err = sp.knots.DeleteKnot(knotNo)
 	if err != nil {
 		return err
@@ -130,19 +130,19 @@ func (sp *BezierSpline2d) DeleteVertex(knotNo int) (err error) {
 	return nil
 }
 
-func (sp *BezierSpline2d) Prepare() {
+/*func (sp *VertBezierBuilder) Prepare() {
 	sp.prepareCanon()
 }
 
-func (sp *BezierSpline2d) ResetPrepare() {
+func (sp *VertBezierBuilder) ResetPrepare() {
 	sp.canon = nil
 }
 
-func (sp *BezierSpline2d) prepareCanon() {
+func (sp *VertBezierBuilder) prepareCanon() {
 	sp.canon = sp.Canonical()
-}
+}*/
 
-func (sp *BezierSpline2d) Canonical() *CanonicalSpline2d {
+func (sp *VertBezierBuilder) Canonical() *CanonicalSpline {
 	n := len(sp.vertices)
 	if n >= 2 {
 		if sp.knots.IsUniform() {
@@ -151,18 +151,18 @@ func (sp *BezierSpline2d) Canonical() *CanonicalSpline2d {
 			return sp.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].loc)
+		return NewSingleVertexCanonicalSpline(sp.vertices[0].loc)
 	} else {
-		return NewCanonicalSpline2d(sp.knots.External())
+		return NewCanonicalSpline(sp.knots.External())
 	}
 }
 
-func (sp *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
+func (sp *VertBezierBuilder) uniCanonical() *CanonicalSpline {
 	// precondition: segmCnt >= 1, sp.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
 	dim := sp.Dim()
 
-	avs := make([]float64, 0, dim*4*segmCnt)
+	avs := make([]float64, 0, segmCnt*dim*4)
 	for i := 0; i < segmCnt; i++ {
 		vstart, vend := sp.vertices[i], sp.vertices[i+1]
 		for d := 0; d < dim; d++ {
@@ -181,23 +181,63 @@ func (sp *BezierSpline2d) uniCanonical() *CanonicalSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewCanonicalSpline2dByMatrix(sp.knots.External(), dim, coefs)
+	return NewCanonicalSplineByMatrix(sp.knots.External(), dim, coefs)
 }
 
-func (sp *BezierSpline2d) nonUniCanonical() *CanonicalSpline2d {
+func (sp *VertBezierBuilder) nonUniCanonical() *CanonicalSpline {
 	// TODO implement non-uniform
 	panic("not yet implemented")
 }
 
 // At evaluates point on bezier spline for given parameter t
-// Prepare must be called before
-func (sp *BezierSpline2d) At(t float64) bendit.Vec {
+/*func (sp *VertBezierBuilder) At(t float64) bendit.Vec {
 	return sp.canon.At(t)
+}*/
+
+func (sp *VertBezierBuilder) Build() bendit.Spline {
+	return sp.Canonical()
 }
 
-// AtDeCasteljau is an alternative to 'At' using De Casteljau algorithm.
-func (sp *BezierSpline2d) AtDeCasteljau(t float64) bendit.Vec {
-	segmNo, u, err := sp.knots.MapToSegment(t)
+func (sp *VertBezierBuilder) DeCasteljau() bendit.Spline {
+	segmentCnt := sp.knots.SegmentCnt()
+	if segmentCnt == 0 {
+		return nil
+	}
+
+	controls := make([]bendit.Vec, 0, segmentCnt*4)
+	for s := 0; s < segmentCnt; s++ {
+		vtstart, vtend := sp.vertices[s], sp.vertices[s+1]
+		controls = append(controls, vtstart.loc, vtstart.exit, vtend.entry, vtend.loc)
+	}
+
+	return NewDeCasteljauSpline(sp.knots, controls)
+}
+
+func (sp *VertBezierBuilder) BuildDeCasteljau() bendit.Spline {
+	return sp.DeCasteljau()
+}
+
+func (sp *VertBezierBuilder) BezierApproxim() *BezierApproxim {
+	segmentCnt := sp.knots.SegmentCnt()
+	if segmentCnt == 0 {
+		return nil
+	}
+
+	controls := make([]bendit.Vec, 0, segmentCnt*4)
+	for s := 0; s < segmentCnt; s++ {
+		vtstart, vtend := sp.vertices[s], sp.vertices[s+1]
+		controls = append(controls, vtstart.loc, vtstart.exit, vtend.entry, vtend.loc)
+	}
+
+	return NewBezierApproxim(sp.knots, controls)
+}
+
+func (sp *VertBezierBuilder) BuildApproxim() bendit.SplineApproxim {
+	return sp.BezierApproxim()
+}
+
+/*func (sp *VertBezierBuilder) AtDeCasteljau(t float64) bendit.Vec {
+	segmentNo, u, err := sp.knots.MapToSegment(t)
 	if err != nil {
 		return nil
 	} else {
@@ -206,8 +246,8 @@ func (sp *BezierSpline2d) AtDeCasteljau(t float64) bendit.Vec {
 		linip := func(a, b float64) float64 { // linear interpolation
 			return a + u*(b-a)
 		}
-		start := sp.vertices[segmNo]
-		end := sp.vertices[segmNo+1]
+		start := sp.vertices[segmentNo]
+		end := sp.vertices[segmentNo+1]
 		p := bendit.NewZeroVec(dim)
 		for d := 0; d < dim; d++ {
 			b01 := linip(start.loc[d], start.exit[d])
@@ -218,46 +258,19 @@ func (sp *BezierSpline2d) AtDeCasteljau(t float64) bendit.Vec {
 			p[d] = linip(b02, b12)
 		}
 		return p
-		/*x01, y01 := linip(start.x, start.exit.X()), linip(start.y, start.exit.Y())
-		x11, y11 := linip(start.exit.X(), end.entry.X()), linip(start.exit.Y(), end.entry.Y())
-		x21, y21 := linip(end.entry.X(), end.x), linip(end.entry.Y(), end.y)
-		x02, y02 := linip(x01, x11), linip(y01, y11)
-		x12, y12 := linip(x11, x21), linip(y11, y21)
-		return linip(x02, x12), linip(y02, y12)*/
 	}
-}
+}*/
 
+/*
 // Approx -imate bezier-spline with line-segments using subdivision
-func (sp *BezierSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+func (sp *VertBezierBuilder) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
 	dim := sp.Dim()
 
-	/*isFlat := func(x0, y0, x1, y1, x2, y2, x3, y3 float64) bool {
-		lx, ly := x3-x0, y3-y0
-		return ProjectedVectorDist(x1-x0, y1-y0, lx, ly) <= maxDist &&
-			ProjectedVectorDist(x2-x0, y2-y0, lx, ly) <= maxDist
-	}*/
 	isFlat := func(v0, v1, v2, v3 bendit.Vec) bool {
 		v03 := v3.Sub(v0)
 		return v1.Sub(v0).ProjectedVecDist(v03) <= maxDist && v2.Sub(v0).ProjectedVecDist(v03) <= maxDist
 	}
 
-	/*var subdivide func(segmNo int, ts, te, x0, y0, x1, y1, x2, y2, x3, y3 float64)
-	subdivide = func(segmNo int, ts, te, x0, y0, x1, y1, x2, y2, x3, y3 float64) {
-		if isFlat(x0, y0, x1, y1, x2, y2, x3, y3) {
-			collector.CollectLine(segmNo, ts, te, x0, y0, x3, y3)
-		} else {
-			m := 0.5
-			tm := ts*m + te*m
-			x01, y01 := m*x0+m*x1, m*y0+m*y1
-			x11, y11 := m*x1+m*x2, m*y1+m*y2
-			x21, y21 := m*x2+m*x3, m*y2+m*y3
-			x02, y02 := m*x01+m*x11, m*y01+m*y11
-			x12, y12 := m*x11+m*x21, m*y11+m*y21
-			x03, y03 := m*x02+m*x12, m*y02+m*y12
-			subdivide(segmNo, ts, tm, x0, y0, x01, y01, x02, y02, x03, y03)
-			subdivide(segmNo, tm, te, x03, y03, x12, y12, x21, y21, x3, y3)
-		}
-	}*/
 	var subdivide func(segmNo int, ts, te float64, v0, v1, v2, v3 bendit.Vec)
 	subdivide = func(segmNo int, ts, te float64, v0, v1, v2, v3 bendit.Vec) {
 		if isFlat(v0, v1, v2, v3) {
@@ -281,14 +294,6 @@ func (sp *BezierSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64
 			}
 			subdivide(segmNo, ts, tm, v0, v01, v02, v03)
 			subdivide(segmNo, tm, te, v03, v12, v21, v3)
-			/*x01, y01 := m*x0+m*x1, m*y0+m*y1
-			x11, y11 := m*x1+m*x2, m*y1+m*y2
-			x21, y21 := m*x2+m*x3, m*y2+m*y3
-			x02, y02 := m*x01+m*x11, m*y01+m*y11
-			x12, y12 := m*x11+m*x21, m*y11+m*y21
-			x03, y03 := m*x02+m*x12, m*y02+m*y12
-			subdivide(ts, tm, x0, y0, x01, y01, x02, y02, x03, y03)
-			subdivide(tm, te, x03, y03, x12, y12, x21, y21, x3, y3)*/
 		}
 	}
 
@@ -298,5 +303,108 @@ func (sp *BezierSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64
 		tend, _ := sp.knots.Knot(segmentNo + 1)
 		vstart, vend := sp.vertices[segmentNo], sp.vertices[segmentNo+1]
 		subdivide(segmentNo, tstart, tend, vstart.loc, vstart.exit, vend.entry, vend.loc)
+	}
+}*/
+
+// AtDeCasteljau is an alternative to 'At' using De Casteljau algorithm.
+type DeCasteljauSpline struct {
+	knots    bendit.Knots
+	controls []bendit.Vec // bezier controls, 4 per segment in consecutive order
+}
+
+func NewDeCasteljauSpline(knots bendit.Knots, controls []bendit.Vec) *DeCasteljauSpline {
+	return &DeCasteljauSpline{knots: knots, controls: controls}
+}
+
+func (sp DeCasteljauSpline) Knots() bendit.Knots {
+	return sp.knots
+}
+
+func (sp DeCasteljauSpline) At(t float64) bendit.Vec {
+	segmentNo, u, err := sp.knots.MapToSegment(t)
+	if err != nil {
+		return nil
+	}
+
+	dim := 0
+	if len(sp.controls) >= 1 {
+		dim = sp.controls[0].Dim()
+	}
+
+	// TODO prepare u for non-uniform
+	linip := func(a, b float64) float64 { // linear interpolation
+		return a + u*(b-a)
+	}
+	idx := segmentNo * 4
+	start, exit, entry, end := sp.controls[idx], sp.controls[idx+1], sp.controls[idx+2], sp.controls[idx+3]
+	p := bendit.NewZeroVec(dim)
+	for d := 0; d < dim; d++ {
+		b01 := linip(start[d], exit[d])
+		b11 := linip(exit[d], entry[d])
+		b21 := linip(entry[d], end[d])
+		b02 := linip(b01, b11)
+		b12 := linip(b11, b21)
+		p[d] = linip(b02, b12)
+	}
+	return p
+}
+
+type BezierApproxim struct {
+	knots    bendit.Knots
+	controls []bendit.Vec // bezier controls, 4 per segment in consecutive order
+}
+
+func NewBezierApproxim(knots bendit.Knots, controls []bendit.Vec) *BezierApproxim {
+	return &BezierApproxim{knots: knots, controls: controls}
+}
+
+func (sa *BezierApproxim) Knots() bendit.Knots {
+	return sa.knots
+}
+
+func (sa *BezierApproxim) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+	dim := 0
+	if len(sa.controls) >= 1 {
+		dim = sa.controls[0].Dim()
+	}
+
+	isFlat := func(v0, v1, v2, v3 bendit.Vec) bool {
+		v03 := v3.Sub(v0)
+		return v1.Sub(v0).ProjectedVecDist(v03) <= maxDist && v2.Sub(v0).ProjectedVecDist(v03) <= maxDist
+	}
+
+	var subdivide func(segmNo int, ts, te float64, v0, v1, v2, v3 bendit.Vec)
+	subdivide = func(segmNo int, ts, te float64, v0, v1, v2, v3 bendit.Vec) {
+		if isFlat(v0, v1, v2, v3) {
+			collector.CollectLine(segmNo, ts, te, v0, v3)
+		} else {
+			m := 0.5
+			tm := ts*m + te*m
+			v01 := bendit.NewZeroVec(dim)
+			v11 := bendit.NewZeroVec(dim)
+			v21 := bendit.NewZeroVec(dim)
+			v02 := bendit.NewZeroVec(dim)
+			v12 := bendit.NewZeroVec(dim)
+			v03 := bendit.NewZeroVec(dim)
+			for d := 0; d < dim; d++ {
+				v01[d] = m*v0[d] + m*v1[d]
+				v11[d] = m*v1[d] + m*v2[d]
+				v21[d] = m*v2[d] + m*v3[d]
+				v02[d] = m*v01[d] + m*v11[d]
+				v12[d] = m*v11[d] + m*v21[d]
+				v03[d] = m*v02[d] + m*v12[d]
+			}
+			subdivide(segmNo, ts, tm, v0, v01, v02, v03)
+			subdivide(segmNo, tm, te, v03, v12, v21, v3)
+		}
+	}
+
+	// subdivide each segment
+	for segmentNo := fromSegmentNo; segmentNo <= toSegmentNo; segmentNo++ {
+		tstart, tend, err := bendit.SegmentTrange(sa.knots, segmentNo)
+		if err == nil { // ignore non-existant segments
+			idx := segmentNo * 4
+			subdivide(segmentNo, tstart, tend, sa.controls[idx], sa.controls[idx+1], sa.controls[idx+2], sa.controls[idx+3])
+		}
 	}
 }

@@ -237,8 +237,8 @@ func (k *NonUniformKnots) SetSegmentLen(segmentNo int, l float64) (err error) {
 }
 
 func (k *NonUniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err error) {
-	segmCnt := len(k.tknots) - 1
-	if segmCnt < 1 {
+	segmentCnt := len(k.tknots) - 1
+	if segmentCnt < 1 {
 		err = errors.New("at least one segment having 2 knots required")
 		return
 	}
@@ -248,20 +248,20 @@ func (k *NonUniformKnots) MapToSegment(t float64) (segmentNo int, u float64, err
 	}
 
 	// TODO speed up mapping
-	for i := 0; i < segmCnt; i++ {
-		if t < k.tknots[i+1] {
-			if k.tknots[i+1] == k.tknots[i] {
+	for s := 0; s < segmentCnt; s++ {
+		if t < k.tknots[s+1] {
+			if k.tknots[s+1] == k.tknots[s] {
 				u = 0
 			} else {
-				u = (t - k.tknots[i]) / (k.tknots[i+1] - k.tknots[i])
+				u = (t - k.tknots[s]) / (k.tknots[s+1] - k.tknots[s])
 			}
-			return i, u, nil
+			return s, u, nil
 		}
 		if t == k.Tend() { // TODO within-delta
-			return segmCnt - 1, 1, nil
+			return segmentCnt - 1, 1, nil
 		}
 	}
-	err = fmt.Errorf("%v greater than upper limit %v", t, k.tknots[segmCnt])
+	err = fmt.Errorf("%v greater than upper limit %v", t, k.tknots[segmentCnt])
 	return
 }
 
@@ -271,7 +271,16 @@ func (k *NonUniformKnots) External() []float64 {
 	return xtknots
 }
 
-func AdjacentSegments(knots Knots, knotNo int, inclBefore bool, inclAfter bool) (fromSegmentNo int, toSegmentNo int, err error) {
+func SegmentTrange(knots Knots, segmentNo int) (tstart, tend float64, err error) {
+	if !knots.SegmentExists(segmentNo) {
+		return 0, 0, fmt.Errorf("segment with no. %v doesn't exist", segmentNo)
+	}
+	tstart, _ = knots.Knot(segmentNo)
+	tend, _ = knots.Knot(segmentNo + 1)
+	return tstart, tend, nil
+}
+
+func SegmentsAroundKnot(knots Knots, knotNo int, inclBefore bool, inclAfter bool) (fromSegmentNo int, toSegmentNo int, err error) {
 	if !knots.KnotExists(knotNo) {
 		return 0, -1, fmt.Errorf("knot with number %v doesn't exist", knotNo)
 	} else {

@@ -16,8 +16,8 @@ type HermiteSpline2d struct {
 	vertices  []*HermiteVertex
 	tanFinder HermiteTanFinder2d
 	// internal cache of prepare
-	canon    *CanonicalSpline2d
-	bezier   *BezierSpline2d
+	canon    *CanonicalSpline
+	bezier   *VertBezierBuilder
 	tanFound bool
 }
 
@@ -120,7 +120,7 @@ func (sp *HermiteSpline2d) prepareCanon() {
 	sp.canon = sp.Canonical()
 }
 
-func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
+func (sp *HermiteSpline2d) Canonical() *CanonicalSpline {
 	if sp.tanFinder != nil && !sp.tanFound {
 		sp.prepareTan()
 	}
@@ -133,13 +133,13 @@ func (sp *HermiteSpline2d) Canonical() *CanonicalSpline2d {
 			return sp.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVertexCanonicalSpline2d(sp.vertices[0].loc)
+		return NewSingleVertexCanonicalSpline(sp.vertices[0].loc)
 	} else {
-		return NewCanonicalSpline2d(sp.knots.External())
+		return NewCanonicalSpline(sp.knots.External())
 	}
 }
 
-func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
+func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline {
 	// precondition: segmCnt >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
 	dim := sp.Dim()
@@ -163,12 +163,12 @@ func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewCanonicalSpline2dByMatrix(sp.knots.External(), dim, coefs)
+	return NewCanonicalSplineByMatrix(sp.knots.External(), dim, coefs)
 }
 
-func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
+func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline {
 	segmCnt := sp.knots.SegmentCnt()
-	cubics := make([]Cubic2d, segmCnt)
+	cubics := make([]CubicPolies, segmCnt)
 	dim := sp.Dim()
 
 	for i := 0; i < segmCnt; i++ {
@@ -198,13 +198,13 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline2d {
 		for d := 0; d < dim; d++ {
 			cubs[d] = NewCubicPoly(coefs.At(d, 0), coefs.At(d, 1), coefs.At(d, 2), coefs.At(d, 3))
 		}
-		cubics[i] = NewCubic2d(cubs...)
-		/*cubics[i] = NewCubic2d(
+		cubics[i] = NewCubicPolyNd(cubs...)
+		/*cubics[i] = NewCubicPolyNd(
 		NewCubicPoly(coefs.At(0, 0), coefs.At(0, 1), coefs.At(0, 2), coefs.At(0, 3)),
 		NewCubicPoly(coefs.At(1, 0), coefs.At(1, 1), coefs.At(1, 2), coefs.At(1, 3)))*/
 	}
 
-	return NewCanonicalSpline2d(sp.knots.External(), cubics...)
+	return NewCanonicalSpline(sp.knots.External(), cubics...)
 }
 
 // At evaluates point on hermite spline for given parameter t
@@ -217,7 +217,7 @@ func (sp *HermiteSpline2d) prepareBezier() {
 	sp.bezier = sp.Bezier()
 }
 
-func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
+func (sp *HermiteSpline2d) Bezier() *VertBezierBuilder {
 	if sp.tanFinder != nil && !sp.tanFound {
 		sp.prepareTan()
 	}
@@ -231,14 +231,14 @@ func (sp *HermiteSpline2d) Bezier() *BezierSpline2d {
 		}
 	} else if n == 1 {
 		// TODO or instead nil ? zv := bendit.NewZeroVec(sp.Dim())
-		return NewBezierSpline2d(sp.knots.External(),
+		return NewVertBezierBuilder(sp.knots.External(),
 			NewBezierVertex(sp.vertices[0].loc, nil, nil))
 	} else {
-		return NewBezierSpline2d(sp.knots.External())
+		return NewVertBezierBuilder(sp.knots.External())
 	}
 }
 
-func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
+func (sp *HermiteSpline2d) uniBezier() *VertBezierBuilder {
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
 	dim := sp.Dim()
@@ -262,10 +262,10 @@ func (sp *HermiteSpline2d) uniBezier() *BezierSpline2d {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewBezierSpline2dByMatrix(sp.knots.External(), dim, coefs)
+	return NewVertBezierBuilderdByMatrix(sp.knots.External(), dim, coefs)
 }
 
-func (sp *HermiteSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+/*func (sp *HermiteSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
 	// TODO Prepare should be called before (as precondition) or leave it as it is?
 	sp.Bezier().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
-}
+}*/

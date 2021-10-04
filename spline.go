@@ -1,10 +1,12 @@
 package bendit
 
-type Spline2d interface {
+type Spline interface {
 	Knots() Knots
-
 	At(t float64) Vec
+}
 
+type SplineApproxim interface {
+	Knots() Knots
 	Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector2d)
 }
 
@@ -12,9 +14,15 @@ type Vertex interface {
 	Loc() Vec
 }
 
-// VertSpline2d can be constructed by adding vertices
-type VertSpline2d interface {
-	Spline2d
+type SplineBuilder interface {
+	Knots() Knots
+	Build() Spline
+	BuildApproxim() SplineApproxim
+}
+
+// VertSplineBuilder can be constructed by adding vertices
+type VertSplineBuilder interface {
+	SplineBuilder
 
 	Vertex(knotNo int) Vertex
 	AddVertex(knotNo int, vertex Vertex) (err error)
@@ -22,15 +30,15 @@ type VertSpline2d interface {
 	DeleteVertex(knotNo int) (err error)
 }
 
-func ApproxAll(spline Spline2d, maxDist float64, collector LineCollector2d) {
-	spline.Approx(0, spline.Knots().SegmentCnt()-1, maxDist, collector)
+func ApproxAll(splineApproxim SplineApproxim, maxDist float64, collector LineCollector2d) {
+	splineApproxim.Approx(0, splineApproxim.Knots().SegmentCnt()-1, maxDist, collector)
 }
 
-func Vertices(spline VertSpline2d) []Vertex {
-	cnt := spline.Knots().KnotCnt()
+func Vertices(builder VertSplineBuilder) []Vertex {
+	cnt := builder.Knots().KnotCnt()
 	vertices := make([]Vertex, cnt)
 	for i := 0; i < cnt; i++ {
-		vertices[i] = spline.Vertex(i)
+		vertices[i] = builder.Vertex(i)
 	}
 	return vertices
 }
