@@ -213,11 +213,6 @@ func (sp *HermiteSpline2d) At(t float64) bendit.Vec {
 	return sp.canon.At(t)
 }
 
-func (sp *HermiteSpline2d) Fn() bendit.Fn2d {
-	sp.prepareCanon()
-	return sp.canon.Fn()
-}
-
 func (sp *HermiteSpline2d) prepareBezier() {
 	sp.bezier = sp.Bezier()
 }

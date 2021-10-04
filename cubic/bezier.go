@@ -227,11 +227,6 @@ func (sp *BezierSpline2d) AtDeCasteljau(t float64) bendit.Vec {
 	}
 }
 
-func (sp *BezierSpline2d) Fn() bendit.Fn2d {
-	sp.prepareCanon()
-	return sp.canon.Fn()
-}
-
 // Approx -imate bezier-spline with line-segments using subdivision
 func (sp *BezierSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
 	dim := sp.Dim()

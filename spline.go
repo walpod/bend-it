@@ -1,12 +1,9 @@
 package bendit
 
-type Fn2d func(t float64) Vec
-
 type Spline2d interface {
 	Knots() Knots
 
 	At(t float64) Vec
-	Fn() Fn2d
 
 	Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector2d)
 }

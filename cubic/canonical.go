@@ -46,12 +46,6 @@ func (cb *Cubic2d) At(u float64) bendit.Vec {
 	return p
 }
 
-func (cb *Cubic2d) Fn() bendit.Fn2d {
-	return func(u float64) bendit.Vec {
-		return cb.At(u)
-	}
-}
-
 type CanonicalSpline2d struct {
 	knots  bendit.Knots
 	cubics []Cubic2d
@@ -121,12 +115,6 @@ func (sp *CanonicalSpline2d) At(t float64) bendit.Vec {
 		return nil
 	} else {
 		return sp.cubics[segmNo].At(u)
-	}
-}
-
-func (sp *CanonicalSpline2d) Fn() bendit.Fn2d {
-	return func(t float64) bendit.Vec {
-		return sp.At(t)
 	}
 }
 
