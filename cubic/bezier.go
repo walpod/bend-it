@@ -89,11 +89,11 @@ func (sp *BezierSpline2d) BezierVertex(knotNo int) *BezierVertex {
 	}
 }
 
-func (sp *BezierSpline2d) Vertex(knotNo int) bendit.Vertex2d {
+func (sp *BezierSpline2d) Vertex(knotNo int) bendit.Vertex {
 	return sp.BezierVertex(knotNo)
 }
 
-func (sp *BezierSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
+func (sp *BezierSpline2d) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
 	err = sp.knots.AddKnot(knotNo)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (sp *BezierSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err err
 	return nil
 }
 
-func (sp *BezierSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
+func (sp *BezierSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
 	if !sp.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}

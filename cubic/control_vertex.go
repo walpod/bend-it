@@ -3,13 +3,14 @@ package cubic
 import bendit "github.com/walpod/bend-it"
 
 type ControlVertex interface {
-	bendit.Vertex2d
+	bendit.Vertex
 	Entry() bendit.Vec
 	Exit() bendit.Vec
 	Dependent() bool // are entry and exit dependent on each other? TODO extend to scalingFactor (some direction)
+	New(loc bendit.Vec, entry bendit.Vec, exit bendit.Vec) ControlVertex
+	Translate(dv bendit.Vec) ControlVertex
 	ControlToLoc(control bendit.Vec, isEntry bool) bendit.Vec
 	LocToControl(loc bendit.Vec, isEntry bool) bendit.Vec
-	New(loc bendit.Vec, entry bendit.Vec, exit bendit.Vec) ControlVertex
 }
 
 type BezierVertex struct {
@@ -59,7 +60,7 @@ func (vt *BezierVertex) LocToControl(loc bendit.Vec, isEntry bool) bendit.Vec {
 	return loc
 }
 
-func (vt *BezierVertex) Translate(dv bendit.Vec) bendit.Vertex2d {
+func (vt *BezierVertex) Translate(dv bendit.Vec) ControlVertex {
 	var exit bendit.Vec
 	if !vt.dependent {
 		exit = vt.exit.Add(dv)
@@ -129,7 +130,7 @@ func (vt *HermiteVertex) LocToControl(loc bendit.Vec, isEntry bool) bendit.Vec {
 	}
 }
 
-func (vt *HermiteVertex) Translate(dv bendit.Vec) bendit.Vertex2d {
+func (vt *HermiteVertex) Translate(dv bendit.Vec) ControlVertex {
 	return NewHermiteVertex(vt.loc.Add(dv), vt.entry, vt.exit)
 }
 

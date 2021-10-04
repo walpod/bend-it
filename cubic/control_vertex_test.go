@@ -13,9 +13,9 @@ func TestBezierVertexDependent(t *testing.T) {
 }
 
 func TestBezierVertex_Translate(t *testing.T) {
-	bvx := NewBezierVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 1), nil).Translate(bendit.NewVec(2, 0)).(ControlVertex)
+	bvx := NewBezierVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 1), nil).Translate(bendit.NewVec(2, 0))
 	AssertControlVerticesAreEqual(t, NewBezierVertex(bendit.NewVec(2, 0), bendit.NewVec(2, 1), bendit.NewVec(2, -1)), true, bvx)
-	bvx = NewBezierVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 2), bendit.NewVec(3, 0)).Translate(bendit.NewVec(1, 1)).(ControlVertex)
+	bvx = NewBezierVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 2), bendit.NewVec(3, 0)).Translate(bendit.NewVec(1, 1))
 	AssertControlVerticesAreEqual(t, NewBezierVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 3), bendit.NewVec(4, 1)), false, bvx)
 }
 

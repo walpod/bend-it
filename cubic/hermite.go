@@ -6,85 +6,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-/*type HermiteVx2 struct {
-	v         bendit.Vec
-	entryTan  bendit.Vec
-	exitTan   bendit.Vec
-	dependent bool // are the two tangents dependent on each other?
-}
-
-func NewHermiteVx2(v, entryTan, exitTan bendit.Vec) *HermiteVx2 {
-	dependent := false
-
-	// handle dependent tangents
-	if entryTan == nil && exitTan != nil {
-		entryTan = exitTan // TODO clone
-		dependent = true
-	} else if entryTan != nil && exitTan == nil {
-		exitTan = entryTan // TODO clone
-		dependent = true
-	}
-
-	return &HermiteVx2{v, entryTan, exitTan, dependent}
-}
-
-func NewHermiteVx2Raw(v bendit.Vec) *HermiteVx2 {
-	return NewHermiteVx2(v, nil, nil)
-}
-
-func (vt HermiteVx2) Loc() bendit.Vec {
-	return vt.v
-}
-
-func (vt HermiteVx2) EntryTan() bendit.Vec {
-	return vt.entryTan
-}
-
-func (vt HermiteVx2) ExitTan() bendit.Vec {
-	return vt.exitTan
-}
-
-func (vt HermiteVx2) Tan(isEntry bool) bendit.Vec {
-	if isEntry {
-		return vt.entryTan
-	} else {
-		return vt.exitTan
-	}
-}
-
-// absolute control point (as opposed to relative tangent)
-func (vt HermiteVx2) Control(isEntry bool) bendit.Vec {
-	if isEntry {
-		return vt.v.Sub(vt.entryTan)
-	} else {
-		return vt.v.Add(vt.exitTan)
-	}
-}
-
-func (vt HermiteVx2) Dependent() bool {
-	return vt.dependent
-}
-
-func (vt HermiteVx2) Translate(d bendit.Vec) bendit.Vertex2d {
-	return NewHermiteVx2(vt.v.Add(d), vt.entryTan, vt.exitTan)
-}
-
-func (vt HermiteVx2) WithEntryTan(entryTan bendit.Vec) *HermiteVx2 {
-	exitTan := vt.exitTan
-	if vt.dependent {
-		exitTan = nil
-	}
-	return NewHermiteVx2(vt.v, entryTan, exitTan) // TODO clone ??
-}
-
-func (vt HermiteVx2) WithExitTan(exitTan bendit.Vec) *HermiteVx2 {
-	entryTan := vt.entryTan
-	if vt.dependent {
-		entryTan = nil
-	}
-	return NewHermiteVx2(vt.v, entryTan, exitTan)
-}*/
-
 // HermiteTanFinder2d finds tangents based on given vertices and knots
 type HermiteTanFinder2d interface {
 	Find(knots bendit.Knots, vertices []*HermiteVertex)
@@ -131,7 +52,7 @@ func (sp *HermiteSpline2d) Dim() int {
 	}
 }
 
-func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex2d {
+func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex {
 	if knotNo >= len(sp.vertices) {
 		return nil
 	} else {
@@ -139,7 +60,7 @@ func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex2d {
 	}
 }
 
-func (sp *HermiteSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
+func (sp *HermiteSpline2d) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
 	err = sp.knots.AddKnot(knotNo)
 	if err != nil {
 		return err
@@ -155,7 +76,7 @@ func (sp *HermiteSpline2d) AddVertex(knotNo int, vertex bendit.Vertex2d) (err er
 	return nil
 }
 
-func (sp *HermiteSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex2d) (err error) {
+func (sp *HermiteSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
 	if !sp.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
