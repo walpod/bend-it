@@ -29,7 +29,7 @@ type CubicPolies struct {
 	cubs []CubicPoly
 }
 
-func NewCubicPolyNd(cubs ...CubicPoly) CubicPolies {
+func NewCubicPolies(cubs ...CubicPoly) CubicPolies {
 	return CubicPolies{cubs: cubs}
 }
 
@@ -77,7 +77,7 @@ func NewSingleVertexCanonicalSpline(v bendit.Vec) *CanonicalSpline {
 	for d := 0; d < dim; d++ {
 		cubs[d] = NewCubicPoly(v[d], 0, 0, 0)
 	}
-	return NewCanonicalSpline([]float64{0, 0}, NewCubicPolyNd(cubs...))
+	return NewCanonicalSpline([]float64{0, 0}, NewCubicPolies(cubs...))
 }
 
 // matrix: (segmCnt*2) x 4
@@ -96,7 +96,7 @@ func NewCanonicalSplineByMatrix(tknots []float64, dim int, mat mat.Dense) *Canon
 			cubs[j] = NewCubicPoly(mat.At(rowno, 0), mat.At(rowno, 1), mat.At(rowno, 2), mat.At(rowno, 3))
 			rowno++
 		}
-		cubics[i] = NewCubicPolyNd(cubs...)
+		cubics[i] = NewCubicPolies(cubs...)
 	}
 	return NewCanonicalSpline(tknots, cubics...)
 }

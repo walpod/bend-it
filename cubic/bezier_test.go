@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// START some general bend-it spline Asserts
+// START some general bend-it spline Asserts ... TODO to be moved ...
 const delta = 0.0000000001
 
 func AssertVecInDelta(t *testing.T, expected bendit.Vec, actual bendit.Vec, msg string) {
@@ -54,21 +54,6 @@ func AssertRandSplinePointProperty(t *testing.T, spline bendit.Spline, hasProp f
 
 // END some general bend-it spline Asserts
 
-/*func AssertBezierAtInDeltaDeCasteljau(t *testing.T, spline bendit.Spline, bezierBuilder *VertBezierBuilder, atT float64) {
-	v := spline.At(atT)
-	vdc := bezierBuilder.AtDeCasteljau(atT)
-	//fmt.Printf("bezierBuilder.AtDeCasteljau(%loc) = (%loc, %loc) \n", atT, xdc, ydc)
-	AssertVecInDelta(t, vdc, v, fmt.Sprintf("spline.At(%v) = %v != spline.AtDeCasteljau(%v) = %v", atT, v, atT, vdc))
-	//assert.InDeltaf(t, xdc, x, delta, "spline.At(%loc).x = %loc != spline.AtDeCasteljau(%loc).x = %loc", atT, x, atT, xdc)
-}*/
-
-func AssertControlVerticesAreEqual(t *testing.T, expected ControlVertex, expectedDependent bool, actual ControlVertex) {
-	AssertVecInDelta(t, expected.Loc(), actual.Loc(), fmt.Sprintf("expected bezier = %v != actual bezier = %v", expected.Loc(), actual.Loc()))
-	AssertVecInDelta(t, expected.Entry(), actual.Entry(), fmt.Sprintf("expected entry-control = %v != actual = %v", expected.Entry(), actual.Entry()))
-	AssertVecInDelta(t, expected.Exit(), actual.Exit(), fmt.Sprintf("expected exit-control = %v != actual = %v", expected.Entry(), actual.Entry()))
-	assert.Equal(t, expectedDependent, actual.Dependent(), "expected dependent = %v != actual dependent = %v", expectedDependent, actual.Dependent())
-}
-
 // createBezierDiag00to11 creates a bezier representing a straight line from (0,0) to (1,1)
 func createBezierDiag00to11() *VertBezierBuilder {
 	return NewVertBezierBuilder(nil,
@@ -94,7 +79,7 @@ func createDoubleBezierS00to11to22() *VertBezierBuilder {
 	)
 }
 
-func TestBezierSpline2d_At(t *testing.T) {
+func TestBezierSpline_At(t *testing.T) {
 	bezier := createBezierDiag00to11().Build()
 	AssertSplineAt(t, bezier, 0, bendit.NewVec(0, 0))
 	AssertSplineAt(t, bezier, 0.25, bendit.NewVec(0.25, 0.25))
@@ -126,21 +111,15 @@ func TestBezierSpline2d_At(t *testing.T) {
 	bezier = NewVertBezierBuilder([]float64{}).Build()
 }
 
-func TestBezierSpline2d_AtDeCasteljau(t *testing.T) {
+func TestDeCasteljauSpline_At(t *testing.T) {
 	bezierBuilder := createBezierS00to11()
 	AssertSplinesEqual(t, bezierBuilder.Build(), bezierBuilder.BuildDeCasteljau(), 100)
-	/*AssertBezierAtInDeltaDeCasteljau(t, bezier, deCasteljau, 0.1)
-	AssertBezierAtInDeltaDeCasteljau(t, bezier, deCasteljau, 0.25)
-	AssertBezierAtInDeltaDeCasteljau(t, bezier, deCasteljau, 0.5)
-	AssertBezierAtInDeltaDeCasteljau(t, bezier, bezierBuilder, 0.75)
-	AssertBezierAtInDeltaDeCasteljau(t, bezier, bezierBuilder, 0.9)
-	AssertBezierAtInDeltaDeCasteljau(t, bezier, bezierBuilder, 1)*/
 }
 
-func TestBezierSpline2d_Approx(t *testing.T) {
-	bezierApproxim := createBezierDiag00to11().BuildApproxim()
+func TestBezierApproxer_Approx(t *testing.T) {
+	bezierApproxer := createBezierDiag00to11().BuildApproxer()
 	lc := bendit.NewLineToSliceCollector2d()
-	bendit.ApproxAll(bezierApproxim, 0.1, lc)
+	bendit.ApproxAll(bezierApproxer, 0.1, lc)
 	assert.Len(t, lc.Lines, 1, "approximated with one line")
 	AssertVecInDelta(t, bendit.NewVec(0, 0), lc.Lines[0].Pstart, "start point = [0,0]")
 	AssertVecInDelta(t, bendit.NewVec(1, 1), lc.Lines[0].Pend, "end point = [1,1]")
@@ -148,12 +127,12 @@ func TestBezierSpline2d_Approx(t *testing.T) {
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezierBuilder := createBezierS00to11()
 	lc = bendit.NewLineToSliceCollector2d()
-	bendit.ApproxAll(bezierBuilder.BuildApproxim(), 0.02, lc)
+	bendit.ApproxAll(bezierBuilder.BuildApproxer(), 0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezierBuilder.Build())
 }
 
-func TestBezierSpline2d_AddVertex(t *testing.T) {
+func TestVertBezierBuilder_AddVertex(t *testing.T) {
 	bezierBuilder := createBezierDiag00to11()
 	err := bezierBuilder.AddVertex(3, nil)
 	assert.NotNil(t, err, "knot-no. too large")
@@ -165,7 +144,7 @@ func TestBezierSpline2d_AddVertex(t *testing.T) {
 	assert.Equal(t, bezierBuilder.Vertex(2), createBezierDiag00to11().Vertex(1), "vertices don't match")
 }
 
-func TestBezierSpline2d_DeleteVertex(t *testing.T) {
+func TestVertBezierBuilder_DeleteVertex(t *testing.T) {
 	bezierBuilder := createBezierDiag00to11()
 	err := bezierBuilder.DeleteVertex(2)
 	assert.NotNil(t, err, "knot-no. doesn't exist")

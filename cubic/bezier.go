@@ -198,7 +198,7 @@ func (sp *VertBezierBuilder) Build() bendit.Spline {
 	return sp.Canonical()
 }
 
-func (sp *VertBezierBuilder) DeCasteljau() bendit.Spline {
+func (sp *VertBezierBuilder) DeCasteljau() *DeCasteljauSpline {
 	segmentCnt := sp.knots.SegmentCnt()
 	if segmentCnt == 0 {
 		return nil
@@ -217,7 +217,7 @@ func (sp *VertBezierBuilder) BuildDeCasteljau() bendit.Spline {
 	return sp.DeCasteljau()
 }
 
-func (sp *VertBezierBuilder) BezierApproxim() *BezierApproxim {
+func (sp *VertBezierBuilder) BezierApproxer() *BezierApproxer {
 	segmentCnt := sp.knots.SegmentCnt()
 	if segmentCnt == 0 {
 		return nil
@@ -229,11 +229,11 @@ func (sp *VertBezierBuilder) BezierApproxim() *BezierApproxim {
 		controls = append(controls, vtstart.loc, vtstart.exit, vtend.entry, vtend.loc)
 	}
 
-	return NewBezierApproxim(sp.knots, controls)
+	return NewBezierApproxer(sp.knots, controls)
 }
 
-func (sp *VertBezierBuilder) BuildApproxim() bendit.SplineApproxim {
-	return sp.BezierApproxim()
+func (sp *VertBezierBuilder) BuildApproxer() bendit.SplineApproxer {
+	return sp.BezierApproxer()
 }
 
 /*func (sp *VertBezierBuilder) AtDeCasteljau(t float64) bendit.Vec {
@@ -349,20 +349,20 @@ func (sp DeCasteljauSpline) At(t float64) bendit.Vec {
 	return p
 }
 
-type BezierApproxim struct {
+type BezierApproxer struct {
 	knots    bendit.Knots
 	controls []bendit.Vec // bezier controls, 4 per segment in consecutive order
 }
 
-func NewBezierApproxim(knots bendit.Knots, controls []bendit.Vec) *BezierApproxim {
-	return &BezierApproxim{knots: knots, controls: controls}
+func NewBezierApproxer(knots bendit.Knots, controls []bendit.Vec) *BezierApproxer {
+	return &BezierApproxer{knots: knots, controls: controls}
 }
 
-func (sa *BezierApproxim) Knots() bendit.Knots {
+func (sa *BezierApproxer) Knots() bendit.Knots {
 	return sa.knots
 }
 
-func (sa *BezierApproxim) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
+func (sa *BezierApproxer) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
 	dim := 0
 	if len(sa.controls) >= 1 {
 		dim = sa.controls[0].Dim()

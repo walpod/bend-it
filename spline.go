@@ -5,7 +5,7 @@ type Spline interface {
 	At(t float64) Vec
 }
 
-type SplineApproxim interface {
+type SplineApproxer interface {
 	Knots() Knots
 	Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector2d)
 }
@@ -17,7 +17,7 @@ type Vertex interface {
 type SplineBuilder interface {
 	Knots() Knots
 	Build() Spline
-	BuildApproxim() SplineApproxim
+	BuildApproxer() SplineApproxer
 }
 
 // VertSplineBuilder can be constructed by adding vertices
@@ -30,8 +30,8 @@ type VertSplineBuilder interface {
 	DeleteVertex(knotNo int) (err error)
 }
 
-func ApproxAll(splineApproxim SplineApproxim, maxDist float64, collector LineCollector2d) {
-	splineApproxim.Approx(0, splineApproxim.Knots().SegmentCnt()-1, maxDist, collector)
+func ApproxAll(splineApproxer SplineApproxer, maxDist float64, collector LineCollector2d) {
+	splineApproxer.Approx(0, splineApproxer.Knots().SegmentCnt()-1, maxDist, collector)
 }
 
 func Vertices(builder VertSplineBuilder) []Vertex {

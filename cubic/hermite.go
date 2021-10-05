@@ -198,8 +198,8 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline {
 		for d := 0; d < dim; d++ {
 			cubs[d] = NewCubicPoly(coefs.At(d, 0), coefs.At(d, 1), coefs.At(d, 2), coefs.At(d, 3))
 		}
-		cubics[i] = NewCubicPolyNd(cubs...)
-		/*cubics[i] = NewCubicPolyNd(
+		cubics[i] = NewCubicPolies(cubs...)
+		/*cubics[i] = NewCubicPolies(
 		NewCubicPoly(coefs.At(0, 0), coefs.At(0, 1), coefs.At(0, 2), coefs.At(0, 3)),
 		NewCubicPoly(coefs.At(1, 0), coefs.At(1, 1), coefs.At(1, 2), coefs.At(1, 3)))*/
 	}
