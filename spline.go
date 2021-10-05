@@ -7,7 +7,9 @@ type Spline interface {
 
 type SplineApproxer interface {
 	Knots() Knots
-	Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector2d)
+
+	// Approx'imate spline with consecutive line segments
+	Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector)
 }
 
 type Vertex interface {
@@ -30,7 +32,7 @@ type VertSplineBuilder interface {
 	DeleteVertex(knotNo int) (err error)
 }
 
-func ApproxAll(splineApproxer SplineApproxer, maxDist float64, collector LineCollector2d) {
+func ApproxAll(splineApproxer SplineApproxer, maxDist float64, collector LineCollector) {
 	splineApproxer.Approx(0, splineApproxer.Knots().SegmentCnt()-1, maxDist, collector)
 }
 

@@ -119,7 +119,7 @@ func (sp *CanonicalSpline) At(t float64) bendit.Vec {
 }
 
 /* TODO Bezier can be skipped
-func (sp *CanonicalSpline) Bezier() *VertBezierBuilder {
+func (sp *CanonicalSpline) Bezier() *BezierVertBuilder {
 	if len(sp.cubics) >= 1 {
 		if sp.knots.IsUniform() {
 			return sp.uniBezier()
@@ -127,11 +127,11 @@ func (sp *CanonicalSpline) Bezier() *VertBezierBuilder {
 			panic("not yet implemented")
 		}
 	} else {
-		return NewVertBezierBuilder(nil)
+		return NewBezierVertBuilder(nil)
 	}
 }
 
-func (sp *CanonicalSpline) uniBezier() *VertBezierBuilder {
+func (sp *CanonicalSpline) uniBezier() *BezierVertBuilder {
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
 	dim := sp.cubics[0].Dim()
@@ -155,6 +155,6 @@ func (sp *CanonicalSpline) uniBezier() *VertBezierBuilder {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewVertBezierBuilderdByMatrix(sp.knots.External(), dim, coefs)
+	return NewBezierVertBuilderByMatrix(sp.knots.External(), dim, coefs)
 }
 */

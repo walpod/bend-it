@@ -55,24 +55,24 @@ func AssertRandSplinePointProperty(t *testing.T, spline bendit.Spline, hasProp f
 // END some general bend-it spline Asserts
 
 // createBezierDiag00to11 creates a bezier representing a straight line from (0,0) to (1,1)
-func createBezierDiag00to11() *VertBezierBuilder {
-	return NewVertBezierBuilder(nil,
+func createBezierDiag00to11() *BezierVertBuilder {
+	return NewBezierVertBuilder(nil,
 		NewBezierVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1./3, 1./3)),
 		NewBezierVertex(bendit.NewVec(1, 1), bendit.NewVec(2./3, 2./3), nil),
 	)
 }
 
 // createBezierDiag00to11 creates a bezier representing an S-formed slope from (0,0) to (1,1)
-func createBezierS00to11() *VertBezierBuilder {
-	return NewVertBezierBuilder(nil,
+func createBezierS00to11() *BezierVertBuilder {
+	return NewBezierVertBuilder(nil,
 		NewBezierVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1, 0)),
 		NewBezierVertex(bendit.NewVec(1, 1), bendit.NewVec(0, 1), nil),
 	)
 }
 
 // createBezierDiag00to11 creates two consecutive beziers representing an S-formed slope from (0,0) to (1,1) or (1,1) to (2,2), resp.
-func createDoubleBezierS00to11to22() *VertBezierBuilder {
-	return NewVertBezierBuilder(nil,
+func createDoubleBezierS00to11to22() *BezierVertBuilder {
+	return NewBezierVertBuilder(nil,
 		NewBezierVertex(bendit.NewVec(0, 0), nil, bendit.NewVec(1, 0)),
 		NewBezierVertex(bendit.NewVec(1, 1) /*bendit.NewVec(0, 1)*/, nil, bendit.NewVec(2, 1)),
 		NewBezierVertex(bendit.NewVec(2, 2), bendit.NewVec(1, 2), nil),
@@ -95,20 +95,20 @@ func TestBezierSpline_At(t *testing.T) {
 	AssertSplineAt(t, bezier, 2, bendit.NewVec(2, 2))
 
 	// single vertex, domain with value 0 only
-	bezier = NewVertBezierBuilder(nil,
+	bezier = NewBezierVertBuilder(nil,
 		NewBezierVertex(bendit.NewVec(1, 2), nil, nil)).
 		Build()
 	AssertSplineAt(t, bezier, 0, bendit.NewVec(1, 2))
 
-	bezier = NewVertBezierBuilder(
+	bezier = NewBezierVertBuilder(
 		[]float64{0},
 		NewBezierVertex(bendit.NewVec(1, 2), nil, nil)).
 		Build()
 	AssertSplineAt(t, bezier, 0, bendit.NewVec(1, 2))
 
 	// empty domain
-	bezier = NewVertBezierBuilder(nil).Build()
-	bezier = NewVertBezierBuilder([]float64{}).Build()
+	bezier = NewBezierVertBuilder(nil).Build()
+	bezier = NewBezierVertBuilder([]float64{}).Build()
 }
 
 func TestDeCasteljauSpline_At(t *testing.T) {
@@ -118,7 +118,7 @@ func TestDeCasteljauSpline_At(t *testing.T) {
 
 func TestBezierApproxer_Approx(t *testing.T) {
 	bezierApproxer := createBezierDiag00to11().BuildApproxer()
-	lc := bendit.NewLineToSliceCollector2d()
+	lc := bendit.NewLineToSliceCollector()
 	bendit.ApproxAll(bezierApproxer, 0.1, lc)
 	assert.Len(t, lc.Lines, 1, "approximated with one line")
 	AssertVecInDelta(t, bendit.NewVec(0, 0), lc.Lines[0].Pstart, "start point = [0,0]")
@@ -126,13 +126,13 @@ func TestBezierApproxer_Approx(t *testing.T) {
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezierBuilder := createBezierS00to11()
-	lc = bendit.NewLineToSliceCollector2d()
+	lc = bendit.NewLineToSliceCollector()
 	bendit.ApproxAll(bezierBuilder.BuildApproxer(), 0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezierBuilder.Build())
 }
 
-func TestVertBezierBuilder_AddVertex(t *testing.T) {
+func TestBezierVertBuilder_AddVertex(t *testing.T) {
 	bezierBuilder := createBezierDiag00to11()
 	err := bezierBuilder.AddVertex(3, nil)
 	assert.NotNil(t, err, "knot-no. too large")
@@ -144,7 +144,7 @@ func TestVertBezierBuilder_AddVertex(t *testing.T) {
 	assert.Equal(t, bezierBuilder.Vertex(2), createBezierDiag00to11().Vertex(1), "vertices don't match")
 }
 
-func TestVertBezierBuilder_DeleteVertex(t *testing.T) {
+func TestBezierVertBuilder_DeleteVertex(t *testing.T) {
 	bezierBuilder := createBezierDiag00to11()
 	err := bezierBuilder.DeleteVertex(2)
 	assert.NotNil(t, err, "knot-no. doesn't exist")

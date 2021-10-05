@@ -6,26 +6,26 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// HermiteTanFinder2d finds tangents based on given vertices and knots
-type HermiteTanFinder2d interface {
+// HermiteTanFinder finds tangents based on given vertices and knots
+type HermiteTanFinder interface {
 	Find(knots bendit.Knots, vertices []*HermiteVertex)
 }
 
-type HermiteSpline2d struct {
+type HermiteVertBuilder struct {
 	knots     bendit.Knots
 	vertices  []*HermiteVertex
-	tanFinder HermiteTanFinder2d
-	// internal cache of prepare
+	tanFinder HermiteTanFinder
+	/*// internal cache of prepare
 	canon    *CanonicalSpline
-	bezier   *VertBezierBuilder
-	tanFound bool
+	bezier   *BezierVertBuilder
+	tanFound bool*/
 }
 
-func NewHermiteSpline2d(tknots []float64, vertices ...*HermiteVertex) *HermiteSpline2d {
-	return NewHermiteSplineTanFinder2d(tknots, nil, vertices...)
+func NewHermiteVertBuilder(tknots []float64, vertices ...*HermiteVertex) *HermiteVertBuilder {
+	return NewHermiteVertBuilderTanFinder(tknots, nil, vertices...)
 }
 
-func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d, vertices ...*HermiteVertex) *HermiteSpline2d {
+func NewHermiteVertBuilderTanFinder(tknots []float64, tanFinder HermiteTanFinder, vertices ...*HermiteVertex) *HermiteVertBuilder {
 	var knots bendit.Knots
 	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(vertices))
@@ -36,15 +36,15 @@ func NewHermiteSplineTanFinder2d(tknots []float64, tanFinder HermiteTanFinder2d,
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	herm := &HermiteSpline2d{knots: knots, vertices: vertices, tanFinder: tanFinder, canon: nil, bezier: nil, tanFound: false}
+	herm := &HermiteVertBuilder{knots: knots, vertices: vertices, tanFinder: tanFinder}
 	return herm
 }
 
-func (sp *HermiteSpline2d) Knots() bendit.Knots {
+func (sp *HermiteVertBuilder) Knots() bendit.Knots {
 	return sp.knots
 }
 
-func (sp *HermiteSpline2d) Dim() int {
+func (sp *HermiteVertBuilder) Dim() int {
 	if len(sp.vertices) == 0 {
 		return 0
 	} else {
@@ -52,7 +52,7 @@ func (sp *HermiteSpline2d) Dim() int {
 	}
 }
 
-func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex {
+func (sp *HermiteVertBuilder) Vertex(knotNo int) bendit.Vertex {
 	if knotNo >= len(sp.vertices) {
 		return nil
 	} else {
@@ -60,7 +60,7 @@ func (sp *HermiteSpline2d) Vertex(knotNo int) bendit.Vertex {
 	}
 }
 
-func (sp *HermiteSpline2d) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sp *HermiteVertBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
 	err = sp.knots.AddKnot(knotNo)
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func (sp *HermiteSpline2d) AddVertex(knotNo int, vertex bendit.Vertex) (err erro
 	return nil
 }
 
-func (sp *HermiteSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sp *HermiteVertBuilder) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
 	if !sp.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
@@ -84,7 +84,7 @@ func (sp *HermiteSpline2d) UpdateVertex(knotNo int, vertex bendit.Vertex) (err e
 	return nil
 }
 
-func (sp *HermiteSpline2d) DeleteVertex(knotNo int) (err error) {
+func (sp *HermiteVertBuilder) DeleteVertex(knotNo int) (err error) {
 	err = sp.knots.DeleteKnot(knotNo)
 	if err != nil {
 		return err
@@ -97,32 +97,9 @@ func (sp *HermiteSpline2d) DeleteVertex(knotNo int) (err error) {
 	return nil
 }
 
-// Prepare execution of hermite spline by mapping to canonical and bezier representation
-func (sp *HermiteSpline2d) Prepare() {
-	sp.prepareCanon()
-	// TODO sp.prepareBezier()
-}
-
-func (sp *HermiteSpline2d) ResetPrepare() {
-	sp.tanFound = false
-	sp.canon = nil
-	sp.bezier = nil
-}
-
-func (sp *HermiteSpline2d) prepareTan() {
+func (sp *HermiteVertBuilder) Canonical() *CanonicalSpline {
 	if sp.tanFinder != nil {
 		sp.tanFinder.Find(sp.knots, sp.vertices)
-		sp.tanFound = true
-	}
-}
-
-func (sp *HermiteSpline2d) prepareCanon() {
-	sp.canon = sp.Canonical()
-}
-
-func (sp *HermiteSpline2d) Canonical() *CanonicalSpline {
-	if sp.tanFinder != nil && !sp.tanFound {
-		sp.prepareTan()
 	}
 
 	n := len(sp.vertices)
@@ -139,7 +116,7 @@ func (sp *HermiteSpline2d) Canonical() *CanonicalSpline {
 	}
 }
 
-func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline {
+func (sp *HermiteVertBuilder) uniCanonical() *CanonicalSpline {
 	// precondition: segmCnt >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
 	dim := sp.Dim()
@@ -166,7 +143,7 @@ func (sp *HermiteSpline2d) uniCanonical() *CanonicalSpline {
 	return NewCanonicalSplineByMatrix(sp.knots.External(), dim, coefs)
 }
 
-func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline {
+func (sp *HermiteVertBuilder) nonUniCanonical() *CanonicalSpline {
 	segmCnt := sp.knots.SegmentCnt()
 	cubics := make([]CubicPolies, segmCnt)
 	dim := sp.Dim()
@@ -207,19 +184,13 @@ func (sp *HermiteSpline2d) nonUniCanonical() *CanonicalSpline {
 	return NewCanonicalSpline(sp.knots.External(), cubics...)
 }
 
-// At evaluates point on hermite spline for given parameter t
-// Prepare must be called before
-func (sp *HermiteSpline2d) At(t float64) bendit.Vec {
-	return sp.canon.At(t)
+func (sp *HermiteVertBuilder) Build() bendit.Spline {
+	return sp.Canonical()
 }
 
-func (sp *HermiteSpline2d) prepareBezier() {
-	sp.bezier = sp.Bezier()
-}
-
-func (sp *HermiteSpline2d) Bezier() *VertBezierBuilder {
-	if sp.tanFinder != nil && !sp.tanFound {
-		sp.prepareTan()
+func (sp *HermiteVertBuilder) Bezier() *BezierVertBuilder {
+	if sp.tanFinder != nil {
+		sp.tanFinder.Find(sp.knots, sp.vertices)
 	}
 
 	n := len(sp.vertices)
@@ -231,14 +202,14 @@ func (sp *HermiteSpline2d) Bezier() *VertBezierBuilder {
 		}
 	} else if n == 1 {
 		// TODO or instead nil ? zv := bendit.NewZeroVec(sp.Dim())
-		return NewVertBezierBuilder(sp.knots.External(),
+		return NewBezierVertBuilder(sp.knots.External(),
 			NewBezierVertex(sp.vertices[0].loc, nil, nil))
 	} else {
-		return NewVertBezierBuilder(sp.knots.External())
+		return NewBezierVertBuilder(sp.knots.External())
 	}
 }
 
-func (sp *HermiteSpline2d) uniBezier() *VertBezierBuilder {
+func (sp *HermiteVertBuilder) uniBezier() *BezierVertBuilder {
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
 	segmCnt := sp.knots.SegmentCnt()
 	dim := sp.Dim()
@@ -262,10 +233,13 @@ func (sp *HermiteSpline2d) uniBezier() *VertBezierBuilder {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewVertBezierBuilderdByMatrix(sp.knots.External(), dim, coefs)
+	return NewBezierVertBuilderByMatrix(sp.knots.External(), dim, coefs)
 }
 
-/*func (sp *HermiteSpline2d) Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector bendit.LineCollector2d) {
-	// TODO Prepare should be called before (as precondition) or leave it as it is?
-	sp.Bezier().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
-}*/
+func (sp *HermiteVertBuilder) BezierApproxer() *BezierApproxer {
+	return sp.Bezier().BezierApproxer()
+}
+
+func (sp *HermiteVertBuilder) BuildApproxer() bendit.SplineApproxer {
+	return sp.BezierApproxer()
+}

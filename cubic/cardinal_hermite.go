@@ -2,12 +2,12 @@ package cubic
 
 import "github.com/walpod/bend-it"
 
-// Hermite tangent finder for cardinal spline
-type CardinalTanf2d struct {
+// CardinalTanFinder is an Hermite tangent finder for cardinal splines
+type CardinalTanFinder struct {
 	tension float64
 }
 
-func (ct CardinalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVertex) {
+func (ct CardinalTanFinder) Find(knots bendit.Knots, vertices []*HermiteVertex) {
 	n := len(vertices)
 	if n < 2 {
 		return
@@ -52,28 +52,29 @@ func (ct CardinalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVertex) {
 	}
 }
 
-type CardinalHermiteSpline2d struct {
-	HermiteSpline2d
+// CardinalVertBuilder is an hermite vertex-based builder for cardinal splines
+type CardinalVertBuilder struct {
+	HermiteVertBuilder
 	tension float64
 }
 
-func NewCardinalHermiteSpline2d(tknots []float64, tension float64, vertices ...*HermiteVertex) *CardinalHermiteSpline2d {
-	sp := &CardinalHermiteSpline2d{
-		HermiteSpline2d: *NewHermiteSplineTanFinder2d(tknots, CardinalTanf2d{tension: tension}, vertices...),
-		tension:         tension}
+func NewCardinalVertBuilder(tknots []float64, tension float64, vertices ...*HermiteVertex) *CardinalVertBuilder {
+	sp := &CardinalVertBuilder{
+		HermiteVertBuilder: *NewHermiteVertBuilderTanFinder(tknots, CardinalTanFinder{tension: tension}, vertices...),
+		tension:            tension}
 	return sp
 }
 
-func NewCatmullRomHermiteSpline2d(tknots []float64, vertices ...*HermiteVertex) *CardinalHermiteSpline2d {
-	return NewCardinalHermiteSpline2d(tknots, 0, vertices...)
+// NewCatmullRomVertBuilder creates a special cardinal builder with tension = 0
+func NewCatmullRomVertBuilder(tknots []float64, vertices ...*HermiteVertex) *CardinalVertBuilder {
+	return NewCardinalVertBuilder(tknots, 0, vertices...)
 }
 
-func (sp *CardinalHermiteSpline2d) Tension() float64 {
+func (sp *CardinalVertBuilder) Tension() float64 {
 	return sp.tension
 }
 
-func (sp *CardinalHermiteSpline2d) SetTension(tension float64) {
-	sp.HermiteSpline2d.tanFinder = CardinalTanf2d{tension: tension}
+func (sp *CardinalVertBuilder) SetTension(tension float64) {
+	sp.HermiteVertBuilder.tanFinder = CardinalTanFinder{tension: tension}
 	sp.tension = tension
-	sp.ResetPrepare()
 }

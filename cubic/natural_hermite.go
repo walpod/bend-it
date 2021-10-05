@@ -2,13 +2,13 @@ package cubic
 
 import "github.com/walpod/bend-it"
 
-// hermite tangent finder for natural spline
-type NaturalTanf2d struct{}
+// NaturalTanFinder is an Hermite tangent finder for natural splines
+type NaturalTanFinder struct{}
 
 // Find hermite tangents for natural spline
 // mathematical background can be found in "Interpolating Cubic Splines" - 9 (Gary D. Knott) and in
 // "An Introduction to Splines for use in Computer Graphics and Geometric Modeling" - 3.1 (Bartels, Beatty, Barsky)
-func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVertex) {
+func (nt NaturalTanFinder) Find(knots bendit.Knots, vertices []*HermiteVertex) {
 	n := len(vertices)
 	if n < 2 {
 		return
@@ -145,12 +145,12 @@ func (nt NaturalTanf2d) Find(knots bendit.Knots, vertices []*HermiteVertex) {
 	}*/
 }
 
-type NaturalHermiteSpline2d struct {
-	HermiteSpline2d
+type NaturalVertBuilder struct {
+	HermiteVertBuilder
 }
 
-func NewNaturalHermiteSpline2d(tknots []float64, vertices ...*HermiteVertex) *NaturalHermiteSpline2d {
-	sp := &NaturalHermiteSpline2d{
-		HermiteSpline2d: *NewHermiteSplineTanFinder2d(tknots, NaturalTanf2d{}, vertices...)}
+func NewNaturalVertBuilder(tknots []float64, vertices ...*HermiteVertex) *NaturalVertBuilder {
+	sp := &NaturalVertBuilder{
+		HermiteVertBuilder: *NewHermiteVertBuilderTanFinder(tknots, NaturalTanFinder{}, vertices...)}
 	return sp
 }

@@ -7,15 +7,15 @@ import (
 	"testing"
 )
 
-func createHermDiag00to11() *HermiteSpline2d {
-	return NewHermiteSpline2d(nil,
+func createHermDiag00to11() *HermiteVertBuilder {
+	return NewHermiteVertBuilder(nil,
 		NewHermiteVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 1)),
 		NewHermiteVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 1), bendit.NewVec(0, 0)),
 	)
 }
 
-func createNonUniHermDiag00to11() *HermiteSpline2d {
-	return NewHermiteSpline2d([]float64{0, math.Sqrt2},
+func createNonUniHermDiag00to11() *HermiteVertBuilder {
+	return NewHermiteVertBuilder([]float64{0, math.Sqrt2},
 		NewHermiteVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 1)),
 		NewHermiteVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 1), bendit.NewVec(0, 0)),
 	)
@@ -25,45 +25,43 @@ func isOnDiag(v bendit.Vec) bool {
 	return math.Abs(v[0]-v[1]) < delta
 }
 
-func createHermParabola00to11(uniform bool) *HermiteSpline2d {
+func createHermParabola00to11(uniform bool) *HermiteVertBuilder {
 	var tknots []float64
 	if uniform {
 		tknots = nil
 	} else {
 		tknots = []float64{0, 1} // is in fact uniform but specified as non-uniform
 	}
-	return NewHermiteSpline2d(tknots,
+	return NewHermiteVertBuilder(tknots,
 		NewHermiteVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 0)),
 		NewHermiteVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 2), bendit.NewVec(0, 0)),
 	)
 }
 
-func createDoubleHermParabola00to11to22(uniform bool) *HermiteSpline2d {
+func createDoubleHermParabola00to11to22(uniform bool) *HermiteVertBuilder {
 	var tknots []float64
 	if uniform {
 		tknots = nil
 	} else {
 		tknots = []float64{0, 1, 2} // is in fact uniform but specified as non-uniform
 	}
-	return NewHermiteSpline2d(tknots,
+	return NewHermiteVertBuilder(tknots,
 		NewHermiteVertex(bendit.NewVec(0, 0), bendit.NewVec(0, 0), bendit.NewVec(1, 0)),
 		NewHermiteVertex(bendit.NewVec(1, 1), bendit.NewVec(1, 2), bendit.NewVec(1, 0)),
 		NewHermiteVertex(bendit.NewVec(2, 2), bendit.NewVec(1, 2), bendit.NewVec(0, 0)),
 	)
 }
 
-func TestHermiteSpline2d_At(t *testing.T) {
-	herm := createHermDiag00to11()
-	herm.Prepare()
+func TestHermiteSpline_At(t *testing.T) {
+	herm := createHermDiag00to11().Build()
 	AssertSplineAt(t, herm, 0, bendit.NewVec(0, 0))
 	AssertSplineAt(t, herm, 0.25, bendit.NewVec(0.25, 0.25))
 	AssertSplineAt(t, herm, .5, bendit.NewVec(.5, .5))
 	AssertSplineAt(t, herm, 0.75, bendit.NewVec(0.75, 0.75))
 	AssertSplineAt(t, herm, 1, bendit.NewVec(1, 1))
 
-	herm = createNonUniHermDiag00to11()
-	herm.Prepare()
-	ts, te := herm.knots.Tstart(), herm.knots.Tend()
+	herm = createNonUniHermDiag00to11().Build()
+	ts, te := herm.Knots().Tstart(), herm.Knots().Tend()
 	AssertSplineAt(t, herm, ts, bendit.NewVec(0, 0))
 	AssertSplineAt(t, herm, te/2, bendit.NewVec(.5, .5))
 	AssertSplineAt(t, herm, te, bendit.NewVec(1, 1))
@@ -71,16 +69,14 @@ func TestHermiteSpline2d_At(t *testing.T) {
 		AssertRandSplinePointProperty(t, herm, isOnDiag, "hermite point must be on diagonal")
 	}
 
-	herm = createHermParabola00to11(true)
-	herm.Prepare()
+	herm = createHermParabola00to11(true).Build()
 	AssertSplineAt(t, herm, 0, bendit.NewVec(0, 0))
 	AssertSplineAt(t, herm, 0.25, bendit.NewVec(0.25, 0.25*0.25))
 	AssertSplineAt(t, herm, 0.5, bendit.NewVec(0.5, 0.25))
 	AssertSplineAt(t, herm, 0.75, bendit.NewVec(0.75, 0.75*0.75))
 	AssertSplineAt(t, herm, 1, bendit.NewVec(1, 1))
 
-	herm = createDoubleHermParabola00to11to22(true)
-	herm.Prepare()
+	herm = createDoubleHermParabola00to11to22(true).Build()
 	AssertSplineAt(t, herm, 0, bendit.NewVec(0, 0))
 	AssertSplineAt(t, herm, 0.25, bendit.NewVec(0.25, 0.25*0.25))
 	AssertSplineAt(t, herm, 0.5, bendit.NewVec(0.5, 0.25))
@@ -92,52 +88,41 @@ func TestHermiteSpline2d_At(t *testing.T) {
 	AssertSplineAt(t, herm, 2, bendit.NewVec(2, 2))
 
 	// domain with ony one value: 0
-	herm = NewHermiteSpline2d(nil,
-		NewHermiteVertex(bendit.NewVec(1, 2), bendit.NewVec(0, 0), bendit.NewVec(0, 0)))
-	herm.Prepare()
+	herm = NewHermiteVertBuilder(nil,
+		NewHermiteVertex(bendit.NewVec(1, 2), bendit.NewVec(0, 0), bendit.NewVec(0, 0))).
+		Build()
 	AssertSplineAt(t, herm, 0, bendit.NewVec(1, 2))
 
 	// empty domain
-	herm = NewHermiteSpline2d(nil)
+	herm = NewHermiteVertBuilder(nil).Build()
 
 	// uniform and regular non-uniform must match
-	herm = createHermParabola00to11(true)
-	herm.Prepare()
-	nuherm := createHermParabola00to11(false)
-	nuherm.Prepare()
+	herm = createHermParabola00to11(true).Build()
+	nuherm := createHermParabola00to11(false).Build()
 	AssertSplinesEqual(t, herm, nuherm, 100)
 
-	herm = createDoubleHermParabola00to11to22(true)
-	herm.Prepare()
-	nuherm = createDoubleHermParabola00to11to22(false)
-	nuherm.Prepare()
+	herm = createDoubleHermParabola00to11to22(true).Build()
+	nuherm = createDoubleHermParabola00to11to22(false).Build()
 	AssertSplinesEqual(t, herm, nuherm, 100)
 }
 
-func TestHermiteSpline2d_Canonical(t *testing.T) {
-	herm := createDoubleHermParabola00to11to22(true)
-	herm.Prepare()
-	AssertSplinesEqual(t, herm, herm.Canonical(), 100)
-
-	herm = createDoubleHermParabola00to11to22(false)
-	herm.Prepare()
-	AssertSplinesEqual(t, herm, herm.Canonical(), 100)
-}
-
-/* TODO
-func TestHermiteSpline2d_Approx(t *testing.T) {
-	herm := createDoubleHermParabola00to11to22(true)
-	herm.Prepare()
-	lc := bendit.NewLineToSliceCollector2d()
+func TestHermiteApproxer_Approx(t *testing.T) {
+	herm := createDoubleHermParabola00to11to22(true).BuildApproxer()
+	lc := bendit.NewLineToSliceCollector()
 	bendit.ApproxAll(herm, 0.02, lc)
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertVecInDelta(t, bendit.NewVec(0, 0), lc.Lines[0].Pstart, "start point = [0,0]")
 	AssertVecInDelta(t, bendit.NewVec(2, 2), lc.Lines[len(lc.Lines)-1].Pend, "end point = [2,2]")
-	// start points of approximated lines must be on bezier curve and match bezier.At
-	AssertApproxStartPointsMatchSpline(t, lc.Lines, herm)
-} */
 
-func TestHermiteSpline2d_AddVertex(t *testing.T) {
+	// start points of approximated lines must be on bezier curve and match bezier.At
+	hermBuilder := createHermParabola00to11(true)
+	lc = bendit.NewLineToSliceCollector()
+	bendit.ApproxAll(hermBuilder.BuildApproxer(), 0.02, lc)
+	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
+	AssertApproxStartPointsMatchSpline(t, lc.Lines, hermBuilder.Build())
+}
+
+func TestHermiteVertBuilder_AddVertex(t *testing.T) {
 	hermite := createHermDiag00to11()
 	err := hermite.AddVertex(3, nil)
 	assert.NotNil(t, err, "knot-no. too large")
@@ -149,7 +134,7 @@ func TestHermiteSpline2d_AddVertex(t *testing.T) {
 	assert.Equal(t, hermite.Vertex(2), createHermDiag00to11().Vertex(1), "vertices don't match")
 }
 
-func TestHermiteSpline2d_DeleteVertex(t *testing.T) {
+func TestHermiteVertBuilder_DeleteVertex(t *testing.T) {
 	hermite := createHermDiag00to11()
 	err := hermite.DeleteVertex(2)
 	assert.NotNil(t, err, "knot-no. doesn't exist")
