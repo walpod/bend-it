@@ -6,26 +6,17 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// HermiteTanFinder finds tangents based on given vertices and knots
+/*// HermiteTanFinder finds tangents based on given vertices and knots
 type HermiteTanFinder interface {
 	Find(knots bendit.Knots, vertices []*HermiteVertex)
-}
+}*/
 
 type HermiteVertBuilder struct {
-	knots     bendit.Knots
-	vertices  []*HermiteVertex
-	tanFinder HermiteTanFinder
-	/*// internal cache of prepare
-	canon    *CanonicalSpline
-	bezier   *BezierVertBuilder
-	tanFound bool*/
+	knots    bendit.Knots
+	vertices []*HermiteVertex
 }
 
 func NewHermiteVertBuilder(tknots []float64, vertices ...*HermiteVertex) *HermiteVertBuilder {
-	return NewHermiteVertBuilderTanFinder(tknots, nil, vertices...)
-}
-
-func NewHermiteVertBuilderTanFinder(tknots []float64, tanFinder HermiteTanFinder, vertices ...*HermiteVertex) *HermiteVertBuilder {
 	var knots bendit.Knots
 	if tknots == nil {
 		knots = bendit.NewUniformKnots(len(vertices))
@@ -36,7 +27,7 @@ func NewHermiteVertBuilderTanFinder(tknots []float64, tanFinder HermiteTanFinder
 		knots = bendit.NewNonUniformKnots(tknots)
 	}
 
-	herm := &HermiteVertBuilder{knots: knots, vertices: vertices, tanFinder: tanFinder}
+	herm := &HermiteVertBuilder{knots: knots, vertices: vertices}
 	return herm
 }
 
@@ -98,10 +89,6 @@ func (sp *HermiteVertBuilder) DeleteVertex(knotNo int) (err error) {
 }
 
 func (sp *HermiteVertBuilder) Canonical() *CanonicalSpline {
-	if sp.tanFinder != nil {
-		sp.tanFinder.Find(sp.knots, sp.vertices)
-	}
-
 	n := len(sp.vertices)
 	if n >= 2 {
 		if sp.knots.IsUniform() {
@@ -189,10 +176,6 @@ func (sp *HermiteVertBuilder) Build() bendit.Spline {
 }
 
 func (sp *HermiteVertBuilder) Bezier() *BezierVertBuilder {
-	if sp.tanFinder != nil {
-		sp.tanFinder.Find(sp.knots, sp.vertices)
-	}
-
 	n := len(sp.vertices)
 	if n >= 2 {
 		if sp.knots.IsUniform() {

@@ -22,8 +22,8 @@ type SplineBuilder interface {
 	BuildApproxer() SplineApproxer
 }
 
-// VertSplineBuilder can be constructed by adding vertices
-type VertSplineBuilder interface {
+// SplineVertBuilder can be constructed by adding vertices
+type SplineVertBuilder interface {
 	SplineBuilder
 
 	Vertex(knotNo int) Vertex
@@ -36,7 +36,7 @@ func ApproxAll(splineApproxer SplineApproxer, maxDist float64, collector LineCol
 	splineApproxer.Approx(0, splineApproxer.Knots().SegmentCnt()-1, maxDist, collector)
 }
 
-func Vertices(builder VertSplineBuilder) []Vertex {
+func Vertices(builder SplineVertBuilder) []Vertex {
 	cnt := builder.Knots().KnotCnt()
 	vertices := make([]Vertex, cnt)
 	for i := 0; i < cnt; i++ {

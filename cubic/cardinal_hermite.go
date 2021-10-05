@@ -2,6 +2,7 @@ package cubic
 
 import "github.com/walpod/bend-it"
 
+/*
 // CardinalTanFinder is an Hermite tangent finder for cardinal splines
 type CardinalTanFinder struct {
 	tension float64
@@ -38,10 +39,6 @@ func (ct CardinalTanFinder) Find(knots bendit.Knots, vertices []*HermiteVertex) 
 		for i := 0; i < n-1; i++ {
 			// modify length of uniform tangents according to segment-length
 			segmentLen, _ := knots.SegmentLen(i)
-			/*vertices[i].exitTan.x /= segmentLen
-			vertices[i].exitTan.y /= segmentLen
-			vertices[i+1].entryTan.x /= segmentLen
-			vertices[i+1].entryTan.y /= segmentLen*/
 			if segmentLen != 0 {
 				scf := 1 / segmentLen
 				vertices[i].exit = vertices[i].exit.Scale(scf)
@@ -50,7 +47,7 @@ func (ct CardinalTanFinder) Find(knots bendit.Knots, vertices []*HermiteVertex) 
 			// TODO segmentLen == 0
 		}
 	}
-}
+}*/
 
 // CardinalVertBuilder is an hermite vertex-based builder for cardinal splines
 type CardinalVertBuilder struct {
@@ -59,22 +56,88 @@ type CardinalVertBuilder struct {
 }
 
 func NewCardinalVertBuilder(tknots []float64, tension float64, vertices ...*HermiteVertex) *CardinalVertBuilder {
-	sp := &CardinalVertBuilder{
-		HermiteVertBuilder: *NewHermiteVertBuilderTanFinder(tknots, CardinalTanFinder{tension: tension}, vertices...),
+	sb := &CardinalVertBuilder{
+		HermiteVertBuilder: *NewHermiteVertBuilder(tknots, vertices...),
 		tension:            tension}
-	return sp
+	sb.CalcTangents()
+	return sb
+}
+
+func (sb *CardinalVertBuilder) Tension() float64 {
+	return sb.tension
+}
+
+func (sb *CardinalVertBuilder) SetTension(tension float64) {
+	sb.tension = tension
+	sb.CalcTangents()
+}
+
+func (sb *CardinalVertBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
+	err = sb.HermiteVertBuilder.AddVertex(knotNo, vertex)
+	if err == nil {
+		sb.CalcTangents() // TODO recalculate only around new knot
+	}
+	return err
+}
+
+func (sb *CardinalVertBuilder) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
+	err = sb.HermiteVertBuilder.UpdateVertex(knotNo, vertex)
+	if err == nil {
+		sb.CalcTangents() // TODO recalculate only around updated knot
+	}
+	return err
+}
+
+func (sb *CardinalVertBuilder) DeleteVertex(knotNo int) (err error) {
+	err = sb.HermiteVertBuilder.DeleteVertex(knotNo)
+	if err == nil {
+		sb.CalcTangents() // TODO recalculate only around deleted knot
+	}
+	return err
+}
+
+// CalcTangents calculates and sets the tangent controls of the hermite vertices
+func (sb *CardinalVertBuilder) CalcTangents() {
+	n := len(sb.vertices)
+	if n < 2 {
+		return
+	}
+	dim := sb.vertices[0].loc.Dim()
+
+	// transform tension to 'scale' factor of distance vector
+	scale := (1 - sb.tension) / 2
+
+	// calculate tangents for uniform case: entry and exit tangents are equal
+	setUniformCardinalTangent := func(vt, vtstart, vtend *HermiteVertex) {
+		tan := bendit.NewZeroVec(vt.loc.Dim())
+		for d := 0; d < dim; d++ {
+			tan[d] = scale * (vtend.loc[d] - vtstart.loc[d])
+		}
+		vt.entry, vt.exit = tan, tan // TODO or clone ?
+	}
+
+	setUniformCardinalTangent(sb.vertices[0], sb.vertices[0], sb.vertices[1])
+	for i := 1; i < n-1; i++ {
+		setUniformCardinalTangent(sb.vertices[i], sb.vertices[i-1], sb.vertices[i+1]) // use vertex before and after
+	}
+	setUniformCardinalTangent(sb.vertices[n-1], sb.vertices[n-2], sb.vertices[n-1])
+
+	// handle non-uniform case: double tangent, same direction but different lengths
+	if !sb.knots.IsUniform() {
+		for i := 0; i < n-1; i++ {
+			// modify length of uniform tangents according to segment-length
+			segmentLen, _ := sb.knots.SegmentLen(i)
+			if segmentLen != 0 {
+				scf := 1 / segmentLen
+				sb.vertices[i].exit = sb.vertices[i].exit.Scale(scf)
+				sb.vertices[i+1].entry = sb.vertices[i+1].entry.Scale(scf)
+			}
+			// TODO segmentLen == 0
+		}
+	}
 }
 
 // NewCatmullRomVertBuilder creates a special cardinal builder with tension = 0
 func NewCatmullRomVertBuilder(tknots []float64, vertices ...*HermiteVertex) *CardinalVertBuilder {
 	return NewCardinalVertBuilder(tknots, 0, vertices...)
-}
-
-func (sp *CardinalVertBuilder) Tension() float64 {
-	return sp.tension
-}
-
-func (sp *CardinalVertBuilder) SetTension(tension float64) {
-	sp.HermiteVertBuilder.tanFinder = CardinalTanFinder{tension: tension}
-	sp.tension = tension
 }
