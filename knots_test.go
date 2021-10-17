@@ -8,7 +8,11 @@ import (
 const delta = 0.0000000001
 
 func TestUniformKnots(t *testing.T) {
-	knots := NewUniformKnots(3)
+	knots := NewUniformKnots(0)
+	assert.Equalf(t, 0., knots.Tstart(), "empty knots: tstart must be 0")
+	assert.Lessf(t, knots.Tend(), 0., "empty knots: tend must be smaller than 0")
+
+	knots = NewUniformKnots(3)
 	assert.True(t, knots.IsUniform(), "knots must be uniform")
 	assert.Empty(t, knots.External(), "external representation must be nil")
 
@@ -42,9 +46,13 @@ func TestUniformKnots(t *testing.T) {
 }
 
 func TestNonUniformKnots(t *testing.T) {
+	knots := NewNonUniformKnots([]float64{})
+	assert.Equalf(t, 0., knots.Tstart(), "empty knots: tstart must be 0")
+	assert.Lessf(t, knots.Tend(), 0., "empty knots: tend must be smaller than 0")
+
 	t0, t2, t3 := 0., 2.5, 3.
 	ks := []float64{t0, 0.8, t2, t3}
-	knots := NewNonUniformKnots(ks)
+	knots = NewNonUniformKnots(ks)
 	assert.False(t, knots.IsUniform(), "knots may not be uniform")
 	assert.Equal(t, knots.External(), ks, "external representation must be %v", ks)
 

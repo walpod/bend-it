@@ -158,7 +158,7 @@ func (k *NonUniformKnots) Tstart() float64 {
 
 func (k *NonUniformKnots) Tend() float64 {
 	if len(k.tknots) == 0 {
-		return 0
+		return -1
 	} else {
 		return k.tknots[len(k.tknots)-1]
 	}

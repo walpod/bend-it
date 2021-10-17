@@ -1,6 +1,7 @@
 package cubic
 
 import (
+	"github.com/stretchr/testify/assert"
 	bendit "github.com/walpod/bend-it"
 	"testing"
 )
@@ -50,6 +51,9 @@ func TestCanonicalSpline_At(t *testing.T) {
 
 	// empty domain
 	canon = NewCanonicalSpline(nil)
-	canon = NewCanonicalSpline(nil)
+	ts, te := canon.Knots().Tstart(), canon.Knots().Tend()
+	assert.Greaterf(t, ts, te, "empty knots: tstart %v must be greater than tend %v", ts, te)
 	canon = NewCanonicalSpline([]float64{})
+	ts, te = canon.Knots().Tstart(), canon.Knots().Tend()
+	assert.Greaterf(t, ts, te, "empty knots: tstart %v must be greater than tend %v", ts, te)
 }

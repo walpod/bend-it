@@ -95,6 +95,8 @@ func TestHermiteSpline_At(t *testing.T) {
 
 	// empty domain
 	herm = NewHermiteVertBuilder(nil).Build()
+	ts, te = herm.Knots().Tstart(), herm.Knots().Tend()
+	assert.Greaterf(t, ts, te, "empty knots: tstart %v must be greater than tend %v", ts, te)
 
 	// uniform and regular non-uniform must match
 	herm = createHermParabola00to11(true).Build()

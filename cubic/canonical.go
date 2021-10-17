@@ -55,10 +55,16 @@ type CanonicalSpline struct {
 func NewCanonicalSpline(tknots []float64, cubics ...CubicPolies) *CanonicalSpline {
 	var knots bendit.Knots
 	if tknots == nil {
-		knots = bendit.NewUniformKnots(len(cubics) + 1)
+		// uniform
+		knotCnt := len(cubics) + 1
+		if len(cubics) == 0 {
+			knotCnt = 0
+		}
+		knots = bendit.NewUniformKnots(knotCnt)
 	} else {
+		// non-uniform
 		if len(cubics) == 0 && len(tknots) != 0 {
-			panic("knots must be empty (not nil) if no cubics specified")
+			panic("knots must be empty if no cubics specified")
 		}
 		if len(cubics) > 0 && len(tknots) != len(cubics)+1 {
 			panic("there must be one more knot than cubics")
