@@ -226,3 +226,8 @@ func (sp *HermiteVertBuilder) BezierApproxer() *BezierApproxer {
 func (sp *HermiteVertBuilder) BuildApproxer() bendigo.SplineApproxer {
 	return sp.BezierApproxer()
 }
+
+func (sp *HermiteVertBuilder) Linax(fromSegmentNo, toSegmentNo int, collector bendigo.LineCollector) {
+	maxDist := 0.5 // TODO move
+	sp.BezierApproxer().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
+}

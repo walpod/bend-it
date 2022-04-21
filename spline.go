@@ -19,7 +19,10 @@ type Vertex interface {
 type SplineBuilder interface {
 	Knots() Knots
 	Build() Spline
-	BuildApproxer() SplineApproxer
+	//BuildApproxer() SplineApproxer
+	// TODO add maxDist float64 -> linaxMaxDist or linaxParams
+	// TODO linaxSpline() *LinaxSpline
+	Linax(fromSegmentNo, toSegmentNo int, collector LineCollector)
 }
 
 // SplineVertBuilder can be constructed by adding vertices

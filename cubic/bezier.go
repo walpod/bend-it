@@ -236,6 +236,11 @@ func (sp *BezierVertBuilder) BuildApproxer() bendigo.SplineApproxer {
 	return sp.BezierApproxer()
 }
 
+func (sp *BezierVertBuilder) Linax(fromSegmentNo, toSegmentNo int, collector bendigo.LineCollector) {
+	maxDist := 0.5 // TODO move
+	sp.BezierApproxer().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
+}
+
 /*func (sp *BezierVertBuilder) AtDeCasteljau(t float64) bendigo.Vec {
 	segmentNo, u, err := sp.knots.MapToSegment(t)
 	if err != nil {
