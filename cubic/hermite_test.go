@@ -108,18 +108,19 @@ func TestHermiteSpline_At(t *testing.T) {
 	AssertSplinesEqual(t, herm, nuherm, 100)
 }
 
+// TODO implement with LinaxSpline
 func TestHermiteApproxer_Approx(t *testing.T) {
-	herm := createDoubleHermParabola00to11to22(true).BuildApproxer()
+	hermBuilder := createDoubleHermParabola00to11to22(true)
 	lc := bendigo.NewLineToSliceCollector()
-	bendigo.ApproxAll(herm, 0.02, lc)
+	bendigo.LinaxAll(hermBuilder, lc, bendigo.NewLinaxParams(0.02))
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertVecInDelta(t, bendigo.NewVec(0, 0), lc.Lines[0].Pstart, "start point = [0,0]")
 	AssertVecInDelta(t, bendigo.NewVec(2, 2), lc.Lines[len(lc.Lines)-1].Pend, "end point = [2,2]")
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
-	hermBuilder := createHermParabola00to11(true)
+	hermBuilder = createHermParabola00to11(true)
 	lc = bendigo.NewLineToSliceCollector()
-	bendigo.ApproxAll(hermBuilder.BuildApproxer(), 0.02, lc)
+	bendigo.LinaxAll(hermBuilder, lc, bendigo.NewLinaxParams(0.02))
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, hermBuilder.Build())
 }

@@ -219,15 +219,6 @@ func (sp *HermiteVertBuilder) uniBezier() *BezierVertBuilder {
 	return NewBezierVertBuilderByMatrix(sp.knots.External(), dim, coefs)
 }
 
-func (sp *HermiteVertBuilder) BezierApproxer() *BezierApproxer {
-	return sp.Bezier().BezierApproxer()
-}
-
-func (sp *HermiteVertBuilder) BuildApproxer() bendigo.SplineApproxer {
-	return sp.BezierApproxer()
-}
-
-func (sp *HermiteVertBuilder) Linax(fromSegmentNo, toSegmentNo int, collector bendigo.LineCollector) {
-	maxDist := 0.5 // TODO move
-	sp.BezierApproxer().Approx(fromSegmentNo, toSegmentNo, maxDist, collector)
+func (sp *HermiteVertBuilder) Linax(fromSegmentNo, toSegmentNo int, collector bendigo.LineCollector, linaxParams *bendigo.LinaxParams) {
+	sp.Bezier().Linax(fromSegmentNo, toSegmentNo, collector, linaxParams)
 }

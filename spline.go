@@ -5,27 +5,28 @@ type Spline interface {
 	At(t float64) Vec
 }
 
-type SplineApproxer interface {
+type SplineBuilder interface {
 	Knots() Knots
+	Build() Spline
+	// TODO LinaxSpline(linaxParams LinaxParams) *LinaxSpline
+	// linear approximate spline with consecutive line segments
+	Linax(fromSegmentNo, toSegmentNo int, collector LineCollector, linaxParams *LinaxParams)
+}
 
-	// Approx'imate spline with consecutive line segments
-	Approx(fromSegmentNo, toSegmentNo int, maxDist float64, collector LineCollector)
+// linear approximation parameters
+type LinaxParams struct {
+	MaxDist float64
+}
+
+func NewLinaxParams(maxDist float64) *LinaxParams {
+	return &LinaxParams{MaxDist: maxDist}
 }
 
 type Vertex interface {
 	Loc() Vec
 }
 
-type SplineBuilder interface {
-	Knots() Knots
-	Build() Spline
-	//BuildApproxer() SplineApproxer
-	// TODO add maxDist float64 -> linaxMaxDist or linaxParams
-	// TODO linaxSpline() *LinaxSpline
-	Linax(fromSegmentNo, toSegmentNo int, collector LineCollector)
-}
-
-// SplineVertBuilder can be constructed by adding vertices
+// SplineVertBuilder is constructed by adding vertices
 type SplineVertBuilder interface {
 	SplineBuilder
 
@@ -35,8 +36,9 @@ type SplineVertBuilder interface {
 	DeleteVertex(knotNo int) (err error)
 }
 
-func ApproxAll(splineApproxer SplineApproxer, maxDist float64, collector LineCollector) {
-	splineApproxer.Approx(0, splineApproxer.Knots().SegmentCnt()-1, maxDist, collector)
+// TODO replace with LinaxSpline
+func LinaxAll(splineBuilder SplineBuilder, collector LineCollector, linaxParams *LinaxParams) {
+	splineBuilder.Linax(0, splineBuilder.Knots().SegmentCnt()-1, collector, linaxParams)
 }
 
 func Vertices(builder SplineVertBuilder) []Vertex {

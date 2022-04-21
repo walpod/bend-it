@@ -113,21 +113,22 @@ func TestBezierSpline_At(t *testing.T) {
 
 func TestDeCasteljauSpline_At(t *testing.T) {
 	bezierBuilder := createBezierS00to11()
-	AssertSplinesEqual(t, bezierBuilder.Build(), bezierBuilder.BuildDeCasteljau(), 100)
+	AssertSplinesEqual(t, bezierBuilder.Build(), bezierBuilder.DeCasteljauSpline(), 100)
 }
 
+// TODO implement with LinaxSpline
 func TestBezierApproxer_Approx(t *testing.T) {
-	bezierApproxer := createBezierDiag00to11().BuildApproxer()
+	bezierBuilder := createBezierDiag00to11()
 	lc := bendigo.NewLineToSliceCollector()
-	bendigo.ApproxAll(bezierApproxer, 0.1, lc)
+	bendigo.LinaxAll(bezierBuilder, lc, bendigo.NewLinaxParams(0.1))
 	assert.Len(t, lc.Lines, 1, "approximated with one line")
 	AssertVecInDelta(t, bendigo.NewVec(0, 0), lc.Lines[0].Pstart, "start point = [0,0]")
 	AssertVecInDelta(t, bendigo.NewVec(1, 1), lc.Lines[0].Pend, "end point = [1,1]")
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
-	bezierBuilder := createBezierS00to11()
+	bezierBuilder = createBezierS00to11()
 	lc = bendigo.NewLineToSliceCollector()
-	bendigo.ApproxAll(bezierBuilder.BuildApproxer(), 0.02, lc)
+	bendigo.LinaxAll(bezierBuilder, lc, bendigo.NewLinaxParams(0.02))
 	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
 	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezierBuilder.Build())
 }
