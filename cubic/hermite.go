@@ -2,36 +2,36 @@ package cubic
 
 import (
 	"fmt"
-	"github.com/walpod/bend-it"
+	"github.com/walpod/bendigo"
 	"gonum.org/v1/gonum/mat"
 )
 
 /*// HermiteTanFinder finds tangents based on given vertices and knots
 type HermiteTanFinder interface {
-	Find(knots bendit.Knots, vertices []*HermiteVertex)
+	Find(knots bendigo.Knots, vertices []*HermiteVertex)
 }*/
 
 type HermiteVertBuilder struct {
-	knots    bendit.Knots
+	knots    bendigo.Knots
 	vertices []*HermiteVertex
 }
 
 func NewHermiteVertBuilder(tknots []float64, vertices ...*HermiteVertex) *HermiteVertBuilder {
-	var knots bendit.Knots
+	var knots bendigo.Knots
 	if tknots == nil {
-		knots = bendit.NewUniformKnots(len(vertices))
+		knots = bendigo.NewUniformKnots(len(vertices))
 	} else {
 		if len(tknots) != len(vertices) {
 			panic("tknots and vertices must have same length")
 		}
-		knots = bendit.NewNonUniformKnots(tknots)
+		knots = bendigo.NewNonUniformKnots(tknots)
 	}
 
 	herm := &HermiteVertBuilder{knots: knots, vertices: vertices}
 	return herm
 }
 
-func (sp *HermiteVertBuilder) Knots() bendit.Knots {
+func (sp *HermiteVertBuilder) Knots() bendigo.Knots {
 	return sp.knots
 }
 
@@ -43,7 +43,7 @@ func (sp *HermiteVertBuilder) Dim() int {
 	}
 }
 
-func (sp *HermiteVertBuilder) Vertex(knotNo int) bendit.Vertex {
+func (sp *HermiteVertBuilder) Vertex(knotNo int) bendigo.Vertex {
 	if knotNo >= len(sp.vertices) {
 		return nil
 	} else {
@@ -51,7 +51,7 @@ func (sp *HermiteVertBuilder) Vertex(knotNo int) bendit.Vertex {
 	}
 }
 
-func (sp *HermiteVertBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sp *HermiteVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err error) {
 	err = sp.knots.AddKnot(knotNo)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (sp *HermiteVertBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err e
 	return nil
 }
 
-func (sp *HermiteVertBuilder) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sp *HermiteVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (err error) {
 	if !sp.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
@@ -171,7 +171,7 @@ func (sp *HermiteVertBuilder) nonUniCanonical() *CanonicalSpline {
 	return NewCanonicalSpline(sp.knots.External(), cubics...)
 }
 
-func (sp *HermiteVertBuilder) Build() bendit.Spline {
+func (sp *HermiteVertBuilder) Build() bendigo.Spline {
 	return sp.Canonical()
 }
 
@@ -184,7 +184,7 @@ func (sp *HermiteVertBuilder) Bezier() *BezierVertBuilder {
 			panic("not yet implemented")
 		}
 	} else if n == 1 {
-		// TODO or instead nil ? zv := bendit.NewZeroVec(sp.Dim())
+		// TODO or instead nil ? zv := bendigo.NewZeroVec(sp.Dim())
 		return NewBezierVertBuilder(sp.knots.External(),
 			NewBezierVertex(sp.vertices[0].loc, nil, nil))
 	} else {
@@ -223,6 +223,6 @@ func (sp *HermiteVertBuilder) BezierApproxer() *BezierApproxer {
 	return sp.Bezier().BezierApproxer()
 }
 
-func (sp *HermiteVertBuilder) BuildApproxer() bendit.SplineApproxer {
+func (sp *HermiteVertBuilder) BuildApproxer() bendigo.SplineApproxer {
 	return sp.BezierApproxer()
 }

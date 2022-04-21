@@ -1,4 +1,4 @@
-package bendit
+package bendigo
 
 import "fmt"
 

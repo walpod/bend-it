@@ -1,4 +1,4 @@
-package bendit
+package bendigo
 
 type LineCollector interface {
 	// CollectLine is called from start (pstartx,pstarty) to end point (pendx,pendy) in consecutive order

@@ -1,4 +1,4 @@
-module github.com/walpod/bend-it
+module github.com/walpod/bendigo
 
 go 1.16
 

@@ -1,4 +1,4 @@
-package bendit
+package bendigo
 
 import (
 	"github.com/stretchr/testify/assert"

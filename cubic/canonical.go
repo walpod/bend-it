@@ -1,7 +1,7 @@
 package cubic
 
 import (
-	bendit "github.com/walpod/bend-it"
+	"github.com/walpod/bendigo"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -37,9 +37,9 @@ func (cb CubicPolies) Dim() int {
 	return len(cb.cubs)
 }
 
-func (cb *CubicPolies) At(u float64) bendit.Vec {
+func (cb *CubicPolies) At(u float64) bendigo.Vec {
 	dim := len(cb.cubs)
-	p := make(bendit.Vec, dim)
+	p := make(bendigo.Vec, dim)
 	for d := 0; d < dim; d++ {
 		p[d] = cb.cubs[d].At(u)
 	}
@@ -47,20 +47,20 @@ func (cb *CubicPolies) At(u float64) bendit.Vec {
 }
 
 type CanonicalSpline struct {
-	knots  bendit.Knots
+	knots  bendigo.Knots
 	cubics []CubicPolies
 }
 
 // tknots: nil = uniform else non-uniform
 func NewCanonicalSpline(tknots []float64, cubics ...CubicPolies) *CanonicalSpline {
-	var knots bendit.Knots
+	var knots bendigo.Knots
 	if tknots == nil {
 		// uniform
 		knotCnt := len(cubics) + 1
 		if len(cubics) == 0 {
 			knotCnt = 0
 		}
-		knots = bendit.NewUniformKnots(knotCnt)
+		knots = bendigo.NewUniformKnots(knotCnt)
 	} else {
 		// non-uniform
 		if len(cubics) == 0 && len(tknots) != 0 {
@@ -69,14 +69,14 @@ func NewCanonicalSpline(tknots []float64, cubics ...CubicPolies) *CanonicalSplin
 		if len(cubics) > 0 && len(tknots) != len(cubics)+1 {
 			panic("there must be one more knot than cubics")
 		}
-		knots = bendit.NewNonUniformKnots(tknots)
+		knots = bendigo.NewNonUniformKnots(tknots)
 	}
 
 	canon := &CanonicalSpline{knots, cubics}
 	return canon
 }
 
-func NewSingleVertexCanonicalSpline(v bendit.Vec) *CanonicalSpline {
+func NewSingleVertexCanonicalSpline(v bendigo.Vec) *CanonicalSpline {
 	// domain with value 0 only, knots '0,0'
 	dim := len(v)
 	cubs := make([]CubicPoly, dim)
@@ -107,13 +107,13 @@ func NewCanonicalSplineByMatrix(tknots []float64, dim int, mat mat.Dense) *Canon
 	return NewCanonicalSpline(tknots, cubics...)
 }
 
-func (sp *CanonicalSpline) Knots() bendit.Knots {
+func (sp *CanonicalSpline) Knots() bendigo.Knots {
 	return sp.knots
 }
 
-func (sp *CanonicalSpline) At(t float64) bendit.Vec {
+func (sp *CanonicalSpline) At(t float64) bendigo.Vec {
 	if len(sp.cubics) == 0 {
-		return nil //return make(bendit.Vector, sp.dim) ... point (0,0,...0)
+		return nil //return make(bendigo.Vector, sp.dim) ... point (0,0,...0)
 	}
 
 	segmentNo, u, err := sp.knots.MapToSegment(t)

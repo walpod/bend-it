@@ -1,12 +1,12 @@
 package cubic
 
-import "github.com/walpod/bend-it"
+import "github.com/walpod/bendigo"
 
 /*
 // NaturalTanFinder is an Hermite tangent finder for natural splines
 type NaturalTanFinder struct{}
 
-func (nt NaturalTanFinder) Find(knots bendit.Knots, vertices []*HermiteVertex) {
+func (nt NaturalTanFinder) Find(knots bendigo.Knots, vertices []*HermiteVertex) {
 	n := len(vertices)
 	if n < 2 {
 		return
@@ -102,7 +102,7 @@ func (nt NaturalTanFinder) Find(knots bendit.Knots, vertices []*HermiteVertex) {
 
 	// prepare empty tangents for all segments
 	for i := 0; i < n; i++ {
-		vertices[i].entry = bendit.NewZeroVec(dim)
+		vertices[i].entry = bendigo.NewZeroVec(dim)
 		vertices[i].exit = vertices[i].entry // TODO or clone ?
 	}
 
@@ -154,7 +154,7 @@ func NewNaturalVertBuilder(tknots []float64, vertices ...*HermiteVertex) *Natura
 	return sb
 }
 
-func (sb *NaturalVertBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sb *NaturalVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err error) {
 	err = sb.HermiteVertBuilder.AddVertex(knotNo, vertex)
 	if err == nil {
 		sb.CalcTangents()
@@ -162,7 +162,7 @@ func (sb *NaturalVertBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err e
 	return err
 }
 
-func (sb *NaturalVertBuilder) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sb *NaturalVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (err error) {
 	err = sb.HermiteVertBuilder.UpdateVertex(knotNo, vertex)
 	if err == nil {
 		sb.CalcTangents()
@@ -276,7 +276,7 @@ func (sb *NaturalVertBuilder) CalcTangents() {
 
 	// prepare empty tangents for all segments
 	for i := 0; i < n; i++ {
-		sb.vertices[i].entry = bendit.NewZeroVec(dim)
+		sb.vertices[i].entry = bendigo.NewZeroVec(dim)
 		sb.vertices[i].exit = sb.vertices[i].entry // TODO or clone ?
 	}
 

@@ -1,27 +1,27 @@
 package cubic
 
-import bendit "github.com/walpod/bend-it"
+import "github.com/walpod/bendigo"
 
 type ControlVertex interface {
-	bendit.Vertex
-	Entry() bendit.Vec
-	Exit() bendit.Vec
+	bendigo.Vertex
+	Entry() bendigo.Vec
+	Exit() bendigo.Vec
 	Dependent() bool // are entry and exit dependent on each other? TODO extend to scalingFactor (some direction)
-	New(loc bendit.Vec, entry bendit.Vec, exit bendit.Vec) ControlVertex
-	Translate(dv bendit.Vec) ControlVertex
-	ControlToLoc(control bendit.Vec, isEntry bool) bendit.Vec
-	LocToControl(loc bendit.Vec, isEntry bool) bendit.Vec
+	New(loc bendigo.Vec, entry bendigo.Vec, exit bendigo.Vec) ControlVertex
+	Translate(dv bendigo.Vec) ControlVertex
+	ControlToLoc(control bendigo.Vec, isEntry bool) bendigo.Vec
+	LocToControl(loc bendigo.Vec, isEntry bool) bendigo.Vec
 }
 
 type BezierVertex struct {
-	loc       bendit.Vec
-	entry     bendit.Vec
-	exit      bendit.Vec
+	loc       bendigo.Vec
+	entry     bendigo.Vec
+	exit      bendigo.Vec
 	dependent bool
 }
 
 // one of entry or exit control can be nil, is handled as dependent control (on other side of the vertex)
-func NewBezierVertex(loc, entry, exit bendit.Vec) *BezierVertex {
+func NewBezierVertex(loc, entry, exit bendigo.Vec) *BezierVertex {
 	dependent := false
 
 	// handle dependent controls
@@ -36,15 +36,15 @@ func NewBezierVertex(loc, entry, exit bendit.Vec) *BezierVertex {
 	return &BezierVertex{loc: loc, entry: entry, exit: exit, dependent: dependent}
 }
 
-func (vt *BezierVertex) Loc() bendit.Vec {
+func (vt *BezierVertex) Loc() bendigo.Vec {
 	return vt.loc
 }
 
-func (vt *BezierVertex) Entry() bendit.Vec {
+func (vt *BezierVertex) Entry() bendigo.Vec {
 	return vt.entry
 }
 
-func (vt *BezierVertex) Exit() bendit.Vec {
+func (vt *BezierVertex) Exit() bendigo.Vec {
 	return vt.exit
 }
 
@@ -52,34 +52,34 @@ func (vt *BezierVertex) Dependent() bool {
 	return vt.dependent
 }
 
-func (vt *BezierVertex) ControlToLoc(control bendit.Vec, isEntry bool) bendit.Vec {
+func (vt *BezierVertex) ControlToLoc(control bendigo.Vec, isEntry bool) bendigo.Vec {
 	return control
 }
 
-func (vt *BezierVertex) LocToControl(loc bendit.Vec, isEntry bool) bendit.Vec {
+func (vt *BezierVertex) LocToControl(loc bendigo.Vec, isEntry bool) bendigo.Vec {
 	return loc
 }
 
-func (vt *BezierVertex) Translate(dv bendit.Vec) ControlVertex {
-	var exit bendit.Vec
+func (vt *BezierVertex) Translate(dv bendigo.Vec) ControlVertex {
+	var exit bendigo.Vec
 	if !vt.dependent {
 		exit = vt.exit.Add(dv)
 	}
 	return NewBezierVertex(vt.loc.Add(dv), vt.entry.Add(dv), exit)
 }
 
-func (vt *BezierVertex) New(loc bendit.Vec, entry bendit.Vec, exit bendit.Vec) ControlVertex {
+func (vt *BezierVertex) New(loc bendigo.Vec, entry bendigo.Vec, exit bendigo.Vec) ControlVertex {
 	return NewBezierVertex(loc, entry, exit)
 }
 
 type HermiteVertex struct {
-	loc       bendit.Vec
-	entry     bendit.Vec
-	exit      bendit.Vec
+	loc       bendigo.Vec
+	entry     bendigo.Vec
+	exit      bendigo.Vec
 	dependent bool
 }
 
-func NewHermiteVertex(loc, entry, exit bendit.Vec) *HermiteVertex {
+func NewHermiteVertex(loc, entry, exit bendigo.Vec) *HermiteVertex {
 	dependent := false
 
 	// handle dependent tangents
@@ -94,19 +94,19 @@ func NewHermiteVertex(loc, entry, exit bendit.Vec) *HermiteVertex {
 	return &HermiteVertex{loc, entry, exit, dependent}
 }
 
-func NewRawHermiteVertex(loc bendit.Vec) *HermiteVertex {
+func NewRawHermiteVertex(loc bendigo.Vec) *HermiteVertex {
 	return &HermiteVertex{loc: loc, entry: nil, exit: nil, dependent: false}
 }
 
-func (vt *HermiteVertex) Loc() bendit.Vec {
+func (vt *HermiteVertex) Loc() bendigo.Vec {
 	return vt.loc
 }
 
-func (vt *HermiteVertex) Entry() bendit.Vec {
+func (vt *HermiteVertex) Entry() bendigo.Vec {
 	return vt.entry
 }
 
-func (vt *HermiteVertex) Exit() bendit.Vec {
+func (vt *HermiteVertex) Exit() bendigo.Vec {
 	return vt.exit
 }
 
@@ -114,7 +114,7 @@ func (vt *HermiteVertex) Dependent() bool {
 	return vt.dependent
 }
 
-func (vt *HermiteVertex) ControlToLoc(control bendit.Vec, isEntry bool) bendit.Vec {
+func (vt *HermiteVertex) ControlToLoc(control bendigo.Vec, isEntry bool) bendigo.Vec {
 	if isEntry {
 		return vt.loc.Sub(control)
 	} else {
@@ -122,7 +122,7 @@ func (vt *HermiteVertex) ControlToLoc(control bendit.Vec, isEntry bool) bendit.V
 	}
 }
 
-func (vt *HermiteVertex) LocToControl(loc bendit.Vec, isEntry bool) bendit.Vec {
+func (vt *HermiteVertex) LocToControl(loc bendigo.Vec, isEntry bool) bendigo.Vec {
 	if isEntry {
 		return vt.loc.Sub(loc)
 	} else {
@@ -130,16 +130,16 @@ func (vt *HermiteVertex) LocToControl(loc bendit.Vec, isEntry bool) bendit.Vec {
 	}
 }
 
-func (vt *HermiteVertex) Translate(dv bendit.Vec) ControlVertex {
+func (vt *HermiteVertex) Translate(dv bendigo.Vec) ControlVertex {
 	return NewHermiteVertex(vt.loc.Add(dv), vt.entry, vt.exit)
 }
 
-func (vt *HermiteVertex) New(loc bendit.Vec, entry bendit.Vec, exit bendit.Vec) ControlVertex {
+func (vt *HermiteVertex) New(loc bendigo.Vec, entry bendigo.Vec, exit bendigo.Vec) ControlVertex {
 	return NewHermiteVertex(loc, entry, exit)
 }
 
-func NewControlVertexWithControl(vt ControlVertex, control bendit.Vec, isEntry bool) ControlVertex {
-	var entry, exit bendit.Vec
+func NewControlVertexWithControl(vt ControlVertex, control bendigo.Vec, isEntry bool) ControlVertex {
+	var entry, exit bendigo.Vec
 	if isEntry {
 		entry = control
 		exit = vt.Exit()
@@ -156,11 +156,11 @@ func NewControlVertexWithControl(vt ControlVertex, control bendit.Vec, isEntry b
 	return vt.New(vt.Loc(), entry, exit)
 }
 
-func NewControlVertexWithControlLoc(vt ControlVertex, loc bendit.Vec, isEntry bool) ControlVertex {
+func NewControlVertexWithControlLoc(vt ControlVertex, loc bendigo.Vec, isEntry bool) ControlVertex {
 	return NewControlVertexWithControl(vt, vt.LocToControl(loc, isEntry), isEntry)
 }
 
-func Control(vt ControlVertex, isEntry bool) bendit.Vec {
+func Control(vt ControlVertex, isEntry bool) bendigo.Vec {
 	if isEntry {
 		return vt.Entry()
 	} else {
@@ -168,7 +168,7 @@ func Control(vt ControlVertex, isEntry bool) bendit.Vec {
 	}
 }
 
-func ControlLoc(vt ControlVertex, isEntry bool) bendit.Vec {
+func ControlLoc(vt ControlVertex, isEntry bool) bendigo.Vec {
 	if isEntry {
 		return vt.ControlToLoc(vt.Entry(), true)
 	} else {

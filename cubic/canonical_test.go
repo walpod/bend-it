@@ -2,7 +2,7 @@ package cubic
 
 import (
 	"github.com/stretchr/testify/assert"
-	bendit "github.com/walpod/bend-it"
+	"github.com/walpod/bendigo"
 	"testing"
 )
 
@@ -27,27 +27,27 @@ func createDoubleCanonParabola00to11to22() *CanonicalSpline {
 
 func TestCanonicalSpline_At(t *testing.T) {
 	canon := createCanonLineWithParabolicParam()
-	AssertSplineAt(t, canon, 0, bendit.NewVec(0, 0))
-	AssertSplineAt(t, canon, 0.25, bendit.NewVec(0.25*0.25, 0.25*0.25))
-	AssertSplineAt(t, canon, 0.5, bendit.NewVec(0.5*0.5, 0.5*0.5))
-	AssertSplineAt(t, canon, 0.75, bendit.NewVec(0.75*0.75, 0.75*0.75))
-	AssertSplineAt(t, canon, 1, bendit.NewVec(1, 1))
+	AssertSplineAt(t, canon, 0, bendigo.NewVec(0, 0))
+	AssertSplineAt(t, canon, 0.25, bendigo.NewVec(0.25*0.25, 0.25*0.25))
+	AssertSplineAt(t, canon, 0.5, bendigo.NewVec(0.5*0.5, 0.5*0.5))
+	AssertSplineAt(t, canon, 0.75, bendigo.NewVec(0.75*0.75, 0.75*0.75))
+	AssertSplineAt(t, canon, 1, bendigo.NewVec(1, 1))
 
 	canon = createCanonParabola00to11()
-	AssertSplineAt(t, canon, 0, bendit.NewVec(0, 0))
-	AssertSplineAt(t, canon, 0.5, bendit.NewVec(0.5, 0.5*0.5))
-	AssertSplineAt(t, canon, 1, bendit.NewVec(1, 1))
+	AssertSplineAt(t, canon, 0, bendigo.NewVec(0, 0))
+	AssertSplineAt(t, canon, 0.5, bendigo.NewVec(0.5, 0.5*0.5))
+	AssertSplineAt(t, canon, 1, bendigo.NewVec(1, 1))
 
 	canon = createDoubleCanonParabola00to11to22()
-	AssertSplineAt(t, canon, 0, bendit.NewVec(0, 0))
-	AssertSplineAt(t, canon, 0.5, bendit.NewVec(0.5, 0.5*0.5))
-	AssertSplineAt(t, canon, 1, bendit.NewVec(1, 1))
-	AssertSplineAt(t, canon, 1.5, bendit.NewVec(1.5, 1+0.5*0.5))
-	AssertSplineAt(t, canon, 2, bendit.NewVec(2, 2))
+	AssertSplineAt(t, canon, 0, bendigo.NewVec(0, 0))
+	AssertSplineAt(t, canon, 0.5, bendigo.NewVec(0.5, 0.5*0.5))
+	AssertSplineAt(t, canon, 1, bendigo.NewVec(1, 1))
+	AssertSplineAt(t, canon, 1.5, bendigo.NewVec(1.5, 1+0.5*0.5))
+	AssertSplineAt(t, canon, 2, bendigo.NewVec(2, 2))
 
 	// single vertex
-	canon = NewSingleVertexCanonicalSpline(bendit.NewVec(1, 2))
-	AssertSplineAt(t, canon, 0, bendit.NewVec(1, 2))
+	canon = NewSingleVertexCanonicalSpline(bendigo.NewVec(1, 2))
+	AssertSplineAt(t, canon, 0, bendigo.NewVec(1, 2))
 
 	// empty domain
 	canon = NewCanonicalSpline(nil)

@@ -1,6 +1,6 @@
 package cubic
 
-import "github.com/walpod/bend-it"
+import "github.com/walpod/bendigo"
 
 /*
 // CardinalTanFinder is an Hermite tangent finder for cardinal splines
@@ -8,7 +8,7 @@ type CardinalTanFinder struct {
 	tension float64
 }
 
-func (ct CardinalTanFinder) Find(knots bendit.Knots, vertices []*HermiteVertex) {
+func (ct CardinalTanFinder) Find(knots bendigo.Knots, vertices []*HermiteVertex) {
 	n := len(vertices)
 	if n < 2 {
 		return
@@ -21,7 +21,7 @@ func (ct CardinalTanFinder) Find(knots bendit.Knots, vertices []*HermiteVertex) 
 
 	// calculate tangents for uniform case: entry and exit tangents are equal
 	setUniformCardinalTan := func(vt, vtstart, vtend *HermiteVertex) {
-		tan := bendit.NewZeroVec(vt.loc.Dim())
+		tan := bendigo.NewZeroVec(vt.loc.Dim())
 		for d := 0; d < dim; d++ {
 			tan[d] = b * (vtend.loc[d] - vtstart.loc[d])
 		}
@@ -72,7 +72,7 @@ func (sb *CardinalVertBuilder) SetTension(tension float64) {
 	sb.CalcTangents()
 }
 
-func (sb *CardinalVertBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sb *CardinalVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err error) {
 	err = sb.HermiteVertBuilder.AddVertex(knotNo, vertex)
 	if err == nil {
 		sb.CalcTangents() // TODO recalculate only around new knot
@@ -80,7 +80,7 @@ func (sb *CardinalVertBuilder) AddVertex(knotNo int, vertex bendit.Vertex) (err 
 	return err
 }
 
-func (sb *CardinalVertBuilder) UpdateVertex(knotNo int, vertex bendit.Vertex) (err error) {
+func (sb *CardinalVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (err error) {
 	err = sb.HermiteVertBuilder.UpdateVertex(knotNo, vertex)
 	if err == nil {
 		sb.CalcTangents() // TODO recalculate only around updated knot
@@ -109,7 +109,7 @@ func (sb *CardinalVertBuilder) CalcTangents() {
 
 	// calculate tangents for uniform case: entry and exit tangents are equal
 	setUniformCardinalTangent := func(vt, vtstart, vtend *HermiteVertex) {
-		tan := bendit.NewZeroVec(vt.loc.Dim())
+		tan := bendigo.NewZeroVec(vt.loc.Dim())
 		for d := 0; d < dim; d++ {
 			tan[d] = scale * (vtend.loc[d] - vtstart.loc[d])
 		}
