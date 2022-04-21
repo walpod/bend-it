@@ -68,90 +68,90 @@ func NewBezierVertBuilderByMatrix(tknots []float64, dim int, mat mat.Dense) *Bez
 	return NewBezierVertBuilder(tknots, vertices...)
 }
 
-func (sp *BezierVertBuilder) Knots() bendigo.Knots {
-	return sp.knots
+func (sb *BezierVertBuilder) Knots() bendigo.Knots {
+	return sb.knots
 }
 
-func (sp *BezierVertBuilder) Dim() int {
-	if len(sp.vertices) == 0 {
+func (sb *BezierVertBuilder) Dim() int {
+	if len(sb.vertices) == 0 {
 		return 0
 	} else {
-		return sp.vertices[0].loc.Dim()
+		return sb.vertices[0].loc.Dim()
 	}
 }
 
-func (sp *BezierVertBuilder) BezierVertex(knotNo int) *BezierVertex {
-	if knotNo >= len(sp.vertices) {
+func (sb *BezierVertBuilder) BezierVertex(knotNo int) *BezierVertex {
+	if knotNo >= len(sb.vertices) {
 		return nil
 	} else {
-		return sp.vertices[knotNo]
+		return sb.vertices[knotNo]
 	}
 }
 
-func (sp *BezierVertBuilder) Vertex(knotNo int) bendigo.Vertex {
-	return sp.BezierVertex(knotNo)
+func (sb *BezierVertBuilder) Vertex(knotNo int) bendigo.Vertex {
+	return sb.BezierVertex(knotNo)
 }
 
-func (sp *BezierVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err error) {
-	err = sp.knots.AddKnot(knotNo)
+func (sb *BezierVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err error) {
+	err = sb.knots.AddKnot(knotNo)
 	if err != nil {
 		return err
 	}
 	bvt := vertex.(*BezierVertex)
-	if knotNo == len(sp.vertices) {
-		sp.vertices = append(sp.vertices, bvt)
+	if knotNo == len(sb.vertices) {
+		sb.vertices = append(sb.vertices, bvt)
 	} else {
-		sp.vertices = append(sp.vertices, nil)
-		copy(sp.vertices[knotNo+1:], sp.vertices[knotNo:])
-		sp.vertices[knotNo] = bvt
+		sb.vertices = append(sb.vertices, nil)
+		copy(sb.vertices[knotNo+1:], sb.vertices[knotNo:])
+		sb.vertices[knotNo] = bvt
 	}
 	return nil
 }
 
-func (sp *BezierVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (err error) {
-	if !sp.knots.KnotExists(knotNo) {
+func (sb *BezierVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (err error) {
+	if !sb.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
-	sp.vertices[knotNo] = vertex.(*BezierVertex)
+	sb.vertices[knotNo] = vertex.(*BezierVertex)
 	return nil
 }
 
-func (sp *BezierVertBuilder) DeleteVertex(knotNo int) (err error) {
-	err = sp.knots.DeleteKnot(knotNo)
+func (sb *BezierVertBuilder) DeleteVertex(knotNo int) (err error) {
+	err = sb.knots.DeleteKnot(knotNo)
 	if err != nil {
 		return err
 	}
-	if knotNo == len(sp.vertices)-1 {
-		sp.vertices = sp.vertices[:knotNo]
+	if knotNo == len(sb.vertices)-1 {
+		sb.vertices = sb.vertices[:knotNo]
 	} else {
-		sp.vertices = append(sp.vertices[:knotNo], sp.vertices[knotNo+1:]...)
+		sb.vertices = append(sb.vertices[:knotNo], sb.vertices[knotNo+1:]...)
 	}
 	return nil
 }
 
-func (sp *BezierVertBuilder) Canonical() *CanonicalSpline {
-	n := len(sp.vertices)
+func (sb *BezierVertBuilder) Canonical() *CanonicalSpline {
+	n := len(sb.vertices)
 	if n >= 2 {
-		if sp.knots.IsUniform() {
-			return sp.uniCanonical()
+		if sb.knots.IsUniform() {
+			return sb.uniCanonical()
 		} else {
-			return sp.nonUniCanonical()
+			return sb.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVertexCanonicalSpline(sp.vertices[0].loc)
+		return NewSingleVertexCanonicalSpline(sb.vertices[0].loc)
 	} else {
-		return NewCanonicalSpline(sp.knots.External())
+		return NewCanonicalSpline(sb.knots.External())
 	}
 }
 
-func (sp *BezierVertBuilder) uniCanonical() *CanonicalSpline {
-	// precondition: segmCnt >= 1, sp.knots.IsUniform()
-	segmCnt := sp.knots.SegmentCnt()
-	dim := sp.Dim()
+func (sb *BezierVertBuilder) uniCanonical() *CanonicalSpline {
+	// precondition: segmCnt >= 1, sb.knots.IsUniform()
+	segmCnt := sb.knots.SegmentCnt()
+	dim := sb.Dim()
 
 	avs := make([]float64, 0, segmCnt*dim*4)
 	for i := 0; i < segmCnt; i++ {
-		vstart, vend := sp.vertices[i], sp.vertices[i+1]
+		vstart, vend := sb.vertices[i], sb.vertices[i+1]
 		for d := 0; d < dim; d++ {
 			avs = append(avs, vstart.loc[d], vstart.exit[d], vend.entry[d], vend.loc[d])
 		}
@@ -168,35 +168,35 @@ func (sp *BezierVertBuilder) uniCanonical() *CanonicalSpline {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewCanonicalSplineByMatrix(sp.knots.External(), dim, coefs)
+	return NewCanonicalSplineByMatrix(sb.knots.External(), dim, coefs)
 }
 
-func (sp *BezierVertBuilder) nonUniCanonical() *CanonicalSpline {
+func (sb *BezierVertBuilder) nonUniCanonical() *CanonicalSpline {
 	// TODO implement non-uniform
 	panic("not yet implemented")
 }
 
-func (sp *BezierVertBuilder) Build() bendigo.Spline {
-	return sp.Canonical()
+func (sb *BezierVertBuilder) Spline() bendigo.Spline {
+	return sb.Canonical()
 }
 
-func (sp *BezierVertBuilder) DeCasteljauSpline() *DeCasteljauSpline {
-	segmentCnt := sp.knots.SegmentCnt()
+func (sb *BezierVertBuilder) DeCasteljauSpline() *DeCasteljauSpline {
+	segmentCnt := sb.knots.SegmentCnt()
 	if segmentCnt == 0 {
 		return nil
 	}
 
 	controls := make([]bendigo.Vec, 0, segmentCnt*4)
 	for s := 0; s < segmentCnt; s++ {
-		vtstart, vtend := sp.vertices[s], sp.vertices[s+1]
+		vtstart, vtend := sb.vertices[s], sb.vertices[s+1]
 		controls = append(controls, vtstart.loc, vtstart.exit, vtend.entry, vtend.loc)
 	}
 
-	return NewDeCasteljauSpline(sp.knots, controls)
+	return NewDeCasteljauSpline(sb.knots, controls)
 }
 
-func (sp *BezierVertBuilder) Linax(fromSegmentNo, toSegmentNo int, collector bendigo.LineCollector, linaxParams *bendigo.LinaxParams) {
-	dim := sp.Dim()
+func (sb *BezierVertBuilder) LinApproximate(fromSegmentNo, toSegmentNo int, consumer bendigo.LineConsumer, linaxParams *bendigo.LinaxParams) {
+	dim := sb.Dim()
 
 	isFlat := func(v0, v1, v2, v3 bendigo.Vec) bool {
 		v03 := v3.Sub(v0)
@@ -206,7 +206,7 @@ func (sp *BezierVertBuilder) Linax(fromSegmentNo, toSegmentNo int, collector ben
 	var subdivide func(segmentNo int, ts, te float64, v0, v1, v2, v3 bendigo.Vec)
 	subdivide = func(segmentNo int, ts, te float64, v0, v1, v2, v3 bendigo.Vec) {
 		if isFlat(v0, v1, v2, v3) {
-			collector.CollectLine(segmentNo, ts, te, v0, v3)
+			consumer.ConsumeLine(segmentNo, ts, te, v0, v3)
 		} else {
 			m := 0.5
 			tm := ts*m + te*m
@@ -231,12 +231,16 @@ func (sp *BezierVertBuilder) Linax(fromSegmentNo, toSegmentNo int, collector ben
 
 	// subdivide each segment
 	for segmentNo := fromSegmentNo; segmentNo <= toSegmentNo; segmentNo++ {
-		tstart, tend, err := bendigo.SegmentTrange(sp.knots, segmentNo)
+		tstart, tend, err := bendigo.SegmentTrange(sb.knots, segmentNo)
 		if err == nil { // ignore nonexistent segments
-			vtstart, vtend := sp.vertices[segmentNo], sp.vertices[segmentNo+1]
+			vtstart, vtend := sb.vertices[segmentNo], sb.vertices[segmentNo+1]
 			subdivide(segmentNo, tstart, tend, vtstart.loc, vtstart.exit, vtend.entry, vtend.loc)
 		}
 	}
+}
+
+func (sb *BezierVertBuilder) LinaxSpline(linaxParams *bendigo.LinaxParams) *bendigo.LinaxSpline {
+	return bendigo.BuildLinaxSpline(sb, linaxParams)
 }
 
 // DeCasteljauSpline is an alternative Bezier implementation using De Casteljau algorithm.

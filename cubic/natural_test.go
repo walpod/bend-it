@@ -20,15 +20,15 @@ func createNaturalVase() *NaturalVertBuilder {
 		NewRawHermiteVertex(bendigo.NewVec(1, 1)))
 }
 
-func TestNaturalHermiteSpline_At(t *testing.T) {
-	nat := createNaturalDiag00to11().Build()
+func TestNaturalHermiteSpline(t *testing.T) {
+	nat := createNaturalDiag00to11().Spline()
 	AssertSplineAt(t, nat, 0, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, nat, 0.25, bendigo.NewVec(0.25, 0.25))
 	AssertSplineAt(t, nat, 0.5, bendigo.NewVec(0.5, 0.5))
 	AssertSplineAt(t, nat, 0.75, bendigo.NewVec(0.75, 0.75))
 	AssertSplineAt(t, nat, 1, bendigo.NewVec(1, 1))
 
-	nat = createNaturalVase().Build()
+	nat = createNaturalVase().Spline()
 	AssertSplineAt(t, nat, 0, bendigo.NewVec(-1, 1))
 	AssertSplineAt(t, nat, 1, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, nat, 2, bendigo.NewVec(1, 1))

@@ -31,86 +31,86 @@ func NewHermiteVertBuilder(tknots []float64, vertices ...*HermiteVertex) *Hermit
 	return herm
 }
 
-func (sp *HermiteVertBuilder) Knots() bendigo.Knots {
-	return sp.knots
+func (sb *HermiteVertBuilder) Knots() bendigo.Knots {
+	return sb.knots
 }
 
-func (sp *HermiteVertBuilder) Dim() int {
-	if len(sp.vertices) == 0 {
+func (sb *HermiteVertBuilder) Dim() int {
+	if len(sb.vertices) == 0 {
 		return 0
 	} else {
-		return sp.vertices[0].loc.Dim()
+		return sb.vertices[0].loc.Dim()
 	}
 }
 
-func (sp *HermiteVertBuilder) Vertex(knotNo int) bendigo.Vertex {
-	if knotNo >= len(sp.vertices) {
+func (sb *HermiteVertBuilder) Vertex(knotNo int) bendigo.Vertex {
+	if knotNo >= len(sb.vertices) {
 		return nil
 	} else {
-		return sp.vertices[knotNo]
+		return sb.vertices[knotNo]
 	}
 }
 
-func (sp *HermiteVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err error) {
-	err = sp.knots.AddKnot(knotNo)
+func (sb *HermiteVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err error) {
+	err = sb.knots.AddKnot(knotNo)
 	if err != nil {
 		return err
 	}
 	hvt := vertex.(*HermiteVertex)
-	if knotNo == len(sp.vertices) {
-		sp.vertices = append(sp.vertices, hvt)
+	if knotNo == len(sb.vertices) {
+		sb.vertices = append(sb.vertices, hvt)
 	} else {
-		sp.vertices = append(sp.vertices, nil)
-		copy(sp.vertices[knotNo+1:], sp.vertices[knotNo:])
-		sp.vertices[knotNo] = hvt
+		sb.vertices = append(sb.vertices, nil)
+		copy(sb.vertices[knotNo+1:], sb.vertices[knotNo:])
+		sb.vertices[knotNo] = hvt
 	}
 	return nil
 }
 
-func (sp *HermiteVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (err error) {
-	if !sp.knots.KnotExists(knotNo) {
+func (sb *HermiteVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (err error) {
+	if !sb.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
-	sp.vertices[knotNo] = vertex.(*HermiteVertex)
+	sb.vertices[knotNo] = vertex.(*HermiteVertex)
 	return nil
 }
 
-func (sp *HermiteVertBuilder) DeleteVertex(knotNo int) (err error) {
-	err = sp.knots.DeleteKnot(knotNo)
+func (sb *HermiteVertBuilder) DeleteVertex(knotNo int) (err error) {
+	err = sb.knots.DeleteKnot(knotNo)
 	if err != nil {
 		return err
 	}
-	if knotNo == len(sp.vertices)-1 {
-		sp.vertices = sp.vertices[:knotNo]
+	if knotNo == len(sb.vertices)-1 {
+		sb.vertices = sb.vertices[:knotNo]
 	} else {
-		sp.vertices = append(sp.vertices[:knotNo], sp.vertices[knotNo+1:]...)
+		sb.vertices = append(sb.vertices[:knotNo], sb.vertices[knotNo+1:]...)
 	}
 	return nil
 }
 
-func (sp *HermiteVertBuilder) Canonical() *CanonicalSpline {
-	n := len(sp.vertices)
+func (sb *HermiteVertBuilder) Canonical() *CanonicalSpline {
+	n := len(sb.vertices)
 	if n >= 2 {
-		if sp.knots.IsUniform() {
-			return sp.uniCanonical()
+		if sb.knots.IsUniform() {
+			return sb.uniCanonical()
 		} else {
-			return sp.nonUniCanonical()
+			return sb.nonUniCanonical()
 		}
 	} else if n == 1 {
-		return NewSingleVertexCanonicalSpline(sp.vertices[0].loc)
+		return NewSingleVertexCanonicalSpline(sb.vertices[0].loc)
 	} else {
-		return NewCanonicalSpline(sp.knots.External())
+		return NewCanonicalSpline(sb.knots.External())
 	}
 }
 
-func (sp *HermiteVertBuilder) uniCanonical() *CanonicalSpline {
+func (sb *HermiteVertBuilder) uniCanonical() *CanonicalSpline {
 	// precondition: segmCnt >= 1, bs.knots.IsUniform()
-	segmCnt := sp.knots.SegmentCnt()
-	dim := sp.Dim()
+	segmCnt := sb.knots.SegmentCnt()
+	dim := sb.Dim()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
-		vstart, vend := sp.vertices[i], sp.vertices[i+1]
+		vstart, vend := sb.vertices[i], sb.vertices[i+1]
 		for d := 0; d < dim; d++ {
 			avs = append(avs, vstart.loc[d], vend.loc[d], vstart.exit[d], vend.entry[d])
 		}
@@ -127,16 +127,16 @@ func (sp *HermiteVertBuilder) uniCanonical() *CanonicalSpline {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewCanonicalSplineByMatrix(sp.knots.External(), dim, coefs)
+	return NewCanonicalSplineByMatrix(sb.knots.External(), dim, coefs)
 }
 
-func (sp *HermiteVertBuilder) nonUniCanonical() *CanonicalSpline {
-	segmCnt := sp.knots.SegmentCnt()
+func (sb *HermiteVertBuilder) nonUniCanonical() *CanonicalSpline {
+	segmCnt := sb.knots.SegmentCnt()
 	cubics := make([]CubicPolies, segmCnt)
-	dim := sp.Dim()
+	dim := sb.Dim()
 
 	for i := 0; i < segmCnt; i++ {
-		vstart, vend := sp.vertices[i], sp.vertices[i+1]
+		vstart, vend := sb.vertices[i], sb.vertices[i+1]
 		avs := make([]float64, 0, dim*4)
 		for d := 0; d < dim; d++ {
 			avs = append(avs, vstart.loc[d], vend.loc[d], vstart.exit[d], vend.entry[d])
@@ -147,7 +147,7 @@ func (sp *HermiteVertBuilder) nonUniCanonical() *CanonicalSpline {
 			vstart.y, vend.y, vstart.exitTan.y, vend.entryTan.y,
 		})*/
 
-		sgl, _ := sp.knots.SegmentLen(i)
+		sgl, _ := sb.knots.SegmentLen(i)
 		b := mat.NewDense(4, 4, []float64{
 			1, 0, -3, 2,
 			0, 0, 3, -2,
@@ -168,38 +168,38 @@ func (sp *HermiteVertBuilder) nonUniCanonical() *CanonicalSpline {
 		NewCubicPoly(coefs.At(1, 0), coefs.At(1, 1), coefs.At(1, 2), coefs.At(1, 3)))*/
 	}
 
-	return NewCanonicalSpline(sp.knots.External(), cubics...)
+	return NewCanonicalSpline(sb.knots.External(), cubics...)
 }
 
-func (sp *HermiteVertBuilder) Build() bendigo.Spline {
-	return sp.Canonical()
+func (sb *HermiteVertBuilder) Spline() bendigo.Spline {
+	return sb.Canonical()
 }
 
-func (sp *HermiteVertBuilder) Bezier() *BezierVertBuilder {
-	n := len(sp.vertices)
+func (sb *HermiteVertBuilder) Bezier() *BezierVertBuilder {
+	n := len(sb.vertices)
 	if n >= 2 {
-		if sp.knots.IsUniform() {
-			return sp.uniBezier()
+		if sb.knots.IsUniform() {
+			return sb.uniBezier()
 		} else {
 			panic("not yet implemented")
 		}
 	} else if n == 1 {
-		// TODO or instead nil ? zv := bendigo.NewZeroVec(sp.Dim())
-		return NewBezierVertBuilder(sp.knots.External(),
-			NewBezierVertex(sp.vertices[0].loc, nil, nil))
+		// TODO or instead nil ? zv := bendigo.NewZeroVec(sb.Dim())
+		return NewBezierVertBuilder(sb.knots.External(),
+			NewBezierVertex(sb.vertices[0].loc, nil, nil))
 	} else {
-		return NewBezierVertBuilder(sp.knots.External())
+		return NewBezierVertBuilder(sb.knots.External())
 	}
 }
 
-func (sp *HermiteVertBuilder) uniBezier() *BezierVertBuilder {
+func (sb *HermiteVertBuilder) uniBezier() *BezierVertBuilder {
 	// precondition: len(cubics) >= 1, bs.knots.IsUniform()
-	segmCnt := sp.knots.SegmentCnt()
-	dim := sp.Dim()
+	segmCnt := sb.knots.SegmentCnt()
+	dim := sb.Dim()
 
 	avs := make([]float64, 0, dim*4*segmCnt)
 	for i := 0; i < segmCnt; i++ {
-		vstart, vend := sp.vertices[i], sp.vertices[i+1]
+		vstart, vend := sb.vertices[i], sb.vertices[i+1]
 		for d := 0; d < dim; d++ {
 			avs = append(avs, vstart.loc[d], vend.loc[d], vstart.exit[d], vend.entry[d])
 		}
@@ -216,9 +216,13 @@ func (sp *HermiteVertBuilder) uniBezier() *BezierVertBuilder {
 	var coefs mat.Dense
 	coefs.Mul(a, b)
 
-	return NewBezierVertBuilderByMatrix(sp.knots.External(), dim, coefs)
+	return NewBezierVertBuilderByMatrix(sb.knots.External(), dim, coefs)
 }
 
-func (sp *HermiteVertBuilder) Linax(fromSegmentNo, toSegmentNo int, collector bendigo.LineCollector, linaxParams *bendigo.LinaxParams) {
-	sp.Bezier().Linax(fromSegmentNo, toSegmentNo, collector, linaxParams)
+func (sb *HermiteVertBuilder) LinApproximate(fromSegmentNo, toSegmentNo int, consumer bendigo.LineConsumer, linaxParams *bendigo.LinaxParams) {
+	sb.Bezier().LinApproximate(fromSegmentNo, toSegmentNo, consumer, linaxParams)
+}
+
+func (sb *HermiteVertBuilder) LinaxSpline(linaxParams *bendigo.LinaxParams) *bendigo.LinaxSpline {
+	return bendigo.BuildLinaxSpline(sb, linaxParams)
 }

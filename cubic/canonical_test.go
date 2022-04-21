@@ -25,7 +25,7 @@ func createDoubleCanonParabola00to11to22() *CanonicalSpline {
 	)
 }
 
-func TestCanonicalSpline_At(t *testing.T) {
+func TestCanonicalSpline(t *testing.T) {
 	canon := createCanonLineWithParabolicParam()
 	AssertSplineAt(t, canon, 0, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, canon, 0.25, bendigo.NewVec(0.25*0.25, 0.25*0.25))

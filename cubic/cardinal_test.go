@@ -21,24 +21,24 @@ func createCardinalVase() *CardinalVertBuilder {
 		NewRawHermiteVertex(bendigo.NewVec(1, 1)))
 }
 
-func TestCardinalSpline_At(t *testing.T) {
+func TestCardinalSpline(t *testing.T) {
 	cardBuilder := createCardinalDiag00to11()
 	for i := 0; i < 100; i++ {
 		cardBuilder.SetTension(rand.Float64()*4 - 2)
-		card := cardBuilder.Build()
+		card := cardBuilder.Spline()
 		AssertSplineAt(t, card, 0, bendigo.NewVec(0, 0))
 		AssertSplineAt(t, card, 0.5, bendigo.NewVec(0.5, 0.5))
 		AssertSplineAt(t, card, 1, bendigo.NewVec(1, 1))
 	}
 	cardBuilder.SetTension(-1)
-	card := cardBuilder.Build()
+	card := cardBuilder.Spline()
 	AssertSplineAt(t, card, 0.25, bendigo.NewVec(0.25, 0.25))
 	AssertSplineAt(t, card, 0.75, bendigo.NewVec(0.75, 0.75))
 
 	cardBuilder = createCardinalVase()
 	for i := 0; i < 100; i++ {
 		cardBuilder.SetTension(rand.Float64()*4 - 2)
-		card := cardBuilder.Build()
+		card := cardBuilder.Spline()
 		AssertSplineAt(t, card, 0, bendigo.NewVec(-1, 1))
 		AssertSplineAt(t, card, 1, bendigo.NewVec(0, 0))
 		AssertSplineAt(t, card, 2, bendigo.NewVec(1, 1))
@@ -50,6 +50,6 @@ func TestCardinalSpline_At(t *testing.T) {
 		return math.Abs(v[0])-math.Abs(v[0]) < delta
 	}
 	for i := 0; i < 100; i++ {
-		AssertRandSplinePointProperty(t, cardBuilder.Build(), isOnLineSegment, "cardinal point must be on line segment between Vase points")
+		AssertRandSplinePointProperty(t, cardBuilder.Spline(), isOnLineSegment, "cardinal point must be on line segment between Vase points")
 	}
 }

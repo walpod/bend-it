@@ -2,24 +2,22 @@ package bendigo
 
 type Spline interface {
 	Knots() Knots
+
+	// At calculates the Point (Vector) on the spline at parameter t
 	At(t float64) Vec
 }
 
 type SplineBuilder interface {
 	Knots() Knots
-	Build() Spline
-	// TODO LinaxSpline(linaxParams LinaxParams) *LinaxSpline
-	// linear approximate spline with consecutive line segments
-	Linax(fromSegmentNo, toSegmentNo int, collector LineCollector, linaxParams *LinaxParams)
-}
 
-// linear approximation parameters
-type LinaxParams struct {
-	MaxDist float64
-}
+	// Spline builds it
+	Spline() Spline
 
-func NewLinaxParams(maxDist float64) *LinaxParams {
-	return &LinaxParams{MaxDist: maxDist}
+	// LinApproximate linearly approximates spline and passes lines consecutively to consumer
+	LinApproximate(fromSegmentNo, toSegmentNo int, consumer LineConsumer, linaxParams *LinaxParams)
+
+	// LinaxSpline builds linearly approximated spline
+	LinaxSpline(linaxParams *LinaxParams) *LinaxSpline
 }
 
 type Vertex interface {
@@ -34,11 +32,6 @@ type SplineVertBuilder interface {
 	AddVertex(knotNo int, vertex Vertex) (err error)
 	UpdateVertex(knotNo int, vertex Vertex) (err error)
 	DeleteVertex(knotNo int) (err error)
-}
-
-// TODO replace with LinaxSpline
-func LinaxAll(splineBuilder SplineBuilder, collector LineCollector, linaxParams *LinaxParams) {
-	splineBuilder.Linax(0, splineBuilder.Knots().SegmentCnt()-1, collector, linaxParams)
 }
 
 func Vertices(builder SplineVertBuilder) []Vertex {

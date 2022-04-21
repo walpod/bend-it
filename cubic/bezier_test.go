@@ -9,7 +9,7 @@ import (
 )
 
 // START some general bendigo spline Asserts ... TODO to be moved ...
-const delta = 0.0000000001
+const delta = 0.0000000001 // TODO use as param in Assert...
 
 func AssertVecInDelta(t *testing.T, expected bendigo.Vec, actual bendigo.Vec, msg string) {
 	assert.Equal(t, expected.Dim(), actual.Dim(), "dimension of expected = %v != dimension of actual %v", expected.Dim(), actual.Dim())
@@ -37,7 +37,7 @@ func AssertSplinesEqual(t *testing.T, spline0 bendigo.Spline, spline1 bendigo.Sp
 	AssertSplinesEqualInRange(t, spline0, spline1, spline0.Knots().Tstart(), spline0.Knots().Tend(), sampleCnt)
 }
 
-func AssertApproxStartPointsMatchSpline(t *testing.T, lines []bendigo.LineParams, spline bendigo.Spline) {
+func AssertApproxStartPointsMatchSpline(t *testing.T, lines []bendigo.Line, spline bendigo.Spline) {
 	for _, lin := range lines {
 		v := spline.At(lin.Tstart)
 		AssertVecInDelta(t, v, lin.Pstart, fmt.Sprintf("spline.At(%v) = %v != start-point = %v of approximated line", lin.Tstart, v, lin.Pstart))
@@ -79,15 +79,15 @@ func createDoubleBezierS00to11to22() *BezierVertBuilder {
 	)
 }
 
-func TestBezierSpline_At(t *testing.T) {
-	bezier := createBezierDiag00to11().Build()
+func TestBezierSpline(t *testing.T) {
+	bezier := createBezierDiag00to11().Spline()
 	AssertSplineAt(t, bezier, 0, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, bezier, 0.25, bendigo.NewVec(0.25, 0.25))
 	AssertSplineAt(t, bezier, .5, bendigo.NewVec(.5, .5))
 	AssertSplineAt(t, bezier, 0.75, bendigo.NewVec(0.75, 0.75))
 	AssertSplineAt(t, bezier, 1, bendigo.NewVec(1, 1))
 
-	bezier = createDoubleBezierS00to11to22().Build()
+	bezier = createDoubleBezierS00to11to22().Spline()
 	AssertSplineAt(t, bezier, 0, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, bezier, 0.5, bendigo.NewVec(0.5, 0.5))
 	AssertSplineAt(t, bezier, 1, bendigo.NewVec(1, 1))
@@ -97,40 +97,37 @@ func TestBezierSpline_At(t *testing.T) {
 	// single vertex, domain with value 0 only
 	bezier = NewBezierVertBuilder(nil,
 		NewBezierVertex(bendigo.NewVec(1, 2), nil, nil)).
-		Build()
+		Spline()
 	AssertSplineAt(t, bezier, 0, bendigo.NewVec(1, 2))
 
 	bezier = NewBezierVertBuilder(
 		[]float64{0},
 		NewBezierVertex(bendigo.NewVec(1, 2), nil, nil)).
-		Build()
+		Spline()
 	AssertSplineAt(t, bezier, 0, bendigo.NewVec(1, 2))
 
 	// empty domain
-	bezier = NewBezierVertBuilder(nil).Build()
-	bezier = NewBezierVertBuilder([]float64{}).Build()
+	bezier = NewBezierVertBuilder(nil).Spline()
+	bezier = NewBezierVertBuilder([]float64{}).Spline()
 }
 
-func TestDeCasteljauSpline_At(t *testing.T) {
+func TestDeCasteljauSpline(t *testing.T) {
 	bezierBuilder := createBezierS00to11()
-	AssertSplinesEqual(t, bezierBuilder.Build(), bezierBuilder.DeCasteljauSpline(), 100)
+	AssertSplinesEqual(t, bezierBuilder.Spline(), bezierBuilder.DeCasteljauSpline(), 100)
 }
 
-// TODO implement with LinaxSpline
-func TestBezierApproxer_Approx(t *testing.T) {
+func TestBezierLinaxSpline(t *testing.T) {
 	bezierBuilder := createBezierDiag00to11()
-	lc := bendigo.NewLineToSliceCollector()
-	bendigo.LinaxAll(bezierBuilder, lc, bendigo.NewLinaxParams(0.1))
-	assert.Len(t, lc.Lines, 1, "approximated with one line")
-	AssertVecInDelta(t, bendigo.NewVec(0, 0), lc.Lines[0].Pstart, "start point = [0,0]")
-	AssertVecInDelta(t, bendigo.NewVec(1, 1), lc.Lines[0].Pend, "end point = [1,1]")
+	lines := bezierBuilder.LinaxSpline(bendigo.NewLinaxParams(0.1)).Lines()
+	assert.Len(t, lines, 1, "approximated with one line")
+	AssertVecInDelta(t, bendigo.NewVec(0, 0), lines[0].Pstart, "start point = [0,0]")
+	AssertVecInDelta(t, bendigo.NewVec(1, 1), lines[0].Pend, "end point = [1,1]")
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	bezierBuilder = createBezierS00to11()
-	lc = bendigo.NewLineToSliceCollector()
-	bendigo.LinaxAll(bezierBuilder, lc, bendigo.NewLinaxParams(0.02))
-	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
-	AssertApproxStartPointsMatchSpline(t, lc.Lines, bezierBuilder.Build())
+	lines = bezierBuilder.LinaxSpline(bendigo.NewLinaxParams(0.02)).Lines()
+	assert.Greater(t, len(lines), 1, "approximated with more than one line")
+	AssertApproxStartPointsMatchSpline(t, lines, bezierBuilder.Spline())
 }
 
 func TestBezierVertBuilder_AddVertex(t *testing.T) {

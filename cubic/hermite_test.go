@@ -52,15 +52,15 @@ func createDoubleHermParabola00to11to22(uniform bool) *HermiteVertBuilder {
 	)
 }
 
-func TestHermiteSpline_At(t *testing.T) {
-	herm := createHermDiag00to11().Build()
+func TestHermiteSpline(t *testing.T) {
+	herm := createHermDiag00to11().Spline()
 	AssertSplineAt(t, herm, 0, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, herm, 0.25, bendigo.NewVec(0.25, 0.25))
 	AssertSplineAt(t, herm, .5, bendigo.NewVec(.5, .5))
 	AssertSplineAt(t, herm, 0.75, bendigo.NewVec(0.75, 0.75))
 	AssertSplineAt(t, herm, 1, bendigo.NewVec(1, 1))
 
-	herm = createNonUniHermDiag00to11().Build()
+	herm = createNonUniHermDiag00to11().Spline()
 	ts, te := herm.Knots().Tstart(), herm.Knots().Tend()
 	AssertSplineAt(t, herm, ts, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, herm, te/2, bendigo.NewVec(.5, .5))
@@ -69,14 +69,14 @@ func TestHermiteSpline_At(t *testing.T) {
 		AssertRandSplinePointProperty(t, herm, isOnDiag, "hermite point must be on diagonal")
 	}
 
-	herm = createHermParabola00to11(true).Build()
+	herm = createHermParabola00to11(true).Spline()
 	AssertSplineAt(t, herm, 0, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, herm, 0.25, bendigo.NewVec(0.25, 0.25*0.25))
 	AssertSplineAt(t, herm, 0.5, bendigo.NewVec(0.5, 0.25))
 	AssertSplineAt(t, herm, 0.75, bendigo.NewVec(0.75, 0.75*0.75))
 	AssertSplineAt(t, herm, 1, bendigo.NewVec(1, 1))
 
-	herm = createDoubleHermParabola00to11to22(true).Build()
+	herm = createDoubleHermParabola00to11to22(true).Spline()
 	AssertSplineAt(t, herm, 0, bendigo.NewVec(0, 0))
 	AssertSplineAt(t, herm, 0.25, bendigo.NewVec(0.25, 0.25*0.25))
 	AssertSplineAt(t, herm, 0.5, bendigo.NewVec(0.5, 0.25))
@@ -90,39 +90,38 @@ func TestHermiteSpline_At(t *testing.T) {
 	// domain with ony one value: 0
 	herm = NewHermiteVertBuilder(nil,
 		NewHermiteVertex(bendigo.NewVec(1, 2), bendigo.NewVec(0, 0), bendigo.NewVec(0, 0))).
-		Build()
+		Spline()
 	AssertSplineAt(t, herm, 0, bendigo.NewVec(1, 2))
 
 	// empty domain
-	herm = NewHermiteVertBuilder(nil).Build()
+	herm = NewHermiteVertBuilder(nil).Spline()
 	ts, te = herm.Knots().Tstart(), herm.Knots().Tend()
 	assert.Greaterf(t, ts, te, "empty knots: tstart %v must be greater than tend %v", ts, te)
 
 	// uniform and regular non-uniform must match
-	herm = createHermParabola00to11(true).Build()
-	nuherm := createHermParabola00to11(false).Build()
+	herm = createHermParabola00to11(true).Spline()
+	nuherm := createHermParabola00to11(false).Spline()
 	AssertSplinesEqual(t, herm, nuherm, 100)
 
-	herm = createDoubleHermParabola00to11to22(true).Build()
-	nuherm = createDoubleHermParabola00to11to22(false).Build()
+	herm = createDoubleHermParabola00to11to22(true).Spline()
+	nuherm = createDoubleHermParabola00to11to22(false).Spline()
 	AssertSplinesEqual(t, herm, nuherm, 100)
 }
 
-// TODO implement with LinaxSpline
-func TestHermiteApproxer_Approx(t *testing.T) {
+func TestHermiteLinaxSpline(t *testing.T) {
 	hermBuilder := createDoubleHermParabola00to11to22(true)
-	lc := bendigo.NewLineToSliceCollector()
-	bendigo.LinaxAll(hermBuilder, lc, bendigo.NewLinaxParams(0.02))
-	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
-	AssertVecInDelta(t, bendigo.NewVec(0, 0), lc.Lines[0].Pstart, "start point = [0,0]")
-	AssertVecInDelta(t, bendigo.NewVec(2, 2), lc.Lines[len(lc.Lines)-1].Pend, "end point = [2,2]")
+	hermLinaxSpline := hermBuilder.LinaxSpline(bendigo.NewLinaxParams(0.02))
+	lines := hermLinaxSpline.Lines()
+	assert.Greater(t, len(lines), 1, "approximated with more than one line")
+	AssertVecInDelta(t, bendigo.NewVec(0, 0), lines[0].Pstart, "start point = [0,0]")
+	AssertVecInDelta(t, bendigo.NewVec(2, 2), lines[len(lines)-1].Pend, "end point = [2,2]")
+	// TODO pass with larger delta AssertSplinesEqual(t, hermBuilder.Spline(), hermLinaxSpline, 100)
 
 	// start points of approximated lines must be on bezier curve and match bezier.At
 	hermBuilder = createHermParabola00to11(true)
-	lc = bendigo.NewLineToSliceCollector()
-	bendigo.LinaxAll(hermBuilder, lc, bendigo.NewLinaxParams(0.02))
-	assert.Greater(t, len(lc.Lines), 1, "approximated with more than one line")
-	AssertApproxStartPointsMatchSpline(t, lc.Lines, hermBuilder.Build())
+	lines = hermBuilder.LinaxSpline(bendigo.NewLinaxParams(0.02)).Lines()
+	assert.Greater(t, len(lines), 1, "approximated with more than one line")
+	AssertApproxStartPointsMatchSpline(t, lines, hermBuilder.Spline())
 }
 
 func TestHermiteVertBuilder_AddVertex(t *testing.T) {
