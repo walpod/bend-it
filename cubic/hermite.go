@@ -181,7 +181,7 @@ func (sb *HermiteVertBuilder) Bezier() *BezierVertBuilder {
 		if sb.knots.IsUniform() {
 			return sb.uniBezier()
 		} else {
-			panic("not yet implemented")
+			panic("not yet implemented") // TODO
 		}
 	} else if n == 1 {
 		// TODO or instead nil ? zv := bendigo.NewZeroVec(sb.Dim())

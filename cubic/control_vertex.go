@@ -6,9 +6,9 @@ type ControlVertex interface {
 	bendigo.Vertex
 	Entry() bendigo.Vec
 	Exit() bendigo.Vec
-	Dependent() bool // are entry and exit dependent on each other? TODO extend to scalingFactor (some direction)
+	Dependent() bool // are entry and exit dependent on each other? TODO extend to scalingFactor (same direction)
 	New(loc bendigo.Vec, entry bendigo.Vec, exit bendigo.Vec) ControlVertex
-	Translate(dv bendigo.Vec) ControlVertex
+	Translate(dv bendigo.Vec) ControlVertex // TODO => Shift
 	ControlToLoc(control bendigo.Vec, isEntry bool) bendigo.Vec
 	LocToControl(loc bendigo.Vec, isEntry bool) bendigo.Vec
 }
