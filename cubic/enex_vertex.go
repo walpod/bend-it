@@ -3,39 +3,44 @@ package cubic
 import "github.com/walpod/bendigo"
 
 type EnexVertex struct {
-	loc       bendigo.Vec
-	entry     bendigo.Vec
-	exit      bendigo.Vec
-	relative  bool // are entry and exit controls relative to loc or absolut
-	dependent bool // TODO dependencyFactor ? entry-or-exit dependent?
+	loc        bendigo.Vec
+	entry      bendigo.Vec
+	exit       bendigo.Vec
+	relative   bool // are entry and exit controls relative to loc or absolute
+	leading    bool // is one of 'entry' or 'exit' the leader and the other the follower
+	entryLeads bool // is 'entry' leading and 'exit' leading or vice versa, irrelevant if !leading
+	// TODO leadingFactor
 }
 
-func dependantControl(loc bendigo.Vec, control bendigo.Vec, relative bool) bendigo.Vec {
+func follower(leader bendigo.Vec, loc bendigo.Vec, relative bool) bendigo.Vec {
 	if relative {
-		return control // TODO clone ? at least in the future when vec can be modified (not only replaced)
+		return leader // TODO clone ? at least in the future when vec can be modified (not only replaced)
 	} else {
-		return loc.InvertInPoint(control)
+		return loc.InvertInPoint(leader)
 	}
 }
 
-// NewEnexVertex creates entry-exit vertex. if one of entry or exit control is nil, they are handled as dependent controls
+// NewEnexVertex creates entry-exit vertex. if one of entry or exit control is nil then they are handled as leading controls
 func NewEnexVertex(loc, entry, exit bendigo.Vec, relative bool) *EnexVertex {
-	dependent := false
+	leading := false
+	entryLeads := false
 
-	// handle dependent controls
-	if entry == nil && exit != nil {
-		entry = dependantControl(loc, exit, relative)
-		dependent = true
-	} else if entry != nil && exit == nil {
-		exit = dependantControl(loc, entry, relative)
-		dependent = true
+	// handle leading controls
+	if entry != nil && exit == nil {
+		leading = true
+		entryLeads = true
+		exit = follower(entry, loc, relative)
+	} else if entry == nil && exit != nil {
+		leading = true
+		entryLeads = false
+		entry = follower(exit, loc, relative)
 	}
 
-	return &EnexVertex{loc: loc, entry: entry, exit: exit, relative: relative, dependent: dependent}
+	return &EnexVertex{loc: loc, entry: entry, exit: exit, relative: relative, leading: leading, entryLeads: entryLeads}
 }
 
-func NewEnexVertexDep(loc, entry, exit bendigo.Vec, relative bool, dependent bool) *EnexVertex {
-	return &EnexVertex{loc: loc, entry: entry, exit: exit, relative: relative, dependent: dependent}
+func NewEnexVertexDep(loc, entry, exit bendigo.Vec, relative bool, leading bool, entryLeads bool) *EnexVertex {
+	return &EnexVertex{loc: loc, entry: entry, exit: exit, relative: relative, leading: leading, entryLeads: entryLeads}
 }
 
 func (ev *EnexVertex) Loc() bendigo.Vec {
@@ -48,8 +53,9 @@ func (ev *EnexVertex) Entry() bendigo.Vec {
 
 func (ev *EnexVertex) SetEntry(entry bendigo.Vec) {
 	ev.entry = entry
-	if ev.dependent {
-		ev.exit = dependantControl(ev.loc, entry, ev.relative)
+	if ev.leading {
+		ev.entryLeads = true
+		ev.exit = follower(entry, ev.loc, ev.relative)
 	}
 }
 
@@ -67,8 +73,9 @@ func (ev *EnexVertex) Exit() bendigo.Vec {
 
 func (ev *EnexVertex) SetExit(exit bendigo.Vec) {
 	ev.exit = exit
-	if ev.dependent {
-		ev.entry = dependantControl(ev.loc, exit, ev.relative)
+	if ev.leading {
+		ev.entryLeads = false
+		ev.entry = follower(exit, ev.loc, ev.relative)
 	}
 }
 
@@ -88,26 +95,32 @@ func (ev *EnexVertex) Absolute() bool {
 	return !ev.relative
 }
 
-func (ev *EnexVertex) Dependent() bool {
-	return ev.dependent
+func (ev *EnexVertex) Leading() bool {
+	return ev.leading
 }
 
-func (ev *EnexVertex) SetDependent(dependent bool) {
-	// if changed fron independent to dependent then recreate the other? control TODO currently exit is recreated
-	if !ev.dependent && dependent {
-		//ev.SetControl(dependantControl(ev.loc, ev.Control(true), ev.relative), false)
-		ev.exit = dependantControl(ev.loc, ev.entry, ev.relative)
+// RecreateFollower recalculates the follower if vertex is set to leading
+func (ev *EnexVertex) RecreateFollower() {
+	if ev.leading {
+		leader := ev.Control(ev.entryLeads)
+		ev.SetControl(follower(leader, ev.loc, ev.relative), !ev.entryLeads)
 	}
-	ev.dependent = dependent
 }
 
-func (ev *EnexVertex) ToggleDependent(isEntry bool) {
-	ev.dependent = !ev.dependent
+func (ev *EnexVertex) SetLeading(leading bool, entryLeads bool) {
+	ev.leading = leading
+	ev.entryLeads = entryLeads
+	ev.RecreateFollower()
+}
 
-	// if changed to dependent then recreate the other control
-	if ev.dependent {
-		ev.SetControl(dependantControl(ev.loc, ev.Control(isEntry), ev.relative), !isEntry)
-	}
+func (ev *EnexVertex) ToggleLeading(entryLeads bool) {
+	ev.leading = !ev.leading
+	ev.entryLeads = entryLeads
+	ev.RecreateFollower()
+}
+
+func (ev *EnexVertex) EntryLeads() bool {
+	return ev.entryLeads
 }
 
 // Control returns requested entry or exit control
@@ -147,7 +160,7 @@ func (ev *EnexVertex) Shift(dv bendigo.Vec) {
 
 // Clone returns a shallow copy of the vertex
 func (ev *EnexVertex) Clone() *EnexVertex {
-	return NewEnexVertexDep(ev.loc, ev.entry, ev.exit, ev.relative, ev.dependent)
+	return NewEnexVertexDep(ev.loc, ev.entry, ev.exit, ev.relative, ev.leading, ev.entryLeads)
 }
 
 // WithShift creates a new EnexVertex, shifted (translated) in direction given by vector dv

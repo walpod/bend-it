@@ -7,15 +7,15 @@ import (
 	"testing"
 )
 
-func AssertEnexVerticesAreEqual(t *testing.T, expected *EnexVertex, expectedDependent bool, actual *EnexVertex) {
+func AssertEnexVerticesAreEqual(t *testing.T, expected *EnexVertex, expectedLeading bool, actual *EnexVertex) {
 	AssertVecInDelta(t, expected.Loc(), actual.Loc(), fmt.Sprintf("expected location = %v != actual location = %v", expected.Loc(), actual.Loc()))
 	AssertVecInDelta(t, expected.Entry(), actual.Entry(), fmt.Sprintf("expected entry-control = %v != actual = %v", expected.Entry(), actual.Entry()))
 	AssertVecInDelta(t, expected.Exit(), actual.Exit(), fmt.Sprintf("expected exit-control = %v != actual = %v", expected.Entry(), actual.Entry()))
 	assert.Equal(t, expected.Relative(), actual.Relative(), "expected relative = %v != actual relative = %v", expected.Relative(), actual.Relative())
-	assert.Equal(t, expectedDependent, actual.Dependent(), "expected dependent = %v != actual dependent = %v", expectedDependent, actual.Dependent())
+	assert.Equal(t, expectedLeading, actual.Leading(), "expected leading = %v != actual leading = %v", expectedLeading, actual.Leading())
 }
 
-func TestEnexVertex_NewEnexVertex_DependentAbsolute(t *testing.T) {
+func TestEnexVertex_NewEnexVertex_LeadingAbsolute(t *testing.T) {
 	ev := NewEnexVertex(bendigo.NewVec(0, 0), bendigo.NewVec(1, 2), nil, false)
 	AssertVecInDelta(t, ev.entry.Negate(), ev.exit, "automatically created exit control must be on the other side of (= reflected by) origin [0,0] in absolute mode")
 
@@ -23,7 +23,7 @@ func TestEnexVertex_NewEnexVertex_DependentAbsolute(t *testing.T) {
 	AssertVecInDelta(t, ev.entry, ev.exit.Negate(), "automatically created entry control must be on the other side of origin [0,0] in absolute mode")
 }
 
-func TestEnexVertex_NewEnexVertex_DependentRelative(t *testing.T) {
+func TestEnexVertex_NewEnexVertex_LeadingRelative(t *testing.T) {
 	ev := NewEnexVertex(bendigo.NewVec(0, 0), bendigo.NewVec(1, 2), nil, true)
 	AssertVecInDelta(t, ev.entry, ev.exit, "automatically created exit control must be equal to entry in relative mode")
 

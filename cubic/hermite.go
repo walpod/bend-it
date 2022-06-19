@@ -11,7 +11,7 @@ func NewHermiteVertex(loc, entry, exit bendigo.Vec) *EnexVertex {
 }
 
 func NewRawHermiteVertex(loc bendigo.Vec) *EnexVertex {
-	return NewEnexVertexDep(loc, nil, nil, true, false)
+	return NewEnexVertexDep(loc, nil, nil, true, false, false)
 }
 
 type HermiteVertBuilder struct {
