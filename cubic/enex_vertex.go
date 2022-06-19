@@ -93,6 +93,11 @@ func (ev *EnexVertex) Dependent() bool {
 }
 
 func (ev *EnexVertex) SetDependent(dependent bool) {
+	// if changed fron independent to dependent then recreate the other? control TODO currently exit is recreated
+	if !ev.dependent && dependent {
+		//ev.SetControl(dependantControl(ev.loc, ev.Control(true), ev.relative), false)
+		ev.exit = dependantControl(ev.loc, ev.entry, ev.relative)
+	}
 	ev.dependent = dependent
 }
 
