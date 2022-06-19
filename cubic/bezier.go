@@ -6,12 +6,16 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type BezierVertBuilder struct {
-	knots    bendigo.Knots
-	vertices []*BezierVertex
+func NewBezierVertex(loc, entry, exit bendigo.Vec) *EnexVertex {
+	return NewEnexVertex(loc, entry, exit, false)
 }
 
-func NewBezierVertBuilder(tknots []float64, vertices ...*BezierVertex) *BezierVertBuilder {
+type BezierVertBuilder struct {
+	knots    bendigo.Knots
+	vertices []*EnexVertex
+}
+
+func NewBezierVertBuilder(tknots []float64, vertices ...*EnexVertex) *BezierVertBuilder {
 	var knots bendigo.Knots
 	if tknots == nil {
 		knots = bendigo.NewUniformKnots(len(vertices))
@@ -29,7 +33,7 @@ func NewBezierVertBuilder(tknots []float64, vertices ...*BezierVertex) *BezierVe
 func NewBezierVertBuilderByMatrix(tknots []float64, dim int, mat mat.Dense) *BezierVertBuilder {
 	rows, _ := mat.Dims()
 	segmCnt := rows / dim
-	vertices := make([]*BezierVertex, 0, segmCnt)
+	vertices := make([]*EnexVertex, 0, segmCnt)
 	var v, entry, exit bendigo.Vec
 
 	// start vertex
@@ -80,7 +84,7 @@ func (sb *BezierVertBuilder) Dim() int {
 	}
 }
 
-func (sb *BezierVertBuilder) BezierVertex(knotNo int) *BezierVertex {
+func (sb *BezierVertBuilder) BezierVertex(knotNo int) *EnexVertex {
 	if knotNo >= len(sb.vertices) {
 		return nil
 	} else {
@@ -97,7 +101,7 @@ func (sb *BezierVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err e
 	if err != nil {
 		return err
 	}
-	bvt := vertex.(*BezierVertex)
+	bvt := vertex.(*EnexVertex)
 	if knotNo == len(sb.vertices) {
 		sb.vertices = append(sb.vertices, bvt)
 	} else {
@@ -112,7 +116,7 @@ func (sb *BezierVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (er
 	if !sb.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
-	sb.vertices[knotNo] = vertex.(*BezierVertex)
+	sb.vertices[knotNo] = vertex.(*EnexVertex)
 	return nil
 }
 

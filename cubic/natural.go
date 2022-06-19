@@ -6,7 +6,7 @@ type NaturalVertBuilder struct {
 	HermiteVertBuilder
 }
 
-func NewNaturalVertBuilder(tknots []float64, vertices ...*HermiteVertex) *NaturalVertBuilder {
+func NewNaturalVertBuilder(tknots []float64, vertices ...*EnexVertex) *NaturalVertBuilder {
 	sb := &NaturalVertBuilder{
 		HermiteVertBuilder: *NewHermiteVertBuilder(tknots, vertices...)}
 	sb.CalcTangents()

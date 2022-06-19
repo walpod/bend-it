@@ -8,7 +8,7 @@ type CardinalVertBuilder struct {
 	tension float64
 }
 
-func NewCardinalVertBuilder(tknots []float64, tension float64, vertices ...*HermiteVertex) *CardinalVertBuilder {
+func NewCardinalVertBuilder(tknots []float64, tension float64, vertices ...*EnexVertex) *CardinalVertBuilder {
 	sb := &CardinalVertBuilder{
 		HermiteVertBuilder: *NewHermiteVertBuilder(tknots, vertices...),
 		tension:            tension}
@@ -61,7 +61,7 @@ func (sb *CardinalVertBuilder) CalcTangents() {
 	scale := (1 - sb.tension) / 2
 
 	// calculate tangents for uniform case: entry and exit tangents are equal
-	setUniformCardinalTangent := func(vt, vtstart, vtend *HermiteVertex) {
+	setUniformCardinalTangent := func(vt, vtstart, vtend *EnexVertex) {
 		tan := bendigo.NewZeroVec(vt.loc.Dim())
 		for d := 0; d < dim; d++ {
 			tan[d] = scale * (vtend.loc[d] - vtstart.loc[d])
@@ -91,6 +91,6 @@ func (sb *CardinalVertBuilder) CalcTangents() {
 }
 
 // NewCatmullRomVertBuilder creates a special cardinal builder with tension = 0
-func NewCatmullRomVertBuilder(tknots []float64, vertices ...*HermiteVertex) *CardinalVertBuilder {
+func NewCatmullRomVertBuilder(tknots []float64, vertices ...*EnexVertex) *CardinalVertBuilder {
 	return NewCardinalVertBuilder(tknots, 0, vertices...)
 }

@@ -6,17 +6,20 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-/*// HermiteTanFinder finds tangents based on given vertices and knots
-type HermiteTanFinder interface {
-	Find(knots bendigo.Knots, vertices []*HermiteVertex)
-}*/
+func NewHermiteVertex(loc, entry, exit bendigo.Vec) *EnexVertex {
+	return NewEnexVertex(loc, entry, exit, true)
+}
+
+func NewRawHermiteVertex(loc bendigo.Vec) *EnexVertex {
+	return NewEnexVertexDep(loc, nil, nil, true, false)
+}
 
 type HermiteVertBuilder struct {
 	knots    bendigo.Knots
-	vertices []*HermiteVertex
+	vertices []*EnexVertex
 }
 
-func NewHermiteVertBuilder(tknots []float64, vertices ...*HermiteVertex) *HermiteVertBuilder {
+func NewHermiteVertBuilder(tknots []float64, vertices ...*EnexVertex) *HermiteVertBuilder {
 	var knots bendigo.Knots
 	if tknots == nil {
 		knots = bendigo.NewUniformKnots(len(vertices))
@@ -56,7 +59,7 @@ func (sb *HermiteVertBuilder) AddVertex(knotNo int, vertex bendigo.Vertex) (err 
 	if err != nil {
 		return err
 	}
-	hvt := vertex.(*HermiteVertex)
+	hvt := vertex.(*EnexVertex)
 	if knotNo == len(sb.vertices) {
 		sb.vertices = append(sb.vertices, hvt)
 	} else {
@@ -71,7 +74,7 @@ func (sb *HermiteVertBuilder) UpdateVertex(knotNo int, vertex bendigo.Vertex) (e
 	if !sb.knots.KnotExists(knotNo) {
 		return fmt.Errorf("knotNo %v does not exist", knotNo)
 	}
-	sb.vertices[knotNo] = vertex.(*HermiteVertex)
+	sb.vertices[knotNo] = vertex.(*EnexVertex)
 	return nil
 }
 
